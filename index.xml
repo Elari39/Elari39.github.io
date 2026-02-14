@@ -12,19 +12,19 @@
 <p><strong>代码量</strong><br>
 2000 行左右（除去测试代码）</p>
 <hr>
-<h3 id="基础要求">
+<h2 id="基础要求">
 <a class="header-anchor" href="#%e5%9f%ba%e7%a1%80%e8%a6%81%e6%b1%82"></a>
 基础要求
-</h3><ul>
+</h2><ul>
 <li><strong>Go 语言基础</strong>：goroutine、channel、接口等核心概念</li>
 <li><strong>缓存原理</strong>：缓存淘汰策略（LRU、LFU 等）</li>
 <li><strong>网络编程</strong>：gRPC 基础、HTTP 协议、TCP/IP</li>
 </ul>
 <hr>
-<h3 id="循序渐进的学习顺序">
+<h2 id="循序渐进的学习顺序">
 <a class="header-anchor" href="#%e5%be%aa%e5%ba%8f%e6%b8%90%e8%bf%9b%e7%9a%84%e5%ad%a6%e4%b9%a0%e9%a1%ba%e5%ba%8f"></a>
 循序渐进的学习顺序
-</h3><ol>
+</h2><ol>
 <li>
 <p><strong>从单机缓存开始</strong></p>
 <ul>
@@ -57,10 +57,10 @@
 </li>
 </ol>
 <hr>
-<h3 id="代码阅读方式">
+<h2 id="代码阅读方式">
 <a class="header-anchor" href="#%e4%bb%a3%e7%a0%81%e9%98%85%e8%af%bb%e6%96%b9%e5%bc%8f"></a>
 代码阅读方式
-</h3><ol>
+</h2><ol>
 <li>
 <p><strong>绘制组件关系图</strong></p>
 <ul>
@@ -98,23 +98,4 @@
 项目名称：<strong>KamaCache</strong><br>
 项目地址：<a href="https://github.com/youngyangyang04/KamaCache-Go">缓存系统（Go）</a></p>
         
-        <hr><p>本文2026-02-14首发于<a href='https://Elari39.github.io/'>Elari的博客</a>，最后修改于2026-02-14</p>]]></description></item><item><title>Hello World</title><link>https://Elari39.github.io/post/hello/</link><pubDate>Wed, 15 Mar 2023 11:00:00 -0700</pubDate><author>majo_elaina@qq.com (Elari39)</author><guid>https://Elari39.github.io/post/hello/</guid><description>
-<![CDATA[<h1>Hello World</h1><p>作者：Elari39（majo_elaina@qq.com）</p>
-        
-          <p>💘 博麗 霊夢 💘
-Ciallo～(∠・ω&lt; )⌒☆
-𝑪𝒊𝒂𝒍𝒍𝒐～(∠・ω&lt; )⌒☆
-𝓒𝓲𝓪𝓵𝓵𝓸～(∠・ω&lt; )⌒☆
-𝐂𝐢𝐚𝐥𝐥𝐨～(∠・ω&lt; )⌒☆
-ℂ𝕚𝕒𝕝𝕝𝕠～(∠・ω&lt; )⌒☆
-𝘊𝘪𝘢𝘭𝘭𝘰～(∠・ω&lt; )⌒☆
-𝗖𝗶𝗮𝗹𝗹𝗼～(∠・ω&lt; )⌒☆
-𝙲𝚒𝚊𝚕𝚕𝚘～(∠・ω&lt; )⌒☆
-ᴄɪᴀʟʟᴏ～(∠・ω&lt; )⌒☆
-𝕮𝖎𝖆𝖑𝖑𝖔～(∠・ω&lt; )⌒☆
-ℭ𝔦𝔞𝔩𝔩𝔬～(∠・ω&lt; )⌒☆
-ᶜⁱᵃˡˡᵒ～(∠・ω&lt; )⌒☆
-ᑕ⫯Ꭿ𝘭𝘭𝖮～(∠・ω&lt; )⌒☆
-☆⌒( &gt;ω・∠)～ollɐıɔ</p>
-        
-        <hr><p>本文2023-03-15首发于<a href='https://Elari39.github.io/'>Elari的博客</a>，最后修改于2023-03-15</p>]]></description></item></channel></rss>
+        <hr><p>本文2026-02-14首发于<a href='https://Elari39.github.io/'>Elari的博客</a>，最后修改于2026-02-14</p>]]></description></item></channel></rss>
