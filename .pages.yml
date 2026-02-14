@@ -52,7 +52,7 @@ content:
       - name: slug
         label: URL 别名
         type: string
-        required: false
+        required: true
         pattern: { message: '只能包含小写字母、数字和连字符', regex: '^[a-z0-9]+(?:-[a-z0-9]+)*$' }
         description: 用于生成 URL 的别名，留空则自动生成
 
