@@ -14,9 +14,9 @@ menu:
   - name: about
     url: "about"
     icon:
-  - name: friend
-    url: "friend"
-    icon:
+  # - name: friend
+  #   url: "friend"
+  #   icon:
 
 mainSections: ["post"]
 # 年，月，日及时间的格式化样式
@@ -28,8 +28,10 @@ timeFormat: "2006-01-02 15:04:05"
 
 author: Elari39
 email: majo_elaina@qq.com
-description: "少女祈祷中..."
-subtitle: "少女祈祷中..."
+description: |
+  请别在意。
+  我是旅人，得继续旅行才行…
+subtitle: "Eden* They were only two,on the planet"
 
 banner: "images/banner.webp"
 # 你也可以写成以下 URL 的形式
