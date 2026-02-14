@@ -18,7 +18,7 @@ content:
     label: 📝 博客文章
     type: collection
     path: content/post
-    filename: '{slug}/index.md'
+    filename: '{fields.slug}/index.md'
     subfolders: true
     #exclude: [ _index.md ]     # 忽略文件
     format: yaml-frontmatter
@@ -53,7 +53,7 @@ content:
         label: URL 别名
         type: string
         required: true
-        pattern: { message: '只能包含小写字母、数字和连字符', regex: '^[a-z0-9]+(?:-[a-z0-9]+)*$' }
+        # pattern removed to allow custom slugs without restrictions
         description: 用于生成 URL 的别名，留空则自动生成
 
       # 描述和摘要
