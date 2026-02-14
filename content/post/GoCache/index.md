@@ -66,7 +66,7 @@ cover: /post/gocache/gocache.jpg
 # 开篇
 
 帮助初次学习缓存项目的人能够更快的上手项目的开发  
-项目名称：**KamaCache**  
+项目名称：**Cache**  
 项目地址：[缓存系统（Go）](https://github.com/youngyangyang04/KamaCache-Go)
 
 ---
