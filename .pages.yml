@@ -18,10 +18,14 @@ content:
     label: 📝 博客文章
     type: collection
     path: content/post
-    #filename: '{fields.title}.md'
+    filename: '{slug}/index.md'
     subfolders: true
     #exclude: [ _index.md ]     # 忽略文件
     format: yaml-frontmatter
+    media:
+      relative: true
+      input: .
+      output: ./
     view:
       fields: [ title, date, categories, tags ]
       primary: title
