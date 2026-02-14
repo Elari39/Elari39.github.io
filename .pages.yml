@@ -14,10 +14,10 @@ content:
   # ===========================================
   # 博客文章集合
   # ===========================================
-  - name: posts
+  - name: post
     label: 📝 博客文章
     type: collection
-    path: content/posts
+    path: content/post
     #filename: '{fields.title}.md'
     subfolders: true
     #exclude: [ _index.md ]     # 忽略文件
@@ -109,8 +109,8 @@ content:
         description: 文章标签，用于细分主题
 
       # 缩略图
-      - name: thumbnail
-        label: 文章缩略图
+      - name: cover
+        label: 文章封面
         type: image
         required: false
         description: 文章封面图片
