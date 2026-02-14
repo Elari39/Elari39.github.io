@@ -590,7 +590,9 @@ home_categories:
 # 确保你的代码片段是 safeHTML
 injector:
   head_begin: # 在 <head> 之后注入代码片段
-  head_end: # 在 </head> 之前注入代码片段
+  head_end: |
+    <meta name="google-site-verification" content="google-site-verification: google1c5b8161d994d06b.html" />
+    <meta name="msvalidate.01" content="E6AD040C32E9AE33DC68AAED13F8FB31" />
   body_begin: # 在 <body> 之后注入代码片段
   body_end: # 在 </body> 之前注入代码片段
   sidebar_begin: # 在 <aside> 之后注入代码片段
