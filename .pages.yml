@@ -25,7 +25,7 @@ content:
     media:
       relative: true
       input: ""
-      output: ./
+      output: ""
     view:
       fields: [ title, date, categories, tags ]
       primary: title
