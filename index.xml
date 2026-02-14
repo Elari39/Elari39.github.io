@@ -258,11 +258,13 @@ Thumbs.db
 </li>
 </ol>
 <hr>
-<h1 id="开篇">
-<a class="header-anchor" href="#%e5%bc%80%e7%af%87"></a>
-开篇
-</h1><p>帮助初次学习缓存项目的人能够更快的上手项目的开发<br>
-项目名称：<strong>Cache</strong><br>
-项目地址：<a href="https://github.com/youngyangyang04/KamaCache-Go">缓存系统（Go）</a></p>
+<h2 id="什么是缓存">
+<a class="header-anchor" href="#%e4%bb%80%e4%b9%88%e6%98%af%e7%bc%93%e5%ad%98"></a>
+什么是缓存
+</h2><p>缓存是将高频访问的数据暂存到内存中，是加速数据访问的存储，降低延迟，提高吞吐率的利器。</p>
+<h2 id="为什么要实现缓存系统">
+<a class="header-anchor" href="#%e4%b8%ba%e4%bb%80%e4%b9%88%e8%a6%81%e5%ae%9e%e7%8e%b0%e7%bc%93%e5%ad%98%e7%b3%bb%e7%bb%9f"></a>
+为什么要实现缓存系统
+</h2><p>因缓存的使用相关需求，通过牺牲一部分服务器内存，减少对磁盘或者数据库资源进行直接读写，可换取更快响应速度，尤其是处理高并发的场景，负责存储经常访问的数据，通过设计合理的缓存机制提高资源的访问效率。由于服务器的内存是有限的，我们不能把所有数据都存放在内存中，因此需要一种机制来决定当使用内存超过一定标准时，应该删除哪些数据，这就涉及到缓存淘汰策略的选择。</p>
         
         <hr><p>本文2026-02-14首发于<a href='https://Elari39.github.io/'>Elari的博客</a>，最后修改于2026-02-14</p>]]></description></item></channel></rss>
