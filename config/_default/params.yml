@@ -89,7 +89,7 @@ footer:
   since: 2026 # 2020-当前年份
   powered: false
   count: false
-  busuanzi: false
+  busuanzi: true
   icon:
     url: "../images/taichi.png" # 此路径是相对于 css/main.css 的，所以需要向上两级才能到达 images 文件夹
     rotate: true
@@ -248,7 +248,7 @@ dark_mode:
 ########################################
 
 baidu_analytics: false
-google_analytics: false
+google_analytics: "G-FR1GBDTR58"
 clarity: false
 
 ########################################
@@ -590,9 +590,7 @@ home_categories:
 # 确保你的代码片段是 safeHTML
 injector:
   head_begin: # 在 <head> 之后注入代码片段
-  head_end: |
-    <meta name="google-site-verification" content="google-site-verification: google1c5b8161d994d06b.html" />
-    <meta name="msvalidate.01" content="E6AD040C32E9AE33DC68AAED13F8FB31" />
+  head_end: # 在 </head> 之前注入代码片段
   body_begin: # 在 <body> 之后注入代码片段
   body_end: # 在 </body> 之前注入代码片段
   sidebar_begin: # 在 <aside> 之后注入代码片段
