@@ -1,6 +1,0 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Go on Elari的博客</title><link>https://Elari39.github.io/tags/go/</link><description>Recent content from Elari的博客</description><generator>Hugo</generator><language>zh-cn</language><managingEditor>majo_elaina@qq.com (Elari39)</managingEditor><webMaster>majo_elaina@qq.com (Elari39)</webMaster><copyright>本博客所有文章除特别声明外，均采用 BY-NC-SA 许可协议。转载请注明出处！</copyright><lastBuildDate>Sat, 14 Feb 2026 17:01:00 +0000</lastBuildDate><atom:link href="https://Elari39.github.io/tags/go/index.xml" rel="self" type="application/rss+xml"/><item><title>GoHttp库</title><link>https://Elari39.github.io/post/gohttpv1/</link><pubDate>Sat, 14 Feb 2026 17:01:00 +0000</pubDate><author>majo_elaina@qq.com (Elari39)</author><guid>https://Elari39.github.io/post/gohttpv1/</guid><description>
-<![CDATA[<h1>GoHttp库</h1><p>作者：Elari39（majo_elaina@qq.com）</p>
-        
-          Go 语言的 net/http 标准库是构建 HTTP 服务端和客户端的基石，它设计简洁、功能强大，并且是众多第三方 Web 框架（如 Gin、Echo）的底层依赖。无论你是想从零搭建一个高性能的 Web 服务，还是希望在使用框架时能深入理解其原理，掌握 net/http 都是必修课。本文将从零开始，以最新版本的 Go（语法层面无破坏性变更）为例，详细拆解 net/http 的核心概念、工作机制以及最佳实践。
-        
-        <hr><p>本文2026-02-14首发于<a href='https://Elari39.github.io/'>Elari的博客</a>，最后修改于2026-02-14</p>]]></description><category>Go</category></item></channel></rss>
