@@ -1,0 +1,735 @@
+########################################
+# 基础配置
+########################################
+
+# 主菜单导航
+# 更多图标信息，请访问 https://github.com/D-Sketon/hexo-theme-reimu/issues/30
+menu:
+  - name: home
+    url: ""
+    icon: # 默认使用太极图标，你可以使用 fontawesome 或 icon_font 的十六进制表示，如 'f0c1'
+  - name: archives
+    url: "archives"
+    icon:
+  - name: about
+    url: "about"
+    icon:
+  - name: friend
+    url: "friend"
+    icon:
+
+mainSections: ["post"]
+# 年，月，日及时间的格式化样式
+# Format style for year,month,date & time
+yearFormat: "2006"
+monthFormat: "2006-01"
+dateFormat: "2006-01-02"
+timeFormat: "2006-01-02 15:04:05"
+
+author: Elari39
+email: majo_elaina@qq.com
+description: "少女祈祷中..."
+subtitle: "少女祈祷中..."
+
+banner: "images/banner.webp"
+# 你也可以写成以下 URL 的形式
+# banner: "https://example.com"
+
+# 如果你想使用 srcset 属性，请启用它
+banner_srcset:
+  enable: false
+  srcset:
+    - src: "images/banner-600w.webp"
+      media: "(max-width: 479px)"
+    - src: "images/banner-800w.webp"
+      media: "(max-width: 799px)"
+    - src: "images/banner.webp"
+      media: "(min-width: 800px)"
+
+avatar: "avatar.webp"
+
+# 控制文章封面的显示
+# 如果未设置，默认显示 banner 图片
+# 其优先级低于 Front-matter 中的 cover
+cover: # https://example.com / false / rgb(255,117,117)
+
+# 控制文章目录的显示
+# 其优先级低于 Front-matter 中的 toc
+toc: true
+
+# Open Graph 元数据
+open_graph:
+  enable: true
+  options:
+    #twitter_card: <twitter:card>
+    #twitter_id: <twitter:creator>
+    #twitter_site: <twitter:site>
+    #twitter_image: <twitter:image>
+    #google_plus: <g+:profile_link>
+    #fb_admins: <fb:admin_id>
+    #fb_app_id: <fb:app_id>
+
+# 内容
+excerpt_link: Read More
+
+# 页脚版权
+# 在页脚版权处注入代码片段
+# 确保你的代码片段是 safeHTML
+copyright:
+# 需要帮助选择？请查看...
+# https://creativecommons.org/choose/
+# https://choosealicense.com/
+# copyright: |-
+#   <div style="flex-direction:column;align-items: center;"><a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/88x31.png" /></a>
+#   All website licensed under <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank">CC BY 4.0</a></div>
+
+footer:
+  since: 2026 # 2020-当前年份
+  powered: false
+  count: false
+  busuanzi: false
+  icon:
+    url: "../images/taichi.png" # 此路径是相对于 css/main.css 的，所以需要向上两级才能到达 images 文件夹
+    rotate: true
+    mask: true # 是否将图像用作蒙版
+    
+# 侧边栏
+# sidebar: right # 已弃用，请改用 sidebar.position
+sidebar:
+  position: right
+  menu: true  # 是否显示侧边栏菜单按钮，移动设备上忽略
+  article:
+    show_common: false # 是否显示通用侧边栏，移动设备上忽略
+
+social:
+  email: mailto:majo_elaina@qq.com
+  github: https://github.com/Elari39
+  # google: https://plus.google.com/yourname
+  # twitter: https://twitter.com/yourname
+  # facebook: https://www.facebook.com/yourname
+  # instagram: https://www.instagram.com/yourname
+  # linkedin: https://www.linkedin.com/in/yourname
+  # pinterest: https://www.pinterest.com/yourname
+  # youtube: https://www.youtube.com/channel/yourname
+  # vimeo: https://vimeo.com/yourname
+  # flickr: https://www.flickr.com/photos/yourname
+  # dribbble: https://dribbble.com/yourname
+  # behance: https://www.behance.net/yourname
+  # bilibili: https://space.bilibili.com/yourname
+  # weibo: https://weibo.com/yourname
+  # zhihu: https://www.zhihu.com/people/yourname
+  # reddit: https://www.reddit.com/user/yourname
+  # tumblr: https://yourname.tumblr.com
+  # medium: https://medium.com/@yourname
+  # deviantart: https://yourname.deviantart.com
+  # stackoverflow: https://stackoverflow.com/users/yourname
+  # keybase: https://keybase.io/yourname
+  # telegram: https://t.me/yourname
+  # discord: https://discordapp.com/users/yourname
+  # steam: https://steamcommunity.com/id/yourname
+
+widgets:
+  - category
+  - tag
+  - tagcloud
+  - recent_posts
+
+# 挂件行为
+category_limits: 10
+tag_limits: 10
+recent_posts_limits: 5
+tagcloud_limits: 20
+
+# 归档行为
+only_show_capsule_in_index: false # 如果你有大量的标签和分类，可以设置为 true 以仅在索引页显示胶囊，以获得更好的性能
+uppercase_capsule: true # 如果你想保持分类胶囊不变，请将其设置为 false
+
+show_update_time: false # 如果你想显示更新时间，请将其设置为 true
+
+# 摘要内容
+summary:
+  enable: false
+  style: 'subtitle' # 'subtitle' 或 'blockquote'
+
+# RSS 输出
+rss:
+  limit: 10             # 输出的最近文章数量，填写 -1 输出所有
+  showFullContent: false # 输出完整内容或描述
+  showCopyright: false   # 如果为 true，在文章末尾添加版权信息。
+
+# 排序配置
+# 可选值: default, date, date-reverse, weight, weight-reverse
+# default: Hugo 的默认排序顺序，参见 https://gohugo.io/quick-reference/page-collections/#sort
+# date: 按日期升序排序（旧的在前）
+# date-reverse: 按日期降序排序（新的在前）
+# weight: 按权重升序排序
+# weight-reverse: 按权重降序排序
+sort_order:
+  taxonomy:
+    category: date-reverse # 由 categories_weight 控制
+    tag: date-reverse # 由 tags_weight 控制
+  archive: date-reverse # 由 weight 控制
+  home: default # 由 weight 控制
+
+# 分页
+paginate:
+  archive: # 归档和分类页面每页的文章数量
+  post: # 首页和其他列表页面每页的文章数量
+
+########################################
+# CSS 样式
+########################################
+
+layout:
+  max_width: 1350px # 主要内容区域的最大宽度
+
+triangle_badge:
+  enable: false
+  icon: github # 与社交配置中的图标相同
+  link: https://github.com/D-Sketon/hugo-theme-reimu
+
+anchor_icon: # 默认使用 '#' 图标，你可以使用 fontawesome 或 icon_font 的十六进制表示，如 'f0c1'，也可以使用 false 隐藏锚点图标
+
+reimu_cursor:
+  enable: true
+  cursor:
+    default: ../images/cursor/reimu-cursor-default.png  # 此路径是相对于 css/main.css 的，所以需要向上两级才能到达 images 文件夹
+    pointer: ../images/cursor/reimu-cursor-pointer.png
+    text: ../images/cursor/reimu-cursor-text.png
+
+icon_font: 4552607_4k4bc36ef96
+
+# 字体加载策略
+# 自定义字体 -> Google 字体 -> 本地回退字体
+
+# 自定义字体
+custom_font:
+  enable: false
+  article:
+    # - css: https://fontsapi.zeoseven.com/292/main/result.css # 字体 css
+    #   name: LXGW WenKai # 字体名称
+  code:
+
+# https://fonts.google.com/
+# Google 字体，优先级高于本地字体
+font:
+  enable: true
+  article:
+    - Mulish
+    - Noto Serif SC
+  code:
+    # - Ubuntu Mono
+    # - Source Code Pro
+    # - JetBrains Mono
+
+# 本地回退字体
+local_font:
+  article:
+    - "-apple-system"
+    - PingFang SC
+    - Microsoft YaHei
+    - sans-serif
+  code:
+    - Menlo
+    - Monaco
+    - Consolas
+    - monospace
+
+dark_mode:
+  # true 表示默认启用深色模式
+  # false 表示默认禁用深色模式
+  # auto 表示根据系统设置自动切换深色模式
+  enable: auto # true | false | auto
+
+########################################
+# 统计分析
+########################################
+
+baidu_analytics: false
+google_analytics: false
+clarity: false
+
+########################################
+# Markdown 显示
+########################################
+
+# mermaid url https://github.com/mermaid-js/mermaid
+mermaid:
+  zoom: false # 是否启用 mermaid 图表的缩放
+
+code_block:
+  # 是否默认展开代码块
+  # true 表示默认展开所有代码块
+  # false 表示默认折叠所有代码块
+  # 数字表示当行数超过指定值时默认折叠代码块
+  expand: true
+
+# 剪贴板配置
+clipboard:
+  success: 
+    en: Copy successfully (*^▽^*)
+    zh-CN: 复制成功 (*^▽^*)
+    zh-TW: 複製成功 (*^▽^*)
+    ja: コピー成功 (*^▽^*)
+    pt-BR: Copiado com sucesso (*^▽^*)
+  fail: 
+    en: Copy failed (ﾟ⊿ﾟ)ﾂ
+    zh-CN: 复制失败 (ﾟ⊿ﾟ)ﾂ
+    zh-TW: 複製失敗 (ﾟ⊿ﾟ)ﾂ
+    ja: コピー失敗 (ﾟ⊿ﾟ)ﾂ
+    pt-BR: Falha ao copiar (ﾟ⊿ﾟ)ﾂ
+  copyright:
+    enable: false
+    count: 50 # 显示版权时的字符数
+    license_type: by-nc-sa # https://creativecommons.org/licenses
+
+math:
+  katex:
+    enable: true
+  mathjax:
+    enable: false
+    options: # 参见 https://docs.mathjax.org/en/latest/web/configuration.html
+    # 我们需要将配置放在一个数组中，因为 hugo 会自动将键转换为小写
+      [
+        {
+          tex:
+            {
+              tags: "ams",
+              useLabelIds: true,
+              inlineMath: [["$", "$"], ['\\(', '\\)']],
+              displayMath: [["$$", "$$"], ['\\[', '\\]']],
+              processEscapes: true,
+              processEnvironments: true,
+              autoload: { color: [], colorv2: ["color"] },
+              packages: { "[+]": ["noerrors"] },
+            },
+          options:
+            {
+              skipHtmlTags:
+                ["script", "noscript", "style", "textarea", "pre", "code"],
+              ignoreHtmlClass: "tex2jax_ignore",
+              processHtmlClass: "tex2jax_process",
+            },
+          loader: { load: ["input/asciimath", "[tex]/noerrors"] },
+        },
+      ]
+
+########################################
+# 评论系统
+########################################
+
+# 评论系统的全局控制
+# 你可以同时使用多个评论系统
+# 加载顺序：localStorage（用户手动选择）-> default -> valine -> waline -> twikoo -> gitalk -> giscus -> disqus
+comment:
+  # 评论系统标题
+  title:
+    en: Leave a comment
+    zh-CN: 说些什么吧！
+    zh-TW: 說些什麼吧！
+    ja: コメントを残す
+    pt-BR: Deixe um comentário
+  default: waline # 默认评论系统，当你启用多个评论系统时
+
+# valine 评论系统。 https://valine.js.org
+# 版本 1.5.1
+# notify 和 verify 已弃用
+valine:
+  enable: false # 如果你想使用 valine，请将此值设置为 true
+  appId: # leancloud 应用 app id
+  appKey: # leancloud 应用 app key
+  pageSize: 10 # 评论列表每页大小
+  avatar: mp # gravatar 风格 https://valine.js.org/#/avatar
+  # lang: zh-cn # 已弃用，请改用 html.lang
+  placeholder: Just go go # valine 评论输入框占位符（如：请留下你的足迹）
+  guest_info: nick,mail,link # valine 评论头部信息
+  recordIP: true # 是否记录评论者的 IP 地址
+  highlight: true # 是否高亮代码块
+  visitor: false # 是否显示访客数量
+  serverURLs: # leancloud 服务器 url
+
+# https://waline.js.org/
+waline:
+  enable: false
+  serverURL:
+  # lang: zh-CN # 已弃用，请改用 html.lang
+  locale: {} # https://waline.js.org/guide/features/i18n.html#%E8%87%AA%E5%AE%9A%E4%B9%89%E8%AF%AD%E8%A8%80
+  emoji:
+    - https://unpkg.com/@waline/emojis@1.2.0/weibo
+    - https://unpkg.com/@waline/emojis@1.2.0/alus
+    - https://unpkg.com/@waline/emojis@1.2.0/bilibili
+    - https://unpkg.com/@waline/emojis@1.2.0/qq
+    - https://unpkg.com/@waline/emojis@1.2.0/tieba
+    - https://unpkg.com/@waline/emojis@1.2.0/tw-emoji
+  meta:
+    - nick
+    - mail
+    - link
+  requiredMeta:
+    - nick
+    - mail
+  wordLimit: 0
+  pageSize: 10
+  pageview: true
+
+# https://twikoo.js.org
+twikoo:
+  enable: false
+  envId: # 腾讯云环境填 envId；Vercel 环境填地址（https://xxx.vercel.app）
+  region:
+
+# https://github.com/gitalk/gitalk/blob/master/readme-cn.md
+gitalk:
+  enable: false
+  clientID:
+  clientSecret:
+  repo:
+  owner:
+  admin:
+  md5: false
+
+# https://giscus.app/zh-CN
+giscus:
+  enable: false
+  repo:
+  repoId:
+  category:
+  categoryId:
+  mapping: mapping
+  strict: 0
+  reactionsEnabled: 1
+  emitMetadata: 0
+  inputPosition: bottom
+  # commentTheme: preferred_color_scheme invalid
+  # lang: zh-CN # 已弃用，请改用 html.lang
+
+# https://disqus.com
+disqus:
+  enable: false
+  shortname: # 你的 disqus shortname
+  count: true
+
+# https://utteranc.es
+utterances:
+  enable: false
+  repo: owner/repo # 将此更改为用于存储博客评论的 "GitHub 用户名/仓库名"
+  issue_term: title
+  theme: auto # auto 表示自动适应深色和浅色主题，你也可以使用特定主题，如 github-light, github-dark, preferred-color-scheme 等
+  
+########################################
+# 搜索
+########################################
+
+algolia_search:
+  enable: false
+  appID:
+  apiKey:
+  indexName:
+  hits:
+    per_page: 10
+
+########################################
+# 动画
+########################################
+
+preloader:
+  enable: true
+  text: 
+    zh-CN: 少女祈祷中...
+    zh-TW: 少女祈禱中...
+    en: Loading...
+    ja: 少女祈祷中...
+    pt-BR: Carregando...
+  icon: # 默认使用内联 svg 以获得更快的速度，你可以使用图片 url，如 '/images/taichi.png'
+  rotate: true # 是否旋转图标
+
+# 参见 https://github.com/D-Sketon/aos.js
+animation:
+  enable: true
+  options:
+    header:
+      title: slide-up
+      subTitle: slide-down
+    home:
+      post: fade-up
+      widget: fade-up
+      sidebar: fade-up
+    article:
+      whole: fade-up
+      date: zoom-in
+      category: zoom-in
+      tag: zoom-in
+      comment: zoom-in
+      reading: zoom-in
+      nav: fade-up
+    archive:
+      whole: fade-up
+      tag: zoom-in
+      category: zoom-in
+      section: fade-up
+      nav: fade-up
+
+# 参见 https://github.com/D-Sketon/mouse-firework
+firework:
+  enable: true
+  disable_on_mobile: false
+  options:
+    excludeElements: ["a", "button"]
+    particles:
+      - shape: circle
+        move: ["emit"]
+        easing: easeOutExpo
+        colors: ["var(--red-1)", "var(--red-2)", "var(--red-3)", "var(--red-4)"]
+        number: 20
+        duration: [1200, 1800]
+        shapeOptions:
+          radius: [16, 32]
+          alpha: [0.3, 0.5]
+      - shape: circle
+        move: ["diffuse"]
+        easing: easeOutExpo
+        colors: ["var(--red-0)"]
+        number: 1
+        duration: [1200, 1800]
+        shapeOptions:
+          radius: 20
+          alpha: [0.2, 0.5]
+          lineWidth: 6
+
+########################################
+# 扩展功能
+########################################
+
+# 在每篇文章下方显示版权信息
+article_copyright:
+  enable: false
+  content:
+    author: true
+    link: true
+    title: false
+    date: false
+    updated: false
+    license: true
+    license_type: by-nc-sa # https://creativecommons.org/licenses
+
+# 回到顶部
+top:
+  enable: true
+  position: right # 左或右
+  icon:
+    url: "../images/taichi.png" # 此路径是相对于 css/main.css 的，所以需要向上两级才能到达 images 文件夹
+    rotate: true
+    mask: true # 是否将图像用作蒙版
+
+# 是否在文章过时时显示通知
+outdate:
+  enable: false
+  daysAgo: 180 # 文章被认为过时的天数
+  message:
+    en: This article was last updated on {time}. Please note that the content may no longer be applicable.
+    zh-CN: 本文最后更新于 {time}，请注意文中内容可能已不适用。
+    zh-TW: 本文最後更新於 {time}，請注意文中內容可能已不適用。
+    ja: この記事は最終更新日：{time}。記載内容が現在有効でない可能性がありますのでご注意ください。
+    pt-BR: Este artigo foi atualizado pela última vez em {time}. Observe que o conteúdo pode não ser mais aplicável.
+
+# ICP 备案
+icp:
+  icpnumber: # ICP备案号
+  beian: # 网安备案号
+  recordcode: # 网安备案链接中的 recordcode 参数
+
+# 萌国 ICP 备案
+moe_icp:
+  icpnumber: # 萌国ICP备案号
+
+# 赞助
+sponsor:
+  enable: false
+  tip: 
+    zh-CN: 请作者喝杯咖啡吧
+    zh-TW: 請作者喝杯咖啡吧
+    en: Buy me a coffee
+    ja: コーヒーを買ってください
+    pt-BR: Compre-me um café
+  icon:
+    url: "../images/taichi.png" # 此路径是相对于 css/main.css 的，所以需要向上两级才能到达 images 文件夹
+    rotate: true
+    mask: true # 是否将图像用作蒙版
+  qr:
+    # - name: 支付宝
+    #   src: "sponsor/alipay.jpg"
+    # - name: 微信
+    #   src: "sponsor/wechat.png"
+
+# 分享
+share:
+  # - facebook
+  # - twitter
+  # - linkedin
+  # - reddit
+  # - weibo
+  # - qq
+  # - weixin
+
+# 在首页显示分类卡片
+home_categories:
+  enable: false
+  content:
+    - categories: # 字符串（单层分类）或数组（多层分类）
+      cover: # 为空表示随机封面
+    - categories:
+      cover:
+
+########################################
+# 实验性功能
+########################################
+
+# 注入代码片段
+# 确保你的代码片段是 safeHTML
+injector:
+  head_begin: # 在 <head> 之后注入代码片段
+  head_end: # 在 </head> 之前注入代码片段
+  body_begin: # 在 <body> 之后注入代码片段
+  body_end: # 在 </body> 之前注入代码片段
+  sidebar_begin: # 在 <aside> 之后注入代码片段
+  sidebar_end: # 在 </aside> 之前注入代码片段
+
+# 实验性功能，可能有很多 bug，请谨慎开启！
+pjax:
+  enable: false
+
+# 实验性功能
+# https://github.com/GoogleChromeLabs/quicklink
+quicklink:
+  enable: false
+  # `requestIdleCallback` 超时时间，以毫秒为单位。
+  timeout: 3000
+  # options.el 容器内的 URL 是否应被视为高优先级。
+  # 当为 true 时，如果支持，quicklink 将尝试使用 fetch() API（而不是 link[rel=prefetch]）。
+  priority: true
+  # 决定是否应预取 URL。
+  # 仅支持字符串
+  ignores: []
+
+# 实验性功能
+service_worker:
+  enable: false
+
+# 实验性功能
+live2d:
+  enable: false
+  position: left # 左或右
+
+# 实验性功能
+live2d_widgets:
+  enable: false
+  position: left # 左或右
+
+# https://github.com/CodeByZach/pace
+pace:
+  enable: true
+
+# 实验性功能
+# 请开启 pjax 以使用此功能
+player:
+  disable_on_mobile: false
+  position: before_sidebar # 侧边栏之前 | 侧边栏之后 | 挂件之后
+  # 如果你启用 meting，必须先启用 aplayer
+  aplayer:
+    # https://github.com/DIYgod/APlayer
+    enable: false
+    options:
+      audio: []
+      fixed: true
+      autoplay:
+      loop:
+      order:
+      preload:
+      volume:
+      mutex:
+      listFolded:
+      lrcType:
+  meting:
+    # https://github.com/metowolf/MetingJS
+    # 如果你想使用 meting，请先启用 aplayer
+    enable: false
+    meting_api: # 自定义 api
+    options:
+      id: 2265921590
+      server: netease
+      type: playlist
+      auto:
+
+########################################
+# pangu.js
+########################################
+
+pangu:
+  # 更多信息: https://github.com/vinta/pangu.js 
+  enable: false  # 启用 pangu.js 以在中文和英文之间添加空格
+
+########################################
+# 主题
+########################################
+
+# 实验性功能，可能有很多 bug，请谨慎开启！
+# 基于 Google Material You 设计规范的动态颜色生成工具，能够从任何图像中提取主色调并生成完整的亮色和暗色配色方案。
+material_theme:
+  # 更多信息: https://github.com/2061360308/material-theme
+  # 注意：当你启用此功能时，所有封面将自动添加 "crossorigin" 属性以支持动态配色方案
+  # 所以请确保你的自定义封面不会被浏览器的 CORS 策略阻止
+  enable: false # 启用 material_theme 以基于 banner 图像生成动态配色方案
+
+internal_theme:
+  light:
+    --red-0: '#ff0000'
+    --red-1: '#ff5252'
+    --red-2: '#ff7c7c'
+    --red-3: '#ffafaf'
+    --red-4: '#ffd0d0'
+    --red-5: '#ffecec'
+    --red-5-5: '#fff3f3'
+    --red-6: '#fff7f7'
+    --color-red-6-shadow: 'rgba(255, 78, 78, 0.6)'
+    --color-red-3-shadow: 'rgba(255, 78, 78, 0.3)'
+
+    --highlight-nav: "#f5f5f5"
+    --highlight-scrollbar: "#d6d6d6"
+    --highlight-background: "#fdfdfd"
+    --highlight-selection: "#e9e9e988"
+    --highlight-foreground: "#24292e"
+    --highlight-comment: "#7d7d7d"
+    --highlight-red: "#d73a49"
+    --highlight-orange: "#e36209"
+    --highlight-yellow: "#cb911d"
+    --highlight-green: "#22863a"
+    --highlight-aqua: "#005cc5"
+    --highlight-blue: "#032f62"
+    --highlight-purple: "#6f42c1"
+    --highlight-deletion: "#b31d28"
+    --highlight-deletion-bg: "#ffeef0"
+    --highlight-addition: "#22863a"
+    --highlight-addition-bg: "#f0fff4"
+  dark:
+    --red-4: 'rgba(255, 208, 208, 0.5)'
+    --red-5: 'rgba(255,228,228,0.15)'
+    --red-5-5: 'rgba(255,236,236,0.05)'
+    --red-6: 'rgba(255, 243, 243, 0.2)'
+
+    --highlight-nav: "#222830"
+    --highlight-scrollbar: "#454d59"
+    --highlight-background: "#1e2027"
+    --highlight-selection: "#51515155"
+    --highlight-foreground: "#c9d1d9"
+    --highlight-comment: "#8b949e"
+    --highlight-red: "#ff7b72"
+    --highlight-orange: "#ffa657"
+    --highlight-yellow: "#ffcc66"
+    --highlight-green: "#7ee787"
+    --highlight-aqua: "#a5d6ff"
+    --highlight-blue: "#79c0ff"
+    --highlight-purple: "#d2a8ff"
+    --highlight-deletion: "#ffa198"
+    --highlight-deletion-bg: "#490202"
+    --highlight-addition: "#7ee787"
+    --highlight-addition-bg: "#04260f"

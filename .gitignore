@@ -1,0 +1,56 @@
+# Hugo default
+/public/
+/resources/_gen/
+.hugo_build.lock
+/hugo_stats.json
+
+# Hugo executables
+hugo.exe
+hugo.linux
+hugo.darwin
+
+# System Files
+.DS_Store
+Thumbs.db
+
+# IDE & Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+*.orig
+.history/
+
+# Obsidian
+.obsidian/*
+!.obsidian/app.json
+!.obsidian/appearance.json
+!.obsidian/core-plugins.json
+!.obsidian/community-plugins.json
+!.obsidian/hotkeys.json
+!.obsidian/graph.json
+.trash/
+
+# Logs & Temp
+*.log
+tmp/
+*.tmp
+.cache/
+.hugo_cache/
+
+# Dependencies
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Environment & Local Config
+.env
+.env.*
+local.toml
+development.toml
+
+# Deployment
+.deploy_git/
+.netlify/
+vercel.json
