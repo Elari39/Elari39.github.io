@@ -24,7 +24,7 @@ content:
     format: yaml-frontmatter
     media:
       relative: true
-      input: .
+      input: ""
       output: ./
     view:
       fields: [ title, date, categories, tags ]
