@@ -1,3 +1,4 @@
 baseURL = 'https://Elari39.github.io/'
 languageCode = 'zh-cn'
+timeZone = "Asia/Shanghai"
 title = 'Elari的博客'
