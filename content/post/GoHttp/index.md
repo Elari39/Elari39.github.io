@@ -7,8 +7,8 @@ description: Go 语言的 net/http 标准库是构建 HTTP 服务端和客户端
 summary: Go 语言的 net/http 标准库是构建 HTTP 服务端和客户端的基石，它设计简洁、功能强大，并且是众多第三方 Web 框架（如
   Gin、Echo）的底层依赖。无论你是想从零搭建一个高性能的 Web 服务，还是希望在使用框架时能深入理解其原理，掌握 net/http
   都是必修课。本文将从零开始，以最新版本的 Go（语法层面无破坏性变更）为例，详细拆解 net/http 的核心概念、工作机制以及最佳实践。
-date: 2026-02-14T17:36:00Z
-lastmod: 2026-02-14T17:36:00Z
+date: 2026-02-14T12:00:00+08:00
+lastmod: 2026-02-14T12:00:00+08:00
 draft: false
 categories:
   - Go
