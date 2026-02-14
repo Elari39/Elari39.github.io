@@ -1,8 +1,13 @@
 ---
 title: 'GoCache 学习建议'
-date: 2026-02-14T11:00:00+08:00
-lastmod: 2026-02-14T11:00:00+08:00
+date: 2026-02-14T21:57:00+08:00
+weight: 100
 cover: /post/gocache/gocache.jpg
+categories:
+  - Go
+  - 缓存
+tags:
+  - Go
 ---
 
 # 学习建议

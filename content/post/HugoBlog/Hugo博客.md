@@ -3,6 +3,11 @@ title: "Hugo博客配置"
 date: 2026-02-14T12:00:00+08:00
 weight: -1
 draft: false
+cover: /images/saber-bg.jpg
+categories:
+  - 技术
+tags:
+  - 博客
 ---
 ## 按照必要环境
 1. Go环境：[All releases - The Go Programming Language](https://go.dev/dl/)
