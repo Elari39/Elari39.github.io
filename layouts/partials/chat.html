@@ -1,0 +1,163 @@
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<style>
+  .chat-markdown p { margin: 0 0 8px 0; }
+  .chat-markdown p:last-child { margin-bottom: 0; }
+  .chat-markdown pre { background: rgba(0,0,0,0.05); padding: 8px; border-radius: 4px; overflow-x: auto; margin: 8px 0; }
+  .chat-markdown code { font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace; background: rgba(0,0,0,0.05); padding: 2px 4px; border-radius: 3px; font-size: 0.9em; }
+  .chat-markdown ul, .chat-markdown ol { padding-left: 20px; margin: 0 0 8px 0; }
+  .chat-markdown a { color: inherit; text-decoration: underline; }
+  .chat-user-bubble .chat-markdown code { background: rgba(255,255,255,0.2); }
+  .chat-user-bubble .chat-markdown pre { background: rgba(255,255,255,0.1); }
+</style>
+
+<div id="ai-chat-wrapper" style="position: fixed; bottom: 100px; right: 30px; z-index: 9999; font-family: var(--font-basic, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif);">
+    
+    <div id="ai-chat-launcher" onclick="toggleChat()" style="width: 48px; height: 48px; background: var(--red-1, #ff5252); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: var(--shadow-card, 0 4px 12px rgba(0,0,0,0.15)); transition: transform 0.3s;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 21 1.9-5.7a8.5 8.5 0 1 1 3.8 3.8z"/></svg>
+    </div>
+
+    <div id="ai-chat-window" style="display: none; width: 350px; height: 500px; max-width: 90vw; max-height: 80vh; background: var(--color-wrap, white); border: 1px solid var(--color-border, #e5e7eb); border-radius: 10px; flex-direction: column; overflow: hidden; box-shadow: var(--shadow-card-hover, 0 10px 25px -5px rgba(0,0,0,0.1));">
+        <div style="background: var(--red-1, #ff5252); padding: 15px; display: flex; justify-content: space-between; align-items: center; color: white;">
+            <div style="display: flex; flex-direction: column;">
+                <span style="font-weight: 600; font-size: 14px;">Gemini 3 Flash</span>
+                <span style="font-size: 10px; opacity: 0.8;">Streaming Enabled</span>
+            </div>
+            <span onclick="toggleChat()" style="cursor: pointer; padding: 4px; font-size: 18px;">✕</span>
+        </div>
+
+        <div id="chat-history" style="flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 12px; background: var(--red-6, #f9fafb); font-size: 14px;">
+            <div style="align-self: flex-start; background: var(--red-5-5, #e5e7eb); padding: 8px 12px; border-radius: 12px 12px 12px 0; max-width: 85%; color: var(--color-default, #374151);">
+                你好！我是基于 Gemini 3 的 AI 助手，有什么可以帮你的？
+            </div>
+        </div>
+
+        <div style="padding: 15px; border-top: 1px solid var(--color-border, #e5e7eb); display: flex; gap: 8px; background: var(--color-wrap, white);">
+            <input type="text" id="chat-input" placeholder="输入问题..." style="flex: 1; border: 1px solid var(--color-border, #d1d5db); background: var(--color-wrap, white); color: var(--color-default, black); border-radius: 8px; padding: 8px 12px; font-size: 14px; outline: none !important; box-sizing: border-box !important;">
+            <button id="send-btn" onclick="sendMessage()" style="background: var(--red-1, #ff5252); color: white; border: none; border-radius: 8px; padding: 0 16px; cursor: pointer; font-size: 14px; font-weight: 500;">发送</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// 切换窗口状态
+function toggleChat() {
+    const wrapperEl = document.getElementById('ai-chat-wrapper');
+    const windowEl = document.getElementById('ai-chat-window');
+    const launcherEl = document.getElementById('ai-chat-launcher');
+    const isHidden = windowEl.style.display === 'none';
+    
+    if (isHidden) {
+        // 打开窗口
+        windowEl.style.display = 'flex';
+        launcherEl.style.display = 'none';
+        wrapperEl.style.bottom = '20px'; // 下沉到底部
+    } else {
+        // 关闭窗口
+        windowEl.style.display = 'none';
+        launcherEl.style.display = 'flex';
+        wrapperEl.style.bottom = '100px'; // 恢复到上方位置
+    }
+}
+
+// 处理消息发送
+async function sendMessage() {
+    const input = document.getElementById('chat-input');
+    const history = document.getElementById('chat-history');
+    const sendBtn = document.getElementById('send-btn');
+    const message = input.value.trim();
+    
+    if (!message) return;
+
+    // 状态锁定
+    input.value = '';
+    input.disabled = true;
+    sendBtn.disabled = true;
+    sendBtn.style.opacity = '0.5';
+
+    // 用户气泡
+    history.innerHTML += `
+        <div class="chat-user-bubble" style="align-self: flex-end; background: var(--red-1, #4f46e5); color: white; padding: 8px 12px; border-radius: 12px 12px 0 12px; max-width: 85%; word-wrap: break-word;">
+            <div class="chat-markdown">${marked.parse(message)}</div>
+        </div>`;
+    
+    // AI 初始气泡 (加载中状态)
+    const aiBubbleId = 'ai-' + Date.now();
+    history.innerHTML += `
+        <div id="${aiBubbleId}" class="chat-ai-bubble" style="align-self: flex-start; background: var(--red-5-5, #e5e7eb); padding: 8px 12px; border-radius: 12px 12px 12px 0; max-width: 85%; color: var(--color-default, #374151); word-wrap: break-word; line-height: 1.6;">
+            <i>思考中...</i>
+        </div>`;
+    history.scrollTop = history.scrollHeight;
+
+    try {
+        // 请求 Cloudflare Worker 接口
+        const response = await fetch("https://gemini-chat-proxy.elysia20051111.workers.dev", {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                model: "gemini-3-flash-preview",
+                messages: [{ role: "user", content: message }],
+                stream: true // 显式开启流式模式
+            })
+        });
+
+        if (!response.ok) throw new Error("Worker 响应错误 (状态: " + response.status + ")");
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        const aiBubble = document.getElementById(aiBubbleId);
+        let fullText = "";
+        let buffer = ""; // 🛡️ 缓冲区：处理中转导致的 JSON 碎片截断
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            
+            buffer += decoder.decode(value, { stream: true });
+            let lines = buffer.split("\n");
+            buffer = lines.pop(); // 暂存不完整的一行
+
+            for (const line of lines) {
+                const trimmed = line.trim();
+                if (!trimmed || trimmed === "data: [DONE]") continue;
+
+                if (trimmed.startsWith("data: ")) {
+                    try {
+                        // 解析 OpenAI 格式的流式数据
+                        const json = JSON.parse(trimmed.substring(6));
+                        const content = json.choices[0]?.delta?.content || "";
+                        if (content) {
+                            if (fullText === "") aiBubble.innerHTML = ""; // 只要收到首词，立刻清除“思考中”
+                            fullText += content;
+                            aiBubble.innerHTML = `<div class="chat-markdown">${marked.parse(fullText)}</div>`;
+                            history.scrollTop = history.scrollHeight;
+                        }
+                    } catch (e) {
+                        console.warn("解析碎片中...", e);
+                    }
+                }
+            }
+        }
+
+    } catch (err) {
+        console.error("Chat Error:", err);
+        const aiBubble = document.getElementById(aiBubbleId);
+        if (aiBubble) {
+            aiBubble.style.background = '#fee2e2';
+            aiBubble.style.color = '#dc2626';
+            aiBubble.innerHTML = "❌ 错误: " + err.message;
+        }
+    } finally {
+        // 恢复交互
+        input.disabled = false;
+        sendBtn.disabled = false;
+        sendBtn.style.opacity = '1';
+        history.scrollTop = history.scrollHeight;
+        input.focus();
+    }
+}
+
+// 监听回车键
+document.getElementById('chat-input').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') sendMessage();
+});
+</script>
