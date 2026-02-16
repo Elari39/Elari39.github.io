@@ -2,7 +2,7 @@
 title: 'GoCache 学习建议'
 date: 2026-02-14T21:57:00+08:00
 weight: 100
-cover: /post/gocache/gocache.jpg
+cover: https://elari39.oss-cn-chengdu.aliyuncs.com/blog/post/GoCache/gocache.jpg
 categories:
   - Go
 tags:
@@ -83,7 +83,7 @@ tags:
 
 举个例子：假设一个网站需要提高性能，缓存可以放在浏览器、反向代理服务器、应用程序进程内，还可以放在分布式缓存系统中。
 
-![缓存位置示意图](cache-location.png)
+![缓存位置示意图](https://elari39.oss-cn-chengdu.aliyuncs.com/blog/post/GoCache/cache-location.png)
 
 从用户请求数据到数据返回，数据经过了浏览器、CDN、代理服务器、应用服务器以及数据库各个环节。每个环节都可以运用缓存技术。从浏览器/客户端开始请求数据，通过 HTTP 配合 CDN 获取数据的变更情况，到达代理服务器（Nginx）可以通过反向代理获取静态资源。再往下来到应用服务器可以通过进程内（堆内）缓存、分布式缓存等方式获取数据。如果以上所有缓存都没有命中数据，才会回源到数据库。
 

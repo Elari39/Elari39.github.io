@@ -49,3 +49,6 @@ development.toml
 .deploy_git/
 .netlify/
 vercel.json
+
+# Migration Scripts
+migrate_to_oss.py

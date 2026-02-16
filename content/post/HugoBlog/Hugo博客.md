@@ -3,7 +3,7 @@ title: "Hugo博客配置"
 date: 2026-02-14T12:00:00+08:00
 weight: -1
 draft: false
-cover: /images/saber-bg.jpg
+cover: https://elari39.oss-cn-chengdu.aliyuncs.com/blog/images/saber-bg.jpg
 categories:
   - Hugo
 tags:

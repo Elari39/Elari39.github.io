@@ -15,7 +15,7 @@ categories:
 tags:
   - Go
   - HTTP
-cover: /images/elaina-backfront1-1.jpeg
+cover: https://elari39.oss-cn-chengdu.aliyuncs.com/blog/elaina-backfront1.jpeg
 ---
 Go语言的 net/http 标准库功能强大，它提供了构建HTTP客户端和服务端所需的所有核心功能，并且是许多第三方Web框架的基石。理解它的工作原理，不仅能让你不依赖框架也能搭建高性能的Web服务，更能让你在使用任何Go Web框架时都心中有数。
 
