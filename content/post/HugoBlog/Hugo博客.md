@@ -5,9 +5,10 @@ weight: -1
 draft: false
 cover: /images/saber-bg.jpg
 categories:
-  - 技术
+  - Hugo
 tags:
-  - 博客
+  - Hugo
+  - Blog
 ---
 ## 按照必要环境
 1. Go环境：[All releases - The Go Programming Language](https://go.dev/dl/)

@@ -3,7 +3,8 @@ title: "在 Hugo 博客中部署 OpenAI 格式的 AI 助手"
 date: 2026-02-16T19:17:00+08:00
 draft: false
 tags: ["Hugo", "AI", "Cloudflare Workers", "Gemini", "OpenAI"]
-categories: ["技术教程"]
+categories: ["Hugo", "AI"]
+cover: /images/ere.jpeg
 description: "本文记录了如何利用 Cloudflare Workers 作为中转，在 Hugo 静态博客中实现一个支持流式响应、Markdown 渲染和上下文记忆的 AI 聊天助手。"
 ---
 

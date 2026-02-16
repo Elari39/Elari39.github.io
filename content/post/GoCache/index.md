@@ -5,9 +5,9 @@ weight: 100
 cover: /post/gocache/gocache.jpg
 categories:
   - Go
-  - 缓存
 tags:
   - Go
+  - Cache
 ---
 
 # 学习建议
