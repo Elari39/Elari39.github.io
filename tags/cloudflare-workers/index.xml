@@ -95,4 +95,4 @@ Worker 代码
 </span></span><span class="line"><span class="cl"><span class="p">};</span>
 </span></span></code></pre></div><p>记得在 Cloudflare 后台配置环境变量 <code>GEMINI_API_URL</code> 和 <code>GEMINI_API_KEY</code>。</p>
         
-        <hr><p>本文2026-02-16首发于<a href='https://Elari39.github.io/'>Elari的博客</a>，最后修改于2026-02-16</p>]]></description><category>技术教程</category></item></channel></rss>
+        <hr><p>本文2026-02-16首发于<a href='https://Elari39.github.io/'>Elari的博客</a>，最后修改于2026-02-16</p>]]></description><category>Hugo</category><category>AI</category></item></channel></rss>
