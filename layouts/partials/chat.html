@@ -19,15 +19,18 @@
     <div id="ai-chat-window" style="display: none; width: 350px; height: 500px; max-width: 90vw; max-height: 80vh; background: var(--color-wrap, white); border: 1px solid var(--color-border, #e5e7eb); border-radius: 10px; flex-direction: column; overflow: hidden; box-shadow: var(--shadow-card-hover, 0 10px 25px -5px rgba(0,0,0,0.1));">
         <div style="background: var(--red-1, #ff5252); padding: 15px; display: flex; justify-content: space-between; align-items: center; color: white;">
             <div style="display: flex; flex-direction: column;">
-                <span style="font-weight: 600; font-size: 14px;">Gemini 3 Flash</span>
-                <span style="font-size: 10px; opacity: 0.8;">Streaming Enabled</span>
+                <span style="font-weight: 600; font-size: 14px;">Elari39 的助手</span>
+                <span style="font-size: 10px; opacity: 0.8;">✨ 随时为您服务</span>
             </div>
-            <span onclick="toggleChat()" style="cursor: pointer; padding: 4px; font-size: 18px;">✕</span>
+            <div style="display: flex; gap: 8px;">
+                <span onclick="clearChat()" title="清空对话" style="cursor: pointer; padding: 4px; font-size: 16px;">🗑️</span>
+                <span onclick="toggleChat()" title="关闭" style="cursor: pointer; padding: 4px; font-size: 18px;">✕</span>
+            </div>
         </div>
 
         <div id="chat-history" style="flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 12px; background: var(--red-6, #f9fafb); font-size: 14px;">
             <div style="align-self: flex-start; background: var(--red-5-5, #e5e7eb); padding: 8px 12px; border-radius: 12px 12px 12px 0; max-width: 85%; color: var(--color-default, #374151);">
-                你好！我是基于 Gemini 3 的 AI 助手，有什么可以帮你的？
+                你好！我是 Elari39 的 AI 助手，有什么可以帮你的？
             </div>
         </div>
 
@@ -39,6 +42,11 @@
 </div>
 
 <script>
+// 聊天上下文历史
+let chatHistory = [];
+// 最大保留历史轮数
+const MAX_HISTORY = 10;
+
 // 切换窗口状态
 function toggleChat() {
     const wrapperEl = document.getElementById('ai-chat-wrapper');
@@ -57,6 +65,16 @@ function toggleChat() {
         launcherEl.style.display = 'flex';
         wrapperEl.style.bottom = '100px'; // 恢复到上方位置
     }
+}
+
+// 清空聊天记录
+function clearChat() {
+    chatHistory = [];
+    const history = document.getElementById('chat-history');
+    history.innerHTML = `
+        <div style="align-self: flex-start; background: var(--red-5-5, #e5e7eb); padding: 8px 12px; border-radius: 12px 12px 12px 0; max-width: 85%; color: var(--color-default, #374151);">
+            对话已清空，我是 Elari39 的 AI 助手，有什么可以帮你的？
+        </div>`;
 }
 
 // 处理消息发送
@@ -80,6 +98,10 @@ async function sendMessage() {
             <div class="chat-markdown">${marked.parse(message)}</div>
         </div>`;
     
+    // 记录用户消息到历史
+    chatHistory.push({ role: "user", content: message });
+    if (chatHistory.length > MAX_HISTORY * 2) chatHistory.shift();
+
     // AI 初始气泡 (加载中状态)
     const aiBubbleId = 'ai-' + Date.now();
     history.innerHTML += `
@@ -95,7 +117,7 @@ async function sendMessage() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 model: "gemini-3-flash-preview",
-                messages: [{ role: "user", content: message }],
+                messages: chatHistory, // 发送完整历史记录
                 stream: true // 显式开启流式模式
             })
         });
@@ -136,6 +158,12 @@ async function sendMessage() {
                     }
                 }
             }
+        }
+        
+        // 记录 AI 回复到历史
+        if (fullText) {
+            chatHistory.push({ role: "assistant", content: fullText });
+            if (chatHistory.length > MAX_HISTORY * 2) chatHistory.shift();
         }
 
     } catch (err) {
