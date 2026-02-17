@@ -331,7 +331,7 @@ comment:
     zh-TW: 說些什麼吧！
     ja: コメントを残す
     pt-BR: Deixe um comentário
-  default: waline # 默认评论系统，当你启用多个评论系统时
+  default: giscus # 默认评论系统，当你启用多个评论系统时
 
 # valine 评论系统。 https://valine.js.org
 # 版本 1.5.1
@@ -392,12 +392,12 @@ gitalk:
 
 # https://giscus.app/zh-CN
 giscus:
-  enable: false
-  repo:
-  repoId:
-  category:
-  categoryId:
-  mapping: mapping
+  enable: true
+  repo: Elari39/Elari39.github.io
+  repoId: R_kgDORQCxPA
+  category: Announcements
+  categoryId: DIC_kwDORQCxPA4C2oX4
+  mapping: pathname
   strict: 0
   reactionsEnabled: 1
   emitMetadata: 0
