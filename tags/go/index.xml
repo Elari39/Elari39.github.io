@@ -1,4 +1,9 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Go on Elari的博客</title><link>https://Elari39.github.io/tags/go/</link><description>Recent content from Elari的博客</description><generator>Hugo</generator><language>zh-cn</language><managingEditor>majo_elaina@qq.com (Elari39)</managingEditor><webMaster>majo_elaina@qq.com (Elari39)</webMaster><copyright>本博客所有文章除特别声明外，均采用 BY-NC-SA 许可协议。转载请注明出处！</copyright><lastBuildDate>Sat, 14 Feb 2026 21:57:00 +0800</lastBuildDate><atom:link href="https://Elari39.github.io/tags/go/index.xml" rel="self" type="application/rss+xml"/><item><title>GoCache 学习建议</title><link>https://Elari39.github.io/post/gocache/</link><pubDate>Sat, 14 Feb 2026 21:57:00 +0800</pubDate><author>majo_elaina@qq.com (Elari39)</author><guid>https://Elari39.github.io/post/gocache/</guid><description>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Go on Elari的博客</title><link>https://Elari39.github.io/tags/go/</link><description>Recent content from Elari的博客</description><generator>Hugo</generator><language>zh-cn</language><managingEditor>majo_elaina@qq.com (Elari39)</managingEditor><webMaster>majo_elaina@qq.com (Elari39)</webMaster><copyright>本博客所有文章除特别声明外，均采用 BY-NC-SA 许可协议。转载请注明出处！</copyright><lastBuildDate>Tue, 17 Feb 2026 19:41:00 +0800</lastBuildDate><atom:link href="https://Elari39.github.io/tags/go/index.xml" rel="self" type="application/rss+xml"/><item><title>GoHttp库</title><link>https://Elari39.github.io/post/gohttpv1/</link><pubDate>Tue, 17 Feb 2026 19:41:00 +0800</pubDate><author>majo_elaina@qq.com (Elari39)</author><guid>https://Elari39.github.io/post/gohttpv1/</guid><description>
+<![CDATA[<h1>GoHttp库</h1><p>作者：Elari39（majo_elaina@qq.com）</p>
+        
+          Go 语言的 net/http 标准库是构建 HTTP 服务端和客户端的基石，它设计简洁、功能强大，并且是众多第三方 Web 框架（如 Gin、Echo）的底层依赖。无论你是想从零搭建一个高性能的 Web 服务，还是希望在使用框架时能深入理解其原理，掌握 net/http 都是必修课。本文将从零开始，以最新版本的 Go（语法层面无破坏性变更）为例，详细拆解 net/http 的核心概念、工作机制以及最佳实践。
+        
+        <hr><p>本文2026-02-17首发于<a href='https://Elari39.github.io/'>Elari的博客</a>，最后修改于2026-02-17</p>]]></description><category>Go</category></item><item><title>GoCache 学习建议</title><link>https://Elari39.github.io/post/gocache/</link><pubDate>Sat, 14 Feb 2026 21:57:00 +0800</pubDate><author>majo_elaina@qq.com (Elari39)</author><guid>https://Elari39.github.io/post/gocache/</guid><description>
 <![CDATA[<h1>GoCache 学习建议</h1><p>作者：Elari39（majo_elaina@qq.com）</p>
         
           <h1 id="学习建议">
@@ -99,10 +104,5 @@
 <a class="header-anchor" href="#%e4%b8%ba%e4%bb%80%e4%b9%88%e8%a6%81%e5%ae%9e%e7%8e%b0%e7%bc%93%e5%ad%98%e7%b3%bb%e7%bb%9f"></a>
 为什么要实现缓存系统
 </h2><p>因缓存的使用相关需求，通过牺牲一部分服务器内存，减少对磁盘或者数据库资源进行直接读写，可换取更快响应速度，尤其是处理高并发的场景，负责存储经常访问的数据，通过设计合理的缓存机制提高资源的访问效率。由于服务器的内存是有限的，我们不能把所有数据都存放在内存中，因此需要一种机制来决定当使用内存超过一定标准时，应该删除哪些数据，这就涉及到缓存淘汰策略的选择。</p>
-        
-        <hr><p>本文2026-02-14首发于<a href='https://Elari39.github.io/'>Elari的博客</a>，最后修改于2026-02-14</p>]]></description><category>Go</category></item><item><title>GoHttp库</title><link>https://Elari39.github.io/post/gohttpv1/</link><pubDate>Sat, 14 Feb 2026 12:00:00 +0800</pubDate><author>majo_elaina@qq.com (Elari39)</author><guid>https://Elari39.github.io/post/gohttpv1/</guid><description>
-<![CDATA[<h1>GoHttp库</h1><p>作者：Elari39（majo_elaina@qq.com）</p>
-        
-          Go 语言的 net/http 标准库是构建 HTTP 服务端和客户端的基石，它设计简洁、功能强大，并且是众多第三方 Web 框架（如 Gin、Echo）的底层依赖。无论你是想从零搭建一个高性能的 Web 服务，还是希望在使用框架时能深入理解其原理，掌握 net/http 都是必修课。本文将从零开始，以最新版本的 Go（语法层面无破坏性变更）为例，详细拆解 net/http 的核心概念、工作机制以及最佳实践。
         
         <hr><p>本文2026-02-14首发于<a href='https://Elari39.github.io/'>Elari的博客</a>，最后修改于2026-02-14</p>]]></description><category>Go</category></item></channel></rss>
