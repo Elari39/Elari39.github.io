@@ -1,8 +1,8 @@
 ---
 title: 'GoCache 学习建议'
 date: 2026-02-14T21:57:00+08:00
-weight: 100
 cover: https://elari39.oss-cn-chengdu.aliyuncs.com/blog/post/GoCache/gocache.jpg
+draft: false
 categories:
   - Go
 tags:
