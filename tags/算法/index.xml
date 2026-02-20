@@ -200,14 +200,13 @@
 <a class="header-anchor" href="#%e6%95%b0%e7%bb%84%e7%90%86%e8%ae%ba%e5%9f%ba%e7%a1%80"></a>
 数组理论基础
 </h1><p>今天正式开启<strong>代码随想录</strong>的学习之旅！作为第一天，我们重点复习数组的基础知识和常用技巧。数组在 Go 中以切片（slice）形式存在，掌握好切片的底层操作、双指针、二分查找等，是后续所有算法题的基石。</p>
-<p>今天我们一起用 <strong>Go 语言</strong> 手撕以下三道经典数组题目，每道题都会附上<strong>完整可运行代码 + 逐行详细解析</strong>，帮助你彻底吃透实现细节。</p>
+<p>今天我们一起用 <strong>Go 语言</strong> 手撕以下两道经典数组题目，每道题都会附上<strong>完整可运行代码 + 逐行详细解析</strong>，帮助你彻底吃透实现细节。</p>
 <h2 id="题目列表">
 <a class="header-anchor" href="#%e9%a2%98%e7%9b%ae%e5%88%97%e8%a1%a8"></a>
 题目列表
 </h2><ul>
 <li><a href="https://leetcode.cn/problems/binary-search/">704. 二分查找</a></li>
 <li><a href="https://leetcode.cn/problems/remove-element/">27. 移除元素</a></li>
-<li><a href="https://leetcode.cn/problems/squares-of-a-sorted-array/">977. 有序数组的平方</a></li>
 </ul>
 <hr>
 <h2 id="704-二分查找">
