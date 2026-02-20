@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>算法 on Elari的博客</title><link>https://Elari39.github.io/tags/%E7%AE%97%E6%B3%95/</link><description>Recent content from Elari的博客</description><generator>Hugo</generator><language>zh-cn</language><managingEditor>majo_elaina@qq.com (Elari39)</managingEditor><webMaster>majo_elaina@qq.com (Elari39)</webMaster><copyright>本博客所有文章除特别声明外，均采用 BY-NC-SA 许可协议。转载请注明出处！</copyright><lastBuildDate>Fri, 20 Feb 2026 13:00:00 +0800</lastBuildDate><atom:link href="https://Elari39.github.io/tags/%E7%AE%97%E6%B3%95/index.xml" rel="self" type="application/rss+xml"/><item><title>Day 02: 数组 - 双指针、滑动窗口与模拟</title><link>https://Elari39.github.io/post/algorithm/day02/</link><pubDate>Fri, 20 Feb 2026 13:00:00 +0800</pubDate><author>majo_elaina@qq.com (Elari39)</author><guid>https://Elari39.github.io/post/algorithm/day02/</guid><description>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>双指针 on Elari的博客</title><link>https://Elari39.github.io/tags/%E5%8F%8C%E6%8C%87%E9%92%88/</link><description>Recent content from Elari的博客</description><generator>Hugo</generator><language>zh-cn</language><managingEditor>majo_elaina@qq.com (Elari39)</managingEditor><webMaster>majo_elaina@qq.com (Elari39)</webMaster><copyright>本博客所有文章除特别声明外，均采用 BY-NC-SA 许可协议。转载请注明出处！</copyright><lastBuildDate>Fri, 20 Feb 2026 13:00:00 +0800</lastBuildDate><atom:link href="https://Elari39.github.io/tags/%E5%8F%8C%E6%8C%87%E9%92%88/index.xml" rel="self" type="application/rss+xml"/><item><title>Day 02: 数组 - 双指针、滑动窗口与模拟</title><link>https://Elari39.github.io/post/algorithm/day02/</link><pubDate>Fri, 20 Feb 2026 13:00:00 +0800</pubDate><author>majo_elaina@qq.com (Elari39)</author><guid>https://Elari39.github.io/post/algorithm/day02/</guid><description>
 <![CDATA[<h1>Day 02: 数组 - 双指针、滑动窗口与模拟</h1><p>作者：Elari39（majo_elaina@qq.com）</p>
         
           <h1 id="数组---双指针滑动窗口与模拟">
@@ -46,43 +46,4 @@
 </span></span></span><span class="line"><span class="cl"><span class="p">}</span><span class="w">
 </span></span></span></code></pre></div><p><strong>详细解析</strong>（逐行讲解）：</p>
         
-        <hr><p>本文2026-02-20首发于<a href='https://Elari39.github.io/'>Elari的博客</a>，最后修改于2026-02-20</p>]]></description><category>代码随想录</category></item><item><title>Day 01: 数组理论基础</title><link>https://Elari39.github.io/post/algorithm/day01/</link><pubDate>Thu, 19 Feb 2026 13:00:00 +0800</pubDate><author>majo_elaina@qq.com (Elari39)</author><guid>https://Elari39.github.io/post/algorithm/day01/</guid><description>
-<![CDATA[<h1>Day 01: 数组理论基础</h1><p>作者：Elari39（majo_elaina@qq.com）</p>
-        
-          <h1 id="数组理论基础">
-<a class="header-anchor" href="#%e6%95%b0%e7%bb%84%e7%90%86%e8%ae%ba%e5%9f%ba%e7%a1%80"></a>
-数组理论基础
-</h1><p>今天正式开启<strong>代码随想录</strong>的学习之旅！作为第一天，我们重点复习数组的基础知识和常用技巧。数组在 Go 中以切片（slice）形式存在，掌握好切片的底层操作、双指针、二分查找等，是后续所有算法题的基石。</p>
-<p>今天我们一起用 <strong>Go 语言</strong> 手撕以下三道经典数组题目，每道题都会附上<strong>完整可运行代码 + 逐行详细解析</strong>，帮助你彻底吃透实现细节。</p>
-<h2 id="题目列表">
-<a class="header-anchor" href="#%e9%a2%98%e7%9b%ae%e5%88%97%e8%a1%a8"></a>
-题目列表
-</h2><ul>
-<li><a href="https://leetcode.cn/problems/binary-search/">704. 二分查找</a></li>
-<li><a href="https://leetcode.cn/problems/remove-element/">27. 移除元素</a></li>
-<li><a href="https://leetcode.cn/problems/squares-of-a-sorted-array/">977. 有序数组的平方</a></li>
-</ul>
-<hr>
-<h2 id="704-二分查找">
-<a class="header-anchor" href="#704-%e4%ba%8c%e5%88%86%e6%9f%a5%e6%89%be"></a>
-704. 二分查找
-</h2><p><strong>题目描述</strong>：给定一个升序排列的整数数组 <code>nums</code> 和一个目标值 <code>target</code>，在数组中搜索 <code>target</code>，如果存在返回下标，否则返回 <code>-1</code>。要求时间复杂度 <code>O(log n)</code>。</p>
-<p><strong>Go 代码实现</strong>：</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="line"><span class="cl"><span class="kd">func</span><span class="w"> </span><span class="nf">search</span><span class="p">(</span><span class="nx">nums</span><span class="w"> </span><span class="p">[]</span><span class="kt">int</span><span class="p">,</span><span class="w"> </span><span class="nx">target</span><span class="w"> </span><span class="kt">int</span><span class="p">)</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="p">{</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nx">left</span><span class="p">,</span><span class="w"> </span><span class="nx">right</span><span class="w"> </span><span class="o">:=</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="nb">len</span><span class="p">(</span><span class="nx">nums</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="nx">left</span><span class="w"> </span><span class="o">&lt;=</span><span class="w"> </span><span class="nx">right</span><span class="w"> </span><span class="p">{</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="c1">// 防止溢出（Go int 虽然不会像 C++ 那样轻易溢出，但这是好习惯）</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nx">mid</span><span class="w"> </span><span class="o">:=</span><span class="w"> </span><span class="nx">left</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="p">(</span><span class="nx">right</span><span class="o">-</span><span class="nx">left</span><span class="p">)</span><span class="o">&gt;&gt;</span><span class="mi">1</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="nx">nums</span><span class="p">[</span><span class="nx">mid</span><span class="p">]</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="nx">target</span><span class="w"> </span><span class="p">{</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="nx">mid</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="nx">nums</span><span class="p">[</span><span class="nx">mid</span><span class="p">]</span><span class="w"> </span><span class="p">&lt;</span><span class="w"> </span><span class="nx">target</span><span class="w"> </span><span class="p">{</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">            </span><span class="nx">left</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nx">mid</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">            </span><span class="nx">right</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nx">mid</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">1</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="p">}</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="p">}</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="o">-</span><span class="mi">1</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="p">}</span><span class="w">
-</span></span></span></code></pre></div><p><strong>详细解析</strong>（逐行讲解）：</p>
-        
-        <hr><p>本文2026-02-19首发于<a href='https://Elari39.github.io/'>Elari的博客</a>，最后修改于2026-02-19</p>]]></description><category>代码随想录</category></item></channel></rss>
+        <hr><p>本文2026-02-20首发于<a href='https://Elari39.github.io/'>Elari的博客</a>，最后修改于2026-02-20</p>]]></description><category>代码随想录</category></item></channel></rss>

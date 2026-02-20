@@ -1,4 +1,52 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Go on Elari的博客</title><link>https://Elari39.github.io/tags/go/</link><description>Recent content from Elari的博客</description><generator>Hugo</generator><language>zh-cn</language><managingEditor>majo_elaina@qq.com (Elari39)</managingEditor><webMaster>majo_elaina@qq.com (Elari39)</webMaster><copyright>本博客所有文章除特别声明外，均采用 BY-NC-SA 许可协议。转载请注明出处！</copyright><lastBuildDate>Thu, 19 Feb 2026 13:00:00 +0800</lastBuildDate><atom:link href="https://Elari39.github.io/tags/go/index.xml" rel="self" type="application/rss+xml"/><item><title>Day 01: 数组理论基础</title><link>https://Elari39.github.io/post/algorithm/day01/</link><pubDate>Thu, 19 Feb 2026 13:00:00 +0800</pubDate><author>majo_elaina@qq.com (Elari39)</author><guid>https://Elari39.github.io/post/algorithm/day01/</guid><description>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Go on Elari的博客</title><link>https://Elari39.github.io/tags/go/</link><description>Recent content from Elari的博客</description><generator>Hugo</generator><language>zh-cn</language><managingEditor>majo_elaina@qq.com (Elari39)</managingEditor><webMaster>majo_elaina@qq.com (Elari39)</webMaster><copyright>本博客所有文章除特别声明外，均采用 BY-NC-SA 许可协议。转载请注明出处！</copyright><lastBuildDate>Fri, 20 Feb 2026 13:00:00 +0800</lastBuildDate><atom:link href="https://Elari39.github.io/tags/go/index.xml" rel="self" type="application/rss+xml"/><item><title>Day 02: 数组 - 双指针、滑动窗口与模拟</title><link>https://Elari39.github.io/post/algorithm/day02/</link><pubDate>Fri, 20 Feb 2026 13:00:00 +0800</pubDate><author>majo_elaina@qq.com (Elari39)</author><guid>https://Elari39.github.io/post/algorithm/day02/</guid><description>
+<![CDATA[<h1>Day 02: 数组 - 双指针、滑动窗口与模拟</h1><p>作者：Elari39（majo_elaina@qq.com）</p>
+        
+          <h1 id="数组---双指针滑动窗口与模拟">
+<a class="header-anchor" href="#%e6%95%b0%e7%bb%84---%e5%8f%8c%e6%8c%87%e9%92%88%e6%bb%91%e5%8a%a8%e7%aa%97%e5%8f%a3%e4%b8%8e%e6%a8%a1%e6%8b%9f"></a>
+数组 - 双指针、滑动窗口与模拟
+</h1><p>今天是<strong>代码随想录</strong>数组专题第二天！昨天打好了理论基础，今天我们重点学习数组中极具代表性的三大高频技巧：<strong>双指针法</strong>（处理有序数组）、<strong>滑动窗口</strong>（用于求最小长度连续子数组）和<strong>边界模拟</strong>（生成螺旋矩阵）。掌握这些套路后，处理区间、矩阵类问题将事半功倍。</p>
+<p>我们继续用 <strong>Go 语言</strong> 手撕以下三道经典题目，每道题都会附上<strong>完整可运行代码 + 逐行详细解析</strong>，帮助你彻底吃透实现细节。</p>
+<h2 id="题目列表">
+<a class="header-anchor" href="#%e9%a2%98%e7%9b%ae%e5%88%97%e8%a1%a8"></a>
+题目列表
+</h2><ul>
+<li><a href="https://leetcode.cn/problems/squares-of-a-sorted-array/">977. 有序数组的平方</a></li>
+<li><a href="https://leetcode.cn/problems/minimum-size-subarray-sum/">209. 长度最小的子数组</a></li>
+<li><a href="https://leetcode.cn/problems/spiral-matrix-ii/">59. 螺旋矩阵 II</a></li>
+</ul>
+<hr>
+<h2 id="977-有序数组的平方">
+<a class="header-anchor" href="#977-%e6%9c%89%e5%ba%8f%e6%95%b0%e7%bb%84%e7%9a%84%e5%b9%b3%e6%96%b9"></a>
+977. 有序数组的平方
+</h2><p><strong>题目描述</strong>：给你一个按 <strong>非递减顺序</strong> 排序的整数数组 <code>nums</code>，返回每个数字的平方组成的新数组，要求也按非递减顺序排序。</p>
+<p><strong>Go 代码实现</strong>：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="line"><span class="cl"><span class="kd">func</span><span class="w"> </span><span class="nf">sortedSquares</span><span class="p">(</span><span class="nx">nums</span><span class="w"> </span><span class="p">[]</span><span class="kt">int</span><span class="p">)</span><span class="w"> </span><span class="p">[]</span><span class="kt">int</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nx">n</span><span class="w"> </span><span class="o">:=</span><span class="w"> </span><span class="nb">len</span><span class="p">(</span><span class="nx">nums</span><span class="p">)</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nx">left</span><span class="p">,</span><span class="w"> </span><span class="nx">right</span><span class="w"> </span><span class="o">:=</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="nx">n</span><span class="o">-</span><span class="mi">1</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nx">res</span><span class="w"> </span><span class="o">:=</span><span class="w"> </span><span class="nb">make</span><span class="p">([]</span><span class="kt">int</span><span class="p">,</span><span class="w"> </span><span class="nx">n</span><span class="p">)</span><span class="w"> </span><span class="c1">// 结果数组</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="nx">i</span><span class="w"> </span><span class="o">:=</span><span class="w"> </span><span class="nx">n</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span><span class="w"> </span><span class="nx">i</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="nx">i</span><span class="o">--</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="nf">abs</span><span class="p">(</span><span class="nx">nums</span><span class="p">[</span><span class="nx">left</span><span class="p">])</span><span class="w"> </span><span class="p">&gt;</span><span class="w"> </span><span class="nf">abs</span><span class="p">(</span><span class="nx">nums</span><span class="p">[</span><span class="nx">right</span><span class="p">])</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">            </span><span class="nx">res</span><span class="p">[</span><span class="nx">i</span><span class="p">]</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nx">nums</span><span class="p">[</span><span class="nx">left</span><span class="p">]</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="nx">nums</span><span class="p">[</span><span class="nx">left</span><span class="p">]</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">            </span><span class="nx">left</span><span class="o">++</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">            </span><span class="nx">res</span><span class="p">[</span><span class="nx">i</span><span class="p">]</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nx">nums</span><span class="p">[</span><span class="nx">right</span><span class="p">]</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="nx">nums</span><span class="p">[</span><span class="nx">right</span><span class="p">]</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">            </span><span class="nx">right</span><span class="o">--</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="p">}</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="p">}</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nx">res</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="p">}</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="c1">// 辅助函数</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="kd">func</span><span class="w"> </span><span class="nf">abs</span><span class="p">(</span><span class="nx">x</span><span class="w"> </span><span class="kt">int</span><span class="p">)</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="nx">x</span><span class="w"> </span><span class="p">&lt;</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="o">-</span><span class="nx">x</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="p">}</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nx">x</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="p">}</span><span class="w">
+</span></span></span></code></pre></div><p><strong>详细解析</strong>（逐行讲解）：</p>
+        
+        <hr><p>本文2026-02-20首发于<a href='https://Elari39.github.io/'>Elari的博客</a>，最后修改于2026-02-20</p>]]></description><category>代码随想录</category></item><item><title>Day 01: 数组理论基础</title><link>https://Elari39.github.io/post/algorithm/day01/</link><pubDate>Thu, 19 Feb 2026 13:00:00 +0800</pubDate><author>majo_elaina@qq.com (Elari39)</author><guid>https://Elari39.github.io/post/algorithm/day01/</guid><description>
 <![CDATA[<h1>Day 01: 数组理论基础</h1><p>作者：Elari39（majo_elaina@qq.com）</p>
         
           <h1 id="数组理论基础">
