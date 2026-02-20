@@ -1,4 +1,151 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>数组 on Elari的博客</title><link>https://Elari39.github.io/tags/%E6%95%B0%E7%BB%84/</link><description>Recent content from Elari的博客</description><generator>Hugo</generator><language>zh-cn</language><managingEditor>majo_elaina@qq.com (Elari39)</managingEditor><webMaster>majo_elaina@qq.com (Elari39)</webMaster><copyright>本博客所有文章除特别声明外，均采用 BY-NC-SA 许可协议。转载请注明出处！</copyright><lastBuildDate>Fri, 20 Feb 2026 13:00:00 +0800</lastBuildDate><atom:link href="https://Elari39.github.io/tags/%E6%95%B0%E7%BB%84/index.xml" rel="self" type="application/rss+xml"/><item><title>Day 02: 数组 - 双指针、滑动窗口与模拟</title><link>https://Elari39.github.io/post/algorithm/day02/</link><pubDate>Fri, 20 Feb 2026 13:00:00 +0800</pubDate><author>majo_elaina@qq.com (Elari39)</author><guid>https://Elari39.github.io/post/algorithm/day02/</guid><description>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>数组 on Elari的博客</title><link>https://Elari39.github.io/tags/%E6%95%B0%E7%BB%84/</link><description>Recent content from Elari的博客</description><generator>Hugo</generator><language>zh-cn</language><managingEditor>majo_elaina@qq.com (Elari39)</managingEditor><webMaster>majo_elaina@qq.com (Elari39)</webMaster><copyright>本博客所有文章除特别声明外，均采用 BY-NC-SA 许可协议。转载请注明出处！</copyright><lastBuildDate>Sat, 21 Feb 2026 13:00:00 +0800</lastBuildDate><atom:link href="https://Elari39.github.io/tags/%E6%95%B0%E7%BB%84/index.xml" rel="self" type="application/rss+xml"/><item><title>Day 03: 数组篇总结</title><link>https://Elari39.github.io/post/algorithm/day03/</link><pubDate>Sat, 21 Feb 2026 13:00:00 +0800</pubDate><author>majo_elaina@qq.com (Elari39)</author><guid>https://Elari39.github.io/post/algorithm/day03/</guid><description>
+<![CDATA[<h1>Day 03: 数组篇总结</h1><p>作者：Elari39（majo_elaina@qq.com）</p>
+        
+          <h1 id="数组篇总结">
+<a class="header-anchor" href="#%e6%95%b0%e7%bb%84%e7%af%87%e6%80%bb%e7%bb%93"></a>
+数组篇总结
+</h1><p>今天是<strong>代码随想录</strong>算法训练营的第三天，我们已经完成了数组篇的学习。数组作为最基础的数据结构，虽然看似简单，但其中蕴含的算法思想（如二分、双指针、滑动窗口）却是解决复杂问题的基石。</p>
+<p>在这篇文章中，我们将对过去两天学习的<strong>数组理论</strong>、<strong>经典算法</strong>以及 <strong>Go 语言实现细节</strong>进行一次系统性的总结，帮助大家构建完整的知识体系。</p>
+<hr>
+<h2 id="一数组理论基础回顾">
+<a class="header-anchor" href="#%e4%b8%80%e6%95%b0%e7%bb%84%e7%90%86%e8%ae%ba%e5%9f%ba%e7%a1%80%e5%9b%9e%e9%a1%be"></a>
+一、数组理论基础回顾
+</h2><h3 id="1-内存模型">
+<a class="header-anchor" href="#1-%e5%86%85%e5%ad%98%e6%a8%a1%e5%9e%8b"></a>
+1. 内存模型
+</h3><ul>
+<li><strong>定义</strong>：数组是存放在<strong>连续内存空间</strong>上的相同类型数据的集合。</li>
+<li><strong>特性</strong>：
+<ul>
+<li><strong>随机访问</strong>：可以通过下标直接访问元素，时间复杂度为 <code>O(1)</code>。</li>
+<li><strong>插入/删除</strong>：由于需要移动后续元素以保持连续性，时间复杂度为 <code>O(n)</code>。</li>
+</ul>
+</li>
+<li><strong>注意</strong>：在 C++ 中二维数组也是连续的，但在 Go (以及 Java) 中，二维数组（切片）是切片的切片，内存上不一定连续。</li>
+</ul>
+<h3 id="2-go-语言中的数组与切片">
+<a class="header-anchor" href="#2-go-%e8%af%ad%e8%a8%80%e4%b8%ad%e7%9a%84%e6%95%b0%e7%bb%84%e4%b8%8e%e5%88%87%e7%89%87"></a>
+2. Go 语言中的数组与切片
+</h3><ul>
+<li><strong>数组 (Array)</strong>：固定长度，值类型。传递给函数时会发生拷贝。</li>
+<li><strong>切片 (Slice)</strong>：动态长度，引用类型（底层指向数组）。算法题中主要使用切片。
+<ul>
+<li><strong>初始化</strong>：<code>make([]int, len, cap)</code> 或 <code>[]int{}</code>。</li>
+<li><strong>底层原理</strong>：包含指针、长度 (<code>len</code>) 和容量 (<code>cap</code>)。扩容时可能会发生内存重新分配和拷贝。</li>
+</ul>
+</li>
+</ul>
+<hr>
+<h2 id="二四大经典解题套路">
+<a class="header-anchor" href="#%e4%ba%8c%e5%9b%9b%e5%a4%a7%e7%bb%8f%e5%85%b8%e8%a7%a3%e9%a2%98%e5%a5%97%e8%b7%af"></a>
+二、四大经典解题套路
+</h2><p>我们在 <code>704. 二分查找</code>、<code>27. 移除元素</code>、<code>977. 有序数组的平方</code>、<code>209. 长度最小的子数组</code> 和 <code>59. 螺旋矩阵 II</code> 中重点练习了以下四种方法：</p>
+<h3 id="1-二分查找-binary-search">
+<a class="header-anchor" href="#1-%e4%ba%8c%e5%88%86%e6%9f%a5%e6%89%be-binary-search"></a>
+1. 二分查找 (Binary Search)
+</h3><ul>
+<li><strong>适用场景</strong>：<strong>有序</strong>数组、无重复元素（通常）。</li>
+<li><strong>核心思想</strong>：每次比较将查找范围缩小一半。</li>
+<li><strong>关键点</strong>：<strong>循环不变量</strong>（Loop Invariant）。
+<ul>
+<li><strong>左闭右闭</strong> <code>[left, right]</code>：
+<ul>
+<li>初始化：<code>right = len(nums) - 1</code></li>
+<li>循环条件：<code>left &lt;= right</code></li>
+<li>更新：<code>right = mid - 1</code></li>
+</ul>
+</li>
+<li><strong>左闭右开</strong> <code>[left, right)</code>：
+<ul>
+<li>初始化：<code>right = len(nums)</code></li>
+<li>循环条件：<code>left &lt; right</code></li>
+<li>更新：<code>right = mid</code></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><strong>Go 实现细节</strong>：
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="line"><span class="cl"><span class="nx">mid</span><span class="w"> </span><span class="o">:=</span><span class="w"> </span><span class="nx">left</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="p">(</span><span class="nx">right</span><span class="o">-</span><span class="nx">left</span><span class="p">)</span><span class="o">&gt;&gt;</span><span class="mi">1</span><span class="w"> </span><span class="c1">// 防止溢出，位运算更高效</span><span class="w">
+</span></span></span></code></pre></div></li>
+</ul>
+<h3 id="2-双指针法-two-pointers">
+<a class="header-anchor" href="#2-%e5%8f%8c%e6%8c%87%e9%92%88%e6%b3%95-two-pointers"></a>
+2. 双指针法 (Two Pointers)
+</h3><ul>
+<li><strong>核心思想</strong>：通过两个指针在一个 <code>for</code> 循环下完成两个 <code>for</code> 循环的工作，将 <code>O(n²)</code> 优化为 <code>O(n)</code>。</li>
+<li><strong>常见形式</strong>：
+<ul>
+<li><strong>快慢指针</strong>（<code>27. 移除元素</code>）：
+<ul>
+<li><code>fast</code> 指针：寻找新数组的元素（不包含目标值的元素）。</li>
+<li><code>slow</code> 指针：指向新数组更新的位置。</li>
+<li><strong>原地修改</strong>，空间复杂度 <code>O(1)</code>。</li>
+</ul>
+</li>
+<li><strong>左右指针</strong>（<code>977. 有序数组的平方</code>）：
+<ul>
+<li>利用数组<strong>有序</strong>（或部分有序）的特性，从两端向中间遍历。</li>
+<li>解决负数平方后变大的问题，从两头向中间填充结果数组。</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h3 id="3-滑动窗口-sliding-window">
+<a class="header-anchor" href="#3-%e6%bb%91%e5%8a%a8%e7%aa%97%e5%8f%a3-sliding-window"></a>
+3. 滑动窗口 (Sliding Window)
+</h3><ul>
+<li><strong>适用场景</strong>：寻找满足特定条件的<strong>连续</strong>子数组（如最小长度、最大和）。</li>
+<li><strong>核心思想</strong>：
+<ul>
+<li><strong>本质</strong>：也是双指针的一种，但侧重于维护一个“窗口”。</li>
+<li><strong>操作</strong>：<code>right</code> 主动向右扩展窗口，当窗口满足条件时，<code>left</code> 被动向右收缩窗口。</li>
+</ul>
+</li>
+<li><strong>关键点</strong>：
+<ul>
+<li>窗口内是什么？</li>
+<li>什么条件下移动起始位置（收缩窗口）？</li>
+<li>移动起始位置时，窗口内数据如何更新？</li>
+</ul>
+</li>
+<li><strong>复杂度</strong>：每个元素最多进窗口一次、出窗口一次，时间复杂度 <code>O(n)</code>。</li>
+</ul>
+<h3 id="4-模拟-simulation">
+<a class="header-anchor" href="#4-%e6%a8%a1%e6%8b%9f-simulation"></a>
+4. 模拟 (Simulation)
+</h3><ul>
+<li><strong>适用场景</strong>：逻辑复杂、边界条件多的题目（如 <code>59. 螺旋矩阵 II</code>）。</li>
+<li><strong>核心思想</strong>：不涉及复杂算法，而是单纯模拟过程。</li>
+<li><strong>关键点</strong>：<strong>循环不变量</strong>。
+<ul>
+<li>例如画圈，必须坚持统一的原则（如“左闭右开”），每条边处理规则要一致，避免混乱。</li>
+<li>边界处理要仔细（奇数中间点、拐角处）。</li>
+</ul>
+</li>
+</ul>
+<hr>
+<h2 id="三go-语言刷题小贴士">
+<a class="header-anchor" href="#%e4%b8%89go-%e8%af%ad%e8%a8%80%e5%88%b7%e9%a2%98%e5%b0%8f%e8%b4%b4%e5%a3%ab"></a>
+三、Go 语言刷题小贴士
+</h2><ol>
+<li><strong>切片越界</strong>：Go 对切片越界检查很严格，运行时会 panic，务必注意边界条件（如 <code>right &lt; len(nums)</code>）。</li>
+<li><strong>变量声明</strong>：使用 <code>:=</code> 简短声明非常方便，但要注意不要在 <code>if/for</code> 块内意外遮蔽（shadow）外部变量。</li>
+<li><strong>内置函数</strong>：
+<ul>
+<li><code>sort.Ints(nums)</code>：快速排序。</li>
+<li><code>math.Max</code>, <code>math.Min</code>：注意它们接收 <code>float64</code>，处理 <code>int</code> 时通常自己写辅助函数更方便（或强转）。</li>
+<li>Go 标准库没有直接的 <code>abs</code> (int)，建议手写简单的 <code>abs</code> 函数。</li>
+</ul>
+</li>
+</ol>
+<hr>
+<h2 id="四总结">
+<a class="header-anchor" href="#%e5%9b%9b%e6%80%bb%e7%bb%93"></a>
+四、总结
+</h2><p>数组篇的结束通过几道经典题目，让我们掌握了<strong>操作索引</strong>的核心能力。无论是二分法的区间控制，还是双指针的精妙移动，亦或是滑动窗口的动态伸缩，本质上都是在<strong>高效地利用数组的连续性</strong>。</p>
+        
+        <hr><p>本文2026-02-21首发于<a href='https://Elari39.github.io/'>Elari的博客</a>，最后修改于2026-02-21</p>]]></description><category>代码随想录</category></item><item><title>Day 02: 数组 - 双指针、滑动窗口与模拟</title><link>https://Elari39.github.io/post/algorithm/day02/</link><pubDate>Fri, 20 Feb 2026 13:00:00 +0800</pubDate><author>majo_elaina@qq.com (Elari39)</author><guid>https://Elari39.github.io/post/algorithm/day02/</guid><description>
 <![CDATA[<h1>Day 02: 数组 - 双指针、滑动窗口与模拟</h1><p>作者：Elari39（majo_elaina@qq.com）</p>
         
           <h1 id="数组---双指针滑动窗口与模拟">
