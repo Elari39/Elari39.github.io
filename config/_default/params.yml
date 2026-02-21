@@ -326,7 +326,7 @@ valine:
   appId: # leancloud 应用 app id
   appKey: # leancloud 应用 app key
   pageSize: 10 # 评论列表每页大小
-  avatar: mp # gravatar 风格 https://valine.js.org/#/avatar
+  avatar: gravatar #mp # gravatar 风格 https://valine.js.org/#/avatar
   # lang: zh-cn # 已弃用，请改用 html.lang
   placeholder: Just go go # valine 评论输入框占位符（如：请留下你的足迹）
   guest_info: nick,mail,link # valine 评论头部信息
