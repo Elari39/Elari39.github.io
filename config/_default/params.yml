@@ -33,22 +33,22 @@ description: |
   我是旅人，得继续旅行才行…
 subtitle: "Eden* They were only two,on the planet"
 
-banner: "images/banner.webp"
+# banner: "images/banner.webp"
 # 你也可以写成以下 URL 的形式
-# banner: "https://example.com"
+banner: "https://elari39.oss-cn-chengdu.aliyuncs.com/blog/banner.webp"
 
 # 如果你想使用 srcset 属性，请启用它
 banner_srcset:
   enable: false
   srcset:
-    - src: "images/banner-600w.webp"
+    - src: "https://elari39.oss-cn-chengdu.aliyuncs.com/blog/images/banner-600w.webp"
       media: "(max-width: 479px)"
-    - src: "images/banner-800w.webp"
+    - src: "https://elari39.oss-cn-chengdu.aliyuncs.com/blog/images/banner-800w.webp"
       media: "(max-width: 799px)"
-    - src: "images/banner.webp"
+    - src: "https://elari39.oss-cn-chengdu.aliyuncs.com/blog/images/banner.webp"
       media: "(min-width: 800px)"
 
-avatar: "avatar.webp"
+avatar: "https://elari39.oss-cn-chengdu.aliyuncs.com/blog/avatar.webp" # "avatar.webp"
 
 # 控制文章封面的显示
 # 如果未设置，默认显示 banner 图片
@@ -91,10 +91,9 @@ footer:
   count: false
   busuanzi: true
   icon:
-    url: "../images/taichi.png" # 此路径是相对于 css/main.css 的，所以需要向上两级才能到达 images 文件夹
+    url: "https://elari39.oss-cn-chengdu.aliyuncs.com/blog/images/taichi.png" # 此路径是相对于 css/main.css 的，所以需要向上两级才能到达 images 文件夹
     rotate: true
     mask: true # 是否将图像用作蒙版
-    
 # 侧边栏
 # sidebar: right # 已弃用，请改用 sidebar.position
 sidebar:
@@ -195,9 +194,12 @@ anchor_icon: # 默认使用 '#' 图标，你可以使用 fontawesome 或 icon_fo
 reimu_cursor:
   enable: true
   cursor:
-    default: ../images/cursor/reimu-cursor-default.png  # 此路径是相对于 css/main.css 的，所以需要向上两级才能到达 images 文件夹
-    pointer: ../images/cursor/reimu-cursor-pointer.png
-    text: ../images/cursor/reimu-cursor-text.png
+    default: 
+      https://elari39.oss-cn-chengdu.aliyuncs.com/blog/images/cursor/reimu-cursor-default.png # 此路径是相对于 css/main.css 的，所以需要向上两级才能到达 images 文件夹
+    pointer: 
+      https://elari39.oss-cn-chengdu.aliyuncs.com/blog/images/cursor/reimu-cursor-pointer.png
+    text: 
+      https://elari39.oss-cn-chengdu.aliyuncs.com/blog/images/cursor/reimu-cursor-text.png
 
 icon_font: 4552607_4k4bc36ef96
 
@@ -268,13 +270,13 @@ code_block:
 
 # 剪贴板配置
 clipboard:
-  success: 
+  success:
     en: Copy successfully (*^▽^*)
     zh-CN: 复制成功 (*^▽^*)
     zh-TW: 複製成功 (*^▽^*)
     ja: コピー成功 (*^▽^*)
     pt-BR: Copiado com sucesso (*^▽^*)
-  fail: 
+  fail:
     en: Copy failed (ﾟ⊿ﾟ)ﾂ
     zh-CN: 复制失败 (ﾟ⊿ﾟ)ﾂ
     zh-TW: 複製失敗 (ﾟ⊿ﾟ)ﾂ
@@ -290,31 +292,14 @@ math:
     enable: true
   mathjax:
     enable: false
-    options: # 参见 https://docs.mathjax.org/en/latest/web/configuration.html
+    options: [{tex: {tags: "ams", useLabelIds: true, inlineMath: [["$", "$"], ['\\(',
+                  '\\)']], displayMath: [["$$", "$$"], ['\\[', '\\]']], processEscapes: true,
+            processEnvironments: true, autoload: {color: [], colorv2: ["color"]},
+            packages: {"[+]": ["noerrors"]}}, options: {skipHtmlTags: ["script", "noscript",
+              "style", "textarea", "pre", "code"], ignoreHtmlClass: "tex2jax_ignore",
+            processHtmlClass: "tex2jax_process"}, loader: {load: ["input/asciimath",
+              "[tex]/noerrors"]}}] # 参见 https://docs.mathjax.org/en/latest/web/configuration.html
     # 我们需要将配置放在一个数组中，因为 hugo 会自动将键转换为小写
-      [
-        {
-          tex:
-            {
-              tags: "ams",
-              useLabelIds: true,
-              inlineMath: [["$", "$"], ['\\(', '\\)']],
-              displayMath: [["$$", "$$"], ['\\[', '\\]']],
-              processEscapes: true,
-              processEnvironments: true,
-              autoload: { color: [], colorv2: ["color"] },
-              packages: { "[+]": ["noerrors"] },
-            },
-          options:
-            {
-              skipHtmlTags:
-                ["script", "noscript", "style", "textarea", "pre", "code"],
-              ignoreHtmlClass: "tex2jax_ignore",
-              processHtmlClass: "tex2jax_process",
-            },
-          loader: { load: ["input/asciimath", "[tex]/noerrors"] },
-        },
-      ]
 
 ########################################
 # 评论系统
@@ -417,7 +402,6 @@ utterances:
   repo: owner/repo # 将此更改为用于存储博客评论的 "GitHub 用户名/仓库名"
   issue_term: title
   theme: auto # auto 表示自动适应深色和浅色主题，你也可以使用特定主题，如 github-light, github-dark, preferred-color-scheme 等
-  
 ########################################
 # 搜索
 ########################################
@@ -436,7 +420,7 @@ algolia_search:
 
 preloader:
   enable: true
-  text: 
+  text:
     zh-CN: 少女祈祷中...
     zh-TW: 少女祈禱中...
     en: Loading...
@@ -519,7 +503,7 @@ top:
   enable: true
   position: right # 左或右
   icon:
-    url: "../images/taichi.png" # 此路径是相对于 css/main.css 的，所以需要向上两级才能到达 images 文件夹
+    url: "https://elari39.oss-cn-chengdu.aliyuncs.com/blog/images/taichi.png" # 此路径是相对于 css/main.css 的，所以需要向上两级才能到达 images 文件夹
     rotate: true
     mask: true # 是否将图像用作蒙版
 
@@ -528,11 +512,13 @@ outdate:
   enable: false
   daysAgo: 180 # 文章被认为过时的天数
   message:
-    en: This article was last updated on {time}. Please note that the content may no longer be applicable.
+    en: This article was last updated on {time}. Please note that the content may
+      no longer be applicable.
     zh-CN: 本文最后更新于 {time}，请注意文中内容可能已不适用。
     zh-TW: 本文最後更新於 {time}，請注意文中內容可能已不適用。
     ja: この記事は最終更新日：{time}。記載内容が現在有効でない可能性がありますのでご注意ください。
-    pt-BR: Este artigo foi atualizado pela última vez em {time}. Observe que o conteúdo pode não ser mais aplicável.
+    pt-BR: Este artigo foi atualizado pela última vez em {time}. Observe que o conteúdo
+      pode não ser mais aplicável.
 
 # ICP 备案
 icp:
@@ -547,14 +533,14 @@ moe_icp:
 # 赞助
 sponsor:
   enable: false
-  tip: 
+  tip:
     zh-CN: 请作者喝杯咖啡吧
     zh-TW: 請作者喝杯咖啡吧
     en: Buy me a coffee
     ja: コーヒーを買ってください
     pt-BR: Compre-me um café
   icon:
-    url: "../images/taichi.png" # 此路径是相对于 css/main.css 的，所以需要向上两级才能到达 images 文件夹
+    url: "https://elari39.oss-cn-chengdu.aliyuncs.com/blog/images/taichi.png" # 此路径是相对于 css/main.css 的，所以需要向上两级才能到达 images 文件夹
     rotate: true
     mask: true # 是否将图像用作蒙版
   qr:
