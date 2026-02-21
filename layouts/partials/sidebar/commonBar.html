@@ -6,8 +6,12 @@
   {{- $showMenu = $params.sidebar.menu -}}
 {{- end -}}
 <div class="sidebar-author">
+  {{- $avatar := $params.avatar -}}
+  {{- if not (or (strings.HasPrefix $avatar "http://") (strings.HasPrefix $avatar "https://")) -}}
+    {{- $avatar = printf "avatar/%s" $avatar | relURL -}}
+  {{- end -}}
   <img
-    data-src="{{ "avatar/" | relURL }}{{ $params.avatar }}"
+    data-src="{{ $avatar }}"
     data-sizes="auto"
     alt="{{ $params.author }}"
     class="lazyload"
