@@ -1,4 +1,127 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Go on Elari的博客</title><link>https://Elari39.github.io/tags/go/</link><description>Recent content from Elari的博客</description><generator>Hugo</generator><language>zh-cn</language><managingEditor>majo_elaina@qq.com (Elari39)</managingEditor><webMaster>majo_elaina@qq.com (Elari39)</webMaster><copyright>本博客所有文章除特别声明外，均采用 BY-NC-SA 许可协议。转载请注明出处！</copyright><lastBuildDate>Sat, 21 Feb 2026 13:00:00 +0800</lastBuildDate><atom:link href="https://Elari39.github.io/tags/go/index.xml" rel="self" type="application/rss+xml"/><item><title>Day 03: 数组篇总结</title><link>https://Elari39.github.io/post/algorithm/day03/</link><pubDate>Sat, 21 Feb 2026 13:00:00 +0800</pubDate><author>majo_elaina@qq.com (Elari39)</author><guid>https://Elari39.github.io/post/algorithm/day03/</guid><description>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Go on Elari的博客</title><link>https://Elari39.github.io/tags/go/</link><description>Recent content from Elari的博客</description><generator>Hugo</generator><language>zh-cn</language><managingEditor>majo_elaina@qq.com (Elari39)</managingEditor><webMaster>majo_elaina@qq.com (Elari39)</webMaster><copyright>本博客所有文章除特别声明外，均采用 BY-NC-SA 许可协议。转载请注明出处！</copyright><lastBuildDate>Mon, 23 Feb 2026 13:00:00 +0800</lastBuildDate><atom:link href="https://Elari39.github.io/tags/go/index.xml" rel="self" type="application/rss+xml"/><item><title>Day 05: 链表篇</title><link>https://Elari39.github.io/post/algorithm/day05/</link><pubDate>Mon, 23 Feb 2026 13:00:00 +0800</pubDate><author>majo_elaina@qq.com (Elari39)</author><guid>https://Elari39.github.io/post/algorithm/day05/</guid><description>
+<![CDATA[<h1>Day 05: 链表篇</h1><p>作者：Elari39（majo_elaina@qq.com）</p>
+        
+          <h1 id="链表篇day-2">
+<a class="header-anchor" href="#%e9%93%be%e8%a1%a8%e7%af%87day-2"></a>
+链表篇（Day 2）
+</h1><p>今天是<strong>代码随想录</strong>算法训练营的第五天，我们继续深入<strong>链表篇</strong>！<br>
+昨天掌握了虚拟头结点和基本增删操作后，今天的三道题将带我们进入链表的<strong>指针翻转与移动</strong>进阶技巧：</p>
+<ul>
+<li><strong>206. 反转链表</strong>：最经典的指针反转题</li>
+<li><strong>24. 两两交换链表中的节点</strong>：成对操作 + 虚拟头结点</li>
+<li><strong>19. 删除链表的倒数第 N 个结点</strong>：快慢指针 + 虚拟头结点</li>
+</ul>
+<p>掌握这三题后，你对链表指针的操控将达到“指哪打哪”的境界！<br>
+下面我们逐题拆解，并给出<strong>带详细中文注释的 Go 完整实现</strong>（均已通过 LeetCode 测试）。</p>
+<hr>
+<h2 id="一206-反转链表">
+<a class="header-anchor" href="#%e4%b8%80206-%e5%8f%8d%e8%bd%ac%e9%93%be%e8%a1%a8"></a>
+一、206. 反转链表
+</h2><p><strong>题目</strong>：给你单链表的头节点 <code>head</code>，请你反转链表，并返回反转后的链表。</p>
+<p><strong>示例 1</strong>（如图所示）：<br>
+输入：<code>head = [1,2,3,4,5]</code><br>
+输出：<code>[5,4,3,2,1]</code></p>
+<p><strong>核心思路</strong>：<strong>迭代三指针法</strong>（pre、cur、next）<br>
+每次把 <code>cur</code> 的 <code>Next</code> 指向 <code>pre</code>，然后三个指针一起向后移动。</p>
+<p><strong>Go 完整代码（详细注释）</strong>：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="line"><span class="cl"><span class="c1">// reverseList 反转整个链表（迭代版，推荐！空间 O(1)）</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="kd">func</span><span class="w"> </span><span class="nf">reverseList</span><span class="p">(</span><span class="nx">head</span><span class="w"> </span><span class="o">*</span><span class="nx">ListNode</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="nx">ListNode</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="c1">// pre 始终指向已反转部分的头节点（初始为 nil）</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="kd">var</span><span class="w"> </span><span class="nx">pre</span><span class="w"> </span><span class="o">*</span><span class="nx">ListNode</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="c1">// cur 是当前正在处理的节点，从 head 开始</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nx">cur</span><span class="w"> </span><span class="o">:=</span><span class="w"> </span><span class="nx">head</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="c1">// 当 cur 不为空时继续反转</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="nx">cur</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="kc">nil</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="c1">// 1. 先保存下一个节点，防止断链</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nx">next</span><span class="w"> </span><span class="o">:=</span><span class="w"> </span><span class="nx">cur</span><span class="p">.</span><span class="nx">Next</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="c1">// 2. 核心：把当前节点的 next 指向前一个节点，实现反转</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nx">cur</span><span class="p">.</span><span class="nx">Next</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nx">pre</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="c1">// 3. pre 和 cur 同时向前移动一位</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nx">pre</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nx">cur</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nx">cur</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nx">next</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="p">}</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="c1">// 循环结束后 pre 指向新的头节点（原尾节点）</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nx">pre</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="p">}</span><span class="w">
+</span></span></span></code></pre></div><p><strong>复杂度</strong>：时间 O(n)，空间 O(1)。</p>
+        
+        <hr><p>本文2026-02-23首发于<a href='https://Elari39.github.io/'>Elari的博客</a>，最后修改于2026-02-23</p>]]></description><category>代码随想录</category></item><item><title>Day 04: 链表篇</title><link>https://Elari39.github.io/post/algorithm/day04/</link><pubDate>Sun, 22 Feb 2026 13:00:00 +0800</pubDate><author>majo_elaina@qq.com (Elari39)</author><guid>https://Elari39.github.io/post/algorithm/day04/</guid><description>
+<![CDATA[<h1>Day 04: 链表篇</h1><p>作者：Elari39（majo_elaina@qq.com）</p>
+        
+          <h1 id="链表篇day-1">
+<a class="header-anchor" href="#%e9%93%be%e8%a1%a8%e7%af%87day-1"></a>
+链表篇（Day 1）
+</h1><p>今天是<strong>代码随想录</strong>算法训练营的第四天，我们正式开启<strong>链表篇</strong>的学习！<br>
+链表与数组形成鲜明对比：数组连续存储、随机访问快；链表非连续存储、插入删除快。掌握链表的<strong>指针操作</strong>和<strong>虚拟头结点</strong>技巧，是后续树、图、递归等高级结构的必备基础。</p>
+<p>在这篇文章中，我们重点总结<strong>链表理论</strong>、<strong>203. 移除链表元素</strong> 和 <strong>707. 设计链表</strong> 两道经典题目，以及 <strong>Go 语言实现细节</strong>，帮助大家快速建立链表操作的肌肉记忆。</p>
+<hr>
+<h2 id="一链表理论基础回顾">
+<a class="header-anchor" href="#%e4%b8%80%e9%93%be%e8%a1%a8%e7%90%86%e8%ae%ba%e5%9f%ba%e7%a1%80%e5%9b%9e%e9%a1%be"></a>
+一、链表理论基础回顾
+</h2><h3 id="1-定义与内存模型">
+<a class="header-anchor" href="#1-%e5%ae%9a%e4%b9%89%e4%b8%8e%e5%86%85%e5%ad%98%e6%a8%a1%e5%9e%8b"></a>
+1. 定义与内存模型
+</h3><ul>
+<li><strong>单链表 (Singly Linked List)</strong>：每个节点包含 <code>Val</code>（值）和 <code>Next</code>（指向下一个节点的指针）。</li>
+<li><strong>内存特点</strong>：非连续存储，每个节点在堆上动态分配，通过指针“串”起来。</li>
+<li><strong>与数组对比</strong>：
+<table>
+  <thead>
+      <tr>
+          <th>操作</th>
+          <th>数组</th>
+          <th>链表</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>随机访问</td>
+          <td>O(1)</td>
+          <td>O(n)</td>
+      </tr>
+      <tr>
+          <td>头插/头删</td>
+          <td>O(n)</td>
+          <td>O(1)</td>
+      </tr>
+      <tr>
+          <td>尾插</td>
+          <td>O(1)（有容量）</td>
+          <td>O(n)（无尾指针）</td>
+      </tr>
+  </tbody>
+</table>
+</li>
+</ul>
+<h3 id="2-go-语言中的链表实现">
+<a class="header-anchor" href="#2-go-%e8%af%ad%e8%a8%80%e4%b8%ad%e7%9a%84%e9%93%be%e8%a1%a8%e5%ae%9e%e7%8e%b0"></a>
+2. Go 语言中的链表实现
+</h3><div class="highlight"><pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="line"><span class="cl"><span class="kd">type</span><span class="w"> </span><span class="nx">ListNode</span><span class="w"> </span><span class="kd">struct</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nx">Val</span><span class="w">  </span><span class="kt">int</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nx">Next</span><span class="w"> </span><span class="o">*</span><span class="nx">ListNode</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="p">}</span><span class="w">
+</span></span></span></code></pre></div><ul>
+<li><strong>核心技巧：虚拟头结点 (Dummy Head)</strong>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="line"><span class="cl"><span class="nx">dummy</span><span class="w"> </span><span class="o">:=</span><span class="w"> </span><span class="o">&amp;</span><span class="nx">ListNode</span><span class="p">{</span><span class="nx">Next</span><span class="p">:</span><span class="w"> </span><span class="nx">head</span><span class="p">}</span><span class="w">
+</span></span></span></code></pre></div>作用：统一处理头节点删除/插入，避免对 <code>head</code> 做特殊判断，最后返回 <code>dummy.Next</code>。</li>
+<li><strong>遍历常用写法</strong>：
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="line"><span class="cl"><span class="k">for</span><span class="w"> </span><span class="nx">cur</span><span class="w"> </span><span class="o">:=</span><span class="w"> </span><span class="nx">dummy</span><span class="p">;</span><span class="w"> </span><span class="nx">cur</span><span class="p">.</span><span class="nx">Next</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="kc">nil</span><span class="p">;</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="o">...</span><span class="w"> </span><span class="p">}</span><span class="w">
+</span></span></span></code></pre></div></li>
+</ul>
+<hr>
+<h2 id="二今日两题详解">
+<a class="header-anchor" href="#%e4%ba%8c%e4%bb%8a%e6%97%a5%e4%b8%a4%e9%a2%98%e8%af%a6%e8%a7%a3"></a>
+二、今日两题详解
+</h2><h3 id="1-203-移除链表元素">
+<a class="header-anchor" href="#1-203-%e7%a7%bb%e9%99%a4%e9%93%be%e8%a1%a8%e5%85%83%e7%b4%a0"></a>
+1. 203. 移除链表元素
+</h3><p><strong>题目</strong>：给你一个链表的头节点 <code>head</code> 和一个整数 <code>val</code>，请你删除链表中所有满足 <code>Node.val == val</code> 的节点，并返回新的头节点。</p>
+        
+        <hr><p>本文2026-02-22首发于<a href='https://Elari39.github.io/'>Elari的博客</a>，最后修改于2026-02-22</p>]]></description><category>代码随想录</category></item><item><title>Day 03: 数组篇总结</title><link>https://Elari39.github.io/post/algorithm/day03/</link><pubDate>Sat, 21 Feb 2026 13:00:00 +0800</pubDate><author>majo_elaina@qq.com (Elari39)</author><guid>https://Elari39.github.io/post/algorithm/day03/</guid><description>
 <![CDATA[<h1>Day 03: 数组篇总结</h1><p>作者：Elari39（majo_elaina@qq.com）</p>
         
           <h1 id="数组篇总结">
