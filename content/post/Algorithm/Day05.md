@@ -1,7 +1,7 @@
 ---
 title: "Day 05: 链表篇"
 date: 2026-02-23T13:00:00+08:00
-draft: false
+draft: true
 tags: ["算法", "链表", "Go"]
 categories: ["代码随想录"]
 ---
