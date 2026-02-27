@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Golang on Elari的博客</title><link>https://Elari39.github.io/tags/golang/</link><description>Recent content from Elari的博客</description><generator>Hugo</generator><language>zh-cn</language><managingEditor>majo_elaina@qq.com (Elari39)</managingEditor><webMaster>majo_elaina@qq.com (Elari39)</webMaster><copyright>本博客所有文章除特别声明外，均采用 BY-NC-SA 许可协议。转载请注明出处！</copyright><lastBuildDate>Fri, 27 Feb 2026 23:00:00 +0800</lastBuildDate><atom:link href="https://Elari39.github.io/tags/golang/index.xml" rel="self" type="application/rss+xml"/><item><title>Golang 笔记Day01 基础篇</title><link>https://Elari39.github.io/post/go-learning/1.notes/day01/</link><pubDate>Fri, 27 Feb 2026 23:00:00 +0800</pubDate><author>majo_elaina@qq.com (Elari39)</author><guid>https://Elari39.github.io/post/go-learning/1.notes/day01/</guid><description>
+<![CDATA[<h1>Golang 笔记Day01 基础篇</h1><p>作者：Elari39（majo_elaina@qq.com）</p>
+        
+          <h2 id="编写第一个go程序">
+<a class="header-anchor" href="#%e7%bc%96%e5%86%99%e7%ac%ac%e4%b8%80%e4%b8%aago%e7%a8%8b%e5%ba%8f"></a>
+编写第一个go程序
+</h2><div class="highlight"><pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="line"><span class="cl"><span class="kn">package</span><span class="w"> </span><span class="nx">main</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="kn">import</span><span class="w"> </span><span class="s">&#34;fmt&#34;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="kd">func</span><span class="w"> </span><span class="nf">main</span><span class="p">(){</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nx">fmt</span><span class="p">.</span><span class="nf">Println</span><span class="p">(</span><span class="s">&#34;Hello world!&#34;</span><span class="p">)</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="p">}</span><span class="w">
+</span></span></span></code></pre></div><h3 id="运行和编译">
+<a class="header-anchor" href="#%e8%bf%90%e8%a1%8c%e5%92%8c%e7%bc%96%e8%af%91"></a>
+运行和编译
+</h3><p>运行命令：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-shell" data-lang="shell"><span class="line"><span class="cl">go run main.go
+</span></span></code></pre></div><p>编译后运行命令：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-shell" data-lang="shell"><span class="line"><span class="cl">go build main.go
+</span></span><span class="line"><span class="cl">./main
+</span></span></code></pre></div><h3 id="注意">
+<a class="header-anchor" href="#%e6%b3%a8%e6%84%8f"></a>
+注意：
+</h3><blockquote>
+<ol>
+<li>必须是main包：package main</li>
+<li>必须有main函数：func main()</li>
+<li>文件名不一定是main.go</li>
+</ol>
+</blockquote>
+<h3 id="与其他注意编程语言的差异">
+<a class="header-anchor" href="#%e4%b8%8e%e5%85%b6%e4%bb%96%e6%b3%a8%e6%84%8f%e7%bc%96%e7%a8%8b%e8%af%ad%e8%a8%80%e7%9a%84%e5%b7%ae%e5%bc%82"></a>
+与其他注意编程语言的差异
+</h3><h4 id="返回值">
+<a class="header-anchor" href="#%e8%bf%94%e5%9b%9e%e5%80%bc"></a>
+返回值
+</h4><ul>
+<li>Go中main函数不支持任何返回值</li>
+<li>通过os.Exit()函数退出程序</li>
+</ul>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="line"><span class="cl"><span class="kn">package</span><span class="w"> </span><span class="nx">main</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="kn">import</span><span class="w"> </span><span class="p">(</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="s">&#34;fmt&#34;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="s">&#34;os&#34;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="p">)</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="kd">func</span><span class="w"> </span><span class="nf">main</span><span class="p">(){</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nx">fmt</span><span class="p">.</span><span class="nf">Println</span><span class="p">(</span><span class="s">&#34;Hello world!&#34;</span><span class="p">)</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nx">os</span><span class="p">.</span><span class="nf">Exit</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="p">}</span><span class="w">
+</span></span></span></code></pre></div><blockquote>
+<p>注意：</p>
+<ul>
+<li>os.Exit()函数会立即退出程序，不会执行defer函数</li>
+<li>退出返回值0表示正常退出，非0值表示异常退出</li>
+</ul>
+</blockquote>
+<h4 id="获取命令行参数">
+<a class="header-anchor" href="#%e8%8e%b7%e5%8f%96%e5%91%bd%e4%bb%a4%e8%a1%8c%e5%8f%82%e6%95%b0"></a>
+获取命令行参数
+</h4><ul>
+<li>main函数不支持传入参数
+<ul>
+<li>func main(<!-- raw HTML omitted -->arg []string<!-- raw HTML omitted -->)</li>
+</ul>
+</li>
+<li>在程序中直接通过os.Args获取命令行参数，第一个参数是程序名</li>
+</ul>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="line"><span class="cl"><span class="kn">package</span><span class="w"> </span><span class="nx">main</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="kn">import</span><span class="w"> </span><span class="p">(</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="s">&#34;fmt&#34;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="s">&#34;os&#34;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="p">)</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="kd">func</span><span class="w"> </span><span class="nf">main</span><span class="p">(){</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="nb">len</span><span class="p">(</span><span class="nx">os</span><span class="p">.</span><span class="nx">Args</span><span class="p">)</span><span class="w"> </span><span class="p">&gt;</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nx">fmt</span><span class="p">.</span><span class="nf">Println</span><span class="p">(</span><span class="s">&#34;Hello world!&#34;</span><span class="p">,</span><span class="w"> </span><span class="nx">os</span><span class="p">.</span><span class="nx">Args</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="p">}</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="p">}</span><span class="w">
+</span></span></span></code></pre></div><p>命令行参数示例：</p>
+        
+        <hr><p>本文2026-02-27首发于<a href='https://Elari39.github.io/'>Elari的博客</a>，最后修改于2026-02-27</p>]]></description><category>GolangStudy</category></item><item><title>Golang 每日任务打卡 (Daily Tasks)</title><link>https://Elari39.github.io/post/go-learning/dailytasks/</link><pubDate>Fri, 27 Feb 2026 23:00:00 +0800</pubDate><author>majo_elaina@qq.com (Elari39)</author><guid>https://Elari39.github.io/post/go-learning/dailytasks/</guid><description>
+<![CDATA[<h1>Golang 每日任务打卡 (Daily Tasks)</h1><p>作者：Elari39（majo_elaina@qq.com）</p>
+        
+          <h1 id="每日任务计划与进度-daily-tasks">
+<a class="header-anchor" href="#%e6%af%8f%e6%97%a5%e4%bb%bb%e5%8a%a1%e8%ae%a1%e5%88%92%e4%b8%8e%e8%bf%9b%e5%ba%a6-daily-tasks"></a>
+每日任务计划与进度 (Daily Tasks)
+</h1><h2 id="go-基础篇">
+<a class="header-anchor" href="#go-%e5%9f%ba%e7%a1%80%e7%af%87"></a>
+Go 基础篇
+</h2><ul>
+<li><strong>2026-02-27</strong>:</li>
+<li>基础类型结构</li>
+<li>常用集合</li>
+<li>字符串</li>
+</ul>
+        
+        <hr><p>本文2026-02-27首发于<a href='https://Elari39.github.io/'>Elari的博客</a>，最后修改于2026-02-27</p>]]></description><category>GolangStudy</category></item><item><title>Golang 学习与项目实战</title><link>https://Elari39.github.io/post/go-learning/</link><pubDate>Thu, 26 Feb 2026 12:00:00 +0800</pubDate><author>majo_elaina@qq.com (Elari39)</author><guid>https://Elari39.github.io/post/go-learning/</guid><description>
+<![CDATA[<h1>Golang 学习与项目实战</h1><p>作者：Elari39（majo_elaina@qq.com）</p>
+        
+          <h1 id="golang-学习与项目实战目录">
+<a class="header-anchor" href="#golang-%e5%ad%a6%e4%b9%a0%e4%b8%8e%e9%a1%b9%e7%9b%ae%e5%ae%9e%e6%88%98%e7%9b%ae%e5%bd%95"></a>
+Golang 学习与项目实战目录
+</h1><p>本专栏用于记录 Golang 学习过程中的代码、笔记与项目源码。</p>
+<h2 id="目录内容">
+<a class="header-anchor" href="#%e7%9b%ae%e5%bd%95%e5%86%85%e5%ae%b9"></a>
+目录内容
+</h2><ul>
+<li><strong><a href="Roadmap.md">学习路线图 (Roadmap)</a></strong>: 总规划，包含基础、Web、中间件、分布式四个阶段。</li>
+<li><strong><a href="DailyTasks.md">每日任务打卡 (Daily Tasks)</a></strong>: 记录每日的学习进度与算法刷题情况。</li>
+</ul>
+<h2 id="文件夹结构-源码">
+<a class="header-anchor" href="#%e6%96%87%e4%bb%b6%e5%a4%b9%e7%bb%93%e6%9e%84-%e6%ba%90%e7%a0%81"></a>
+文件夹结构 (源码)
+</h2><p>以下目录包含了我的实战代码 (位于本目录下):</p>
+<ul>
+<li><strong>01_Basics</strong>: Go 语言基础语法练习</li>
+<li><strong>02_Algorithm</strong>: 算法刷题 (LeetCode / 代码随想录)</li>
+<li><strong>03_Projects</strong>: 实战项目
+<ul>
+<li><code>GopherAI</code>: 基于 Eino + Gin 的 AI 应用</li>
+<li><code>KamaCache</code>: 分布式缓存系统</li>
+<li><code>KamaChat</code>: 分布式聊天室</li>
+</ul>
+</li>
+</ul>
+<h2 id="如何开始">
+<a class="header-anchor" href="#%e5%a6%82%e4%bd%95%e5%bc%80%e5%a7%8b"></a>
+如何开始
+</h2><ol>
+<li>查看 <code>Roadmap.md</code> 了解整体规划。</li>
+<li>每日在 <code>DailyTasks.md</code> 中记录进度。</li>
+<li>在对应文件夹中编写代码。</li>
+<li>定期提交代码到 GitHub (建议每日提交)。</li>
+</ol>
+<h2 id="常用命令">
+<a class="header-anchor" href="#%e5%b8%b8%e7%94%a8%e5%91%bd%e4%bb%a4"></a>
+常用命令
+</h2><div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># 运行 Go 代码</span>
+</span></span><span class="line"><span class="cl">go run main.go
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># 初始化模块</span>
+</span></span><span class="line"><span class="cl">go mod init &lt;module-name&gt;
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># 下载依赖</span>
+</span></span><span class="line"><span class="cl">go mod tidy
+</span></span></code></pre></div>
+        
+        <hr><p>本文2026-02-26首发于<a href='https://Elari39.github.io/'>Elari的博客</a>，最后修改于2026-02-26</p>]]></description><category>GolangStudy</category></item></channel></rss>

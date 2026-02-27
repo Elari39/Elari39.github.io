@@ -1,4 +1,104 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Elari的博客</title><link>https://Elari39.github.io/</link><description>Recent content from Elari的博客</description><generator>Hugo</generator><language>zh-cn</language><managingEditor>majo_elaina@qq.com (Elari39)</managingEditor><webMaster>majo_elaina@qq.com (Elari39)</webMaster><copyright>本博客所有文章除特别声明外，均采用 BY-NC-SA 许可协议。转载请注明出处！</copyright><lastBuildDate>Tue, 17 Feb 2026 19:41:00 +0800</lastBuildDate><atom:link href="https://Elari39.github.io/index.xml" rel="self" type="application/rss+xml"/><item><title>GoHttp库</title><link>https://Elari39.github.io/post/gohttpv1/</link><pubDate>Tue, 17 Feb 2026 19:41:00 +0800</pubDate><author>majo_elaina@qq.com (Elari39)</author><guid>https://Elari39.github.io/post/gohttpv1/</guid><description>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Elari的博客</title><link>https://Elari39.github.io/</link><description>Recent content from Elari的博客</description><generator>Hugo</generator><language>zh-cn</language><managingEditor>majo_elaina@qq.com (Elari39)</managingEditor><webMaster>majo_elaina@qq.com (Elari39)</webMaster><copyright>本博客所有文章除特别声明外，均采用 BY-NC-SA 许可协议。转载请注明出处！</copyright><lastBuildDate>Fri, 27 Feb 2026 23:00:00 +0800</lastBuildDate><atom:link href="https://Elari39.github.io/index.xml" rel="self" type="application/rss+xml"/><item><title>Golang 笔记Day01 基础篇</title><link>https://Elari39.github.io/post/go-learning/1.notes/day01/</link><pubDate>Fri, 27 Feb 2026 23:00:00 +0800</pubDate><author>majo_elaina@qq.com (Elari39)</author><guid>https://Elari39.github.io/post/go-learning/1.notes/day01/</guid><description>
+<![CDATA[<h1>Golang 笔记Day01 基础篇</h1><p>作者：Elari39（majo_elaina@qq.com）</p>
+        
+          <h2 id="编写第一个go程序">
+<a class="header-anchor" href="#%e7%bc%96%e5%86%99%e7%ac%ac%e4%b8%80%e4%b8%aago%e7%a8%8b%e5%ba%8f"></a>
+编写第一个go程序
+</h2><div class="highlight"><pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="line"><span class="cl"><span class="kn">package</span><span class="w"> </span><span class="nx">main</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="kn">import</span><span class="w"> </span><span class="s">&#34;fmt&#34;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="kd">func</span><span class="w"> </span><span class="nf">main</span><span class="p">(){</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nx">fmt</span><span class="p">.</span><span class="nf">Println</span><span class="p">(</span><span class="s">&#34;Hello world!&#34;</span><span class="p">)</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="p">}</span><span class="w">
+</span></span></span></code></pre></div><h3 id="运行和编译">
+<a class="header-anchor" href="#%e8%bf%90%e8%a1%8c%e5%92%8c%e7%bc%96%e8%af%91"></a>
+运行和编译
+</h3><p>运行命令：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-shell" data-lang="shell"><span class="line"><span class="cl">go run main.go
+</span></span></code></pre></div><p>编译后运行命令：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-shell" data-lang="shell"><span class="line"><span class="cl">go build main.go
+</span></span><span class="line"><span class="cl">./main
+</span></span></code></pre></div><h3 id="注意">
+<a class="header-anchor" href="#%e6%b3%a8%e6%84%8f"></a>
+注意：
+</h3><blockquote>
+<ol>
+<li>必须是main包：package main</li>
+<li>必须有main函数：func main()</li>
+<li>文件名不一定是main.go</li>
+</ol>
+</blockquote>
+<h3 id="与其他注意编程语言的差异">
+<a class="header-anchor" href="#%e4%b8%8e%e5%85%b6%e4%bb%96%e6%b3%a8%e6%84%8f%e7%bc%96%e7%a8%8b%e8%af%ad%e8%a8%80%e7%9a%84%e5%b7%ae%e5%bc%82"></a>
+与其他注意编程语言的差异
+</h3><h4 id="返回值">
+<a class="header-anchor" href="#%e8%bf%94%e5%9b%9e%e5%80%bc"></a>
+返回值
+</h4><ul>
+<li>Go中main函数不支持任何返回值</li>
+<li>通过os.Exit()函数退出程序</li>
+</ul>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="line"><span class="cl"><span class="kn">package</span><span class="w"> </span><span class="nx">main</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="kn">import</span><span class="w"> </span><span class="p">(</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="s">&#34;fmt&#34;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="s">&#34;os&#34;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="p">)</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="kd">func</span><span class="w"> </span><span class="nf">main</span><span class="p">(){</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nx">fmt</span><span class="p">.</span><span class="nf">Println</span><span class="p">(</span><span class="s">&#34;Hello world!&#34;</span><span class="p">)</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nx">os</span><span class="p">.</span><span class="nf">Exit</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="p">}</span><span class="w">
+</span></span></span></code></pre></div><blockquote>
+<p>注意：</p>
+<ul>
+<li>os.Exit()函数会立即退出程序，不会执行defer函数</li>
+<li>退出返回值0表示正常退出，非0值表示异常退出</li>
+</ul>
+</blockquote>
+<h4 id="获取命令行参数">
+<a class="header-anchor" href="#%e8%8e%b7%e5%8f%96%e5%91%bd%e4%bb%a4%e8%a1%8c%e5%8f%82%e6%95%b0"></a>
+获取命令行参数
+</h4><ul>
+<li>main函数不支持传入参数
+<ul>
+<li>func main(<!-- raw HTML omitted -->arg []string<!-- raw HTML omitted -->)</li>
+</ul>
+</li>
+<li>在程序中直接通过os.Args获取命令行参数，第一个参数是程序名</li>
+</ul>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="line"><span class="cl"><span class="kn">package</span><span class="w"> </span><span class="nx">main</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="kn">import</span><span class="w"> </span><span class="p">(</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="s">&#34;fmt&#34;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="s">&#34;os&#34;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="p">)</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="kd">func</span><span class="w"> </span><span class="nf">main</span><span class="p">(){</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="nb">len</span><span class="p">(</span><span class="nx">os</span><span class="p">.</span><span class="nx">Args</span><span class="p">)</span><span class="w"> </span><span class="p">&gt;</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nx">fmt</span><span class="p">.</span><span class="nf">Println</span><span class="p">(</span><span class="s">&#34;Hello world!&#34;</span><span class="p">,</span><span class="w"> </span><span class="nx">os</span><span class="p">.</span><span class="nx">Args</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="p">}</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="p">}</span><span class="w">
+</span></span></span></code></pre></div><p>命令行参数示例：</p>
+        
+        <hr><p>本文2026-02-27首发于<a href='https://Elari39.github.io/'>Elari的博客</a>，最后修改于2026-02-27</p>]]></description><category>GolangStudy</category></item><item><title>Golang 每日任务打卡 (Daily Tasks)</title><link>https://Elari39.github.io/post/go-learning/dailytasks/</link><pubDate>Fri, 27 Feb 2026 23:00:00 +0800</pubDate><author>majo_elaina@qq.com (Elari39)</author><guid>https://Elari39.github.io/post/go-learning/dailytasks/</guid><description>
+<![CDATA[<h1>Golang 每日任务打卡 (Daily Tasks)</h1><p>作者：Elari39（majo_elaina@qq.com）</p>
+        
+          <h1 id="每日任务计划与进度-daily-tasks">
+<a class="header-anchor" href="#%e6%af%8f%e6%97%a5%e4%bb%bb%e5%8a%a1%e8%ae%a1%e5%88%92%e4%b8%8e%e8%bf%9b%e5%ba%a6-daily-tasks"></a>
+每日任务计划与进度 (Daily Tasks)
+</h1><h2 id="go-基础篇">
+<a class="header-anchor" href="#go-%e5%9f%ba%e7%a1%80%e7%af%87"></a>
+Go 基础篇
+</h2><ul>
+<li><strong>2026-02-27</strong>:</li>
+<li>基础类型结构</li>
+<li>常用集合</li>
+<li>字符串</li>
+</ul>
+        
+        <hr><p>本文2026-02-27首发于<a href='https://Elari39.github.io/'>Elari的博客</a>，最后修改于2026-02-27</p>]]></description><category>GolangStudy</category></item><item><title>GoHttp库</title><link>https://Elari39.github.io/post/gohttpv1/</link><pubDate>Tue, 17 Feb 2026 19:41:00 +0800</pubDate><author>majo_elaina@qq.com (Elari39)</author><guid>https://Elari39.github.io/post/gohttpv1/</guid><description>
 <![CDATA[<h1>GoHttp库</h1><p>作者：Elari39（majo_elaina@qq.com）</p>
         
           Go 语言的 net/http 标准库是构建 HTTP 服务端和客户端的基石，它设计简洁、功能强大，并且是众多第三方 Web 框架（如 Gin、Echo）的底层依赖。无论你是想从零搭建一个高性能的 Web 服务，还是希望在使用框架时能深入理解其原理，掌握 net/http 都是必修课。本文将从零开始，以最新版本的 Go（语法层面无破坏性变更）为例，详细拆解 net/http 的核心概念、工作机制以及最佳实践。
@@ -147,109 +247,7 @@ Worker 代码
 </span></span><span class="line"><span class="cl"><span class="p">};</span>
 </span></span></code></pre></div><p>记得在 Cloudflare 后台配置环境变量 <code>GEMINI_API_URL</code> 和 <code>GEMINI_API_KEY</code>。</p>
         
-        <hr><p>本文2026-02-16首发于<a href='https://Elari39.github.io/'>Elari的博客</a>，最后修改于2026-02-16</p>]]></description><category>Hugo</category><category>AI</category></item><item><title>GoCache 学习建议</title><link>https://Elari39.github.io/post/gocache/</link><pubDate>Sat, 14 Feb 2026 21:57:00 +0800</pubDate><author>majo_elaina@qq.com (Elari39)</author><guid>https://Elari39.github.io/post/gocache/</guid><description>
-<![CDATA[<h1>GoCache 学习建议</h1><p>作者：Elari39（majo_elaina@qq.com）</p>
-        
-          <h1 id="学习建议">
-<a class="header-anchor" href="#%e5%ad%a6%e4%b9%a0%e5%bb%ba%e8%ae%ae"></a>
-学习建议
-</h1><p><strong>完成项目指导时间</strong></p>
-<ul>
-<li>如果具备【基础要求】里的基础，每天 6 小时，约 7 天完成。</li>
-<li>如果边学边做，每天 6~8 小时，约 15 天完成。</li>
-</ul>
-<p><strong>代码量</strong><br>
-2000 行左右（除去测试代码）</p>
-<hr>
-<h2 id="基础要求">
-<a class="header-anchor" href="#%e5%9f%ba%e7%a1%80%e8%a6%81%e6%b1%82"></a>
-基础要求
-</h2><ul>
-<li><strong>Go 语言基础</strong>：goroutine、channel、接口等核心概念</li>
-<li><strong>缓存原理</strong>：缓存淘汰策略（LRU、LFU 等）</li>
-<li><strong>网络编程</strong>：gRPC 基础、HTTP 协议、TCP/IP</li>
-</ul>
-<hr>
-<h2 id="循序渐进的学习顺序">
-<a class="header-anchor" href="#%e5%be%aa%e5%ba%8f%e6%b8%90%e8%bf%9b%e7%9a%84%e5%ad%a6%e4%b9%a0%e9%a1%ba%e5%ba%8f"></a>
-循序渐进的学习顺序
-</h2><ol>
-<li>
-<p><strong>从单机缓存开始</strong></p>
-<ul>
-<li>先理解 <code>ByteView</code>、<code>lruCache</code> 等核心数据结构</li>
-<li>熟悉 <code>Cache</code> 和基本的缓存操作</li>
-</ul>
-</li>
-<li>
-<p><strong>理解分组缓存</strong></p>
-<ul>
-<li>学习 <code>Group</code> 结构及其工作原理</li>
-<li>掌握缓存加载、过期策略等机制</li>
-</ul>
-</li>
-<li>
-<p><strong>研究分布式扩展</strong></p>
-<ul>
-<li>一致性哈希算法实现</li>
-<li>节点间通信协议</li>
-<li>服务注册与发现</li>
-</ul>
-</li>
-<li>
-<p><strong>深入高级特性</strong></p>
-<ul>
-<li>缓存击穿防护</li>
-<li>分段锁与高并发优化</li>
-<li>优雅关闭与资源管理</li>
-</ul>
-</li>
-</ol>
-<hr>
-<h2 id="代码阅读方式">
-<a class="header-anchor" href="#%e4%bb%a3%e7%a0%81%e9%98%85%e8%af%bb%e6%96%b9%e5%bc%8f"></a>
-代码阅读方式
-</h2><ol>
-<li>
-<p><strong>绘制组件关系图</strong></p>
-<ul>
-<li>梳理核心接口和实现类</li>
-<li>理清组件间的调用关系</li>
-</ul>
-</li>
-<li>
-<p><strong>断点调试关键流程</strong></p>
-<ul>
-<li><code>Set/Get</code> 操作的完整链路</li>
-<li>分布式场景下的数据同步</li>
-</ul>
-</li>
-<li>
-<p><strong>编写单元测试</strong></p>
-<ul>
-<li>为关键组件编写测试用例</li>
-<li>使用基准测试验证性能优化</li>
-</ul>
-</li>
-<li>
-<p><strong>模拟故障场景</strong></p>
-<ul>
-<li>节点宕机时的系统行为</li>
-<li>网络分区下的一致性保证</li>
-</ul>
-</li>
-</ol>
-<hr>
-<h2 id="什么是缓存">
-<a class="header-anchor" href="#%e4%bb%80%e4%b9%88%e6%98%af%e7%bc%93%e5%ad%98"></a>
-什么是缓存
-</h2><p>缓存是将高频访问的数据暂存到内存中，是加速数据访问的存储，降低延迟，提高吞吐率的利器。</p>
-<h2 id="为什么要实现缓存系统">
-<a class="header-anchor" href="#%e4%b8%ba%e4%bb%80%e4%b9%88%e8%a6%81%e5%ae%9e%e7%8e%b0%e7%bc%93%e5%ad%98%e7%b3%bb%e7%bb%9f"></a>
-为什么要实现缓存系统
-</h2><p>因缓存的使用相关需求，通过牺牲一部分服务器内存，减少对磁盘或者数据库资源进行直接读写，可换取更快响应速度，尤其是处理高并发的场景，负责存储经常访问的数据，通过设计合理的缓存机制提高资源的访问效率。由于服务器的内存是有限的，我们不能把所有数据都存放在内存中，因此需要一种机制来决定当使用内存超过一定标准时，应该删除哪些数据，这就涉及到缓存淘汰策略的选择。</p>
-        
-        <hr><p>本文2026-02-14首发于<a href='https://Elari39.github.io/'>Elari的博客</a>，最后修改于2026-02-14</p>]]></description><category>Go</category></item><item><title>Hugo博客配置</title><link>https://Elari39.github.io/post/hugoblog/hugo%E5%8D%9A%E5%AE%A2/</link><pubDate>Sat, 14 Feb 2026 12:00:00 +0800</pubDate><author>majo_elaina@qq.com (Elari39)</author><guid>https://Elari39.github.io/post/hugoblog/hugo%E5%8D%9A%E5%AE%A2/</guid><description>
+        <hr><p>本文2026-02-16首发于<a href='https://Elari39.github.io/'>Elari的博客</a>，最后修改于2026-02-16</p>]]></description><category>Hugo</category><category>AI</category></item><item><title>Hugo博客配置</title><link>https://Elari39.github.io/post/hugoblog/hugo%E5%8D%9A%E5%AE%A2/</link><pubDate>Sat, 14 Feb 2026 12:00:00 +0800</pubDate><author>majo_elaina@qq.com (Elari39)</author><guid>https://Elari39.github.io/post/hugoblog/hugo%E5%8D%9A%E5%AE%A2/</guid><description>
 <![CDATA[<h1>Hugo博客配置</h1><p>作者：Elari39（majo_elaina@qq.com）</p>
         
           <h2 id="按照必要环境">
