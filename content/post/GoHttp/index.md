@@ -9,7 +9,6 @@ summary: Go 语言的 net/http 标准库是构建 HTTP 服务端和客户端的�
   都是必修课。本文将从零开始，以最新版本的 Go（语法层面无破坏性变更）为例，详细拆解 net/http 的核心概念、工作机制以及最佳实践。
 date: 2026-02-17T19:41:00+08:00
 draft: false
-weight: 2
 categories:
   - Go
 tags:
