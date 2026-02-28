@@ -2,8 +2,8 @@
 title: "Golang 笔记Day02 基础篇"
 date: 2026-02-28T21:00:00+08:00
 draft: false
-tags: ["Golang", "学习记录"]
-categories: ["GolangStudy"]
+tags: ["Golang", "学习记录", "Go 1.26", "后端开发"]
+categories: ["GolangStudy", "Golang进阶"]
 cover: "https://elari39.oss-cn-chengdu.aliyuncs.com/blog/20200930104704_7950d.jpeg"
 ---
 
@@ -45,6 +45,27 @@ func TestFn(t *testing.T){
 ```
 
 > 推荐书籍：计算机程序的构造与解释
+
+### 1.2 2026年新增或删改内容
+
+> **Go 1.26 新特性：`new(expr)` 表达式初始化**
+>
+> 在 Go 1.26 之前，`new` 只能接受类型作为参数。现在，`new` 允许接受一个表达式，并直接使用该表达式的值进行初始化。这在处理 JSON 或 Protobuf 中的可选指针字段时非常有用。
+
+```go
+// 以前的写法
+x := 42
+p := &x
+
+// Go 1.26 写法
+p := new(42) // 分配 int 并初始化为 42，返回 *int
+
+// 在结构体初始化中更简洁
+type Person struct {
+    Age *int
+}
+person := Person{Age: new(25)}
+```
 
 ## 2. 可变参数和 defer
 
@@ -89,9 +110,34 @@ func TestDefer(t *testing.T){
 
 ```
 
+### 2.3 2026年新增或删改内容
+
+> **Go 1.22 & 1.23：循环与迭代器的重大改进**
+>
+> 1. **循环变量作用域（Go 1.22）**：`for` 循环中的变量现在在每次迭代中都是唯一的，解决了闭包捕获循环变量的经典坑。
+> 2. **Range over Integers（Go 1.22）**：支持 `for i := range 10` 这种简洁写法。
+> 3. **Range over Functions（Go 1.23）**：引入了标准迭代器模式，支持对函数进行 `range`。
+
+```go
+// Go 1.22 Range over Int
+for i := range 5 {
+    fmt.Print(i) // 01234
+}
+
+// Go 1.23 Iterator (简化示例)
+// iter.Seq[V] 是一个函数类型
+func Backward(s []string) iter.Seq[string] {
+    return func(yield func(string) bool) {
+        for i := len(s) - 1; i >= 0; i-- {
+            if !yield(s[i]) { return }
+        }
+    }
+}
+```
+
 ## 3. 行为的定义和实现
 
-### 3.1 封装数据和行为
+### 3.1 封装数据 and 行为
 
 #### 3.1.1 结构体定义
 
@@ -147,7 +193,13 @@ func (e *Employee) String() string{
 }
 ```
 
-## 4. Go语言的相关接口
+### 3.1.3 2026年新增或删改内容
+
+> **Go 1.24：Map 性能飞跃**
+>
+> Go 1.24 重新设计了 `map` 的底层实现（受 Swiss Table 启发），显著提升了查找和插入性能，并降低了长尾延迟。
+
+## 4. Go 语言的相关接口
 
 ### 4.1 Duck Type 式接口实现
 
@@ -206,6 +258,23 @@ func TestClient(t *testing.T){
 
 1. type IntConvertionFn func (n int) int // 自定义类型 IntConvertionFn 是一个函数类型,参数为 int,返回值也为 int
 2. type MyPoint int // 自定义类型 MyPoint 是一个 int 类型的别名,可以用于表示点的坐标
+
+### 4.4 2026年新增或删改内容
+
+> **Go 1.26：递归类型约束（Recursive Type Constraints）**
+>
+> 泛型类型现在可以在其类型参数列表中引用自身。这极大简化了某些复杂数据结构（如链表、树）的泛型实现。
+
+```go
+// 以前不被允许，现在可以了
+type Adder[A Adder[A]] interface {
+    Add(A) A
+}
+
+func algo[A Adder[A]](x, y A) A {
+    return x.Add(y)
+}
+```
 
 ## 5. 扩展与复用
 
@@ -282,14 +351,14 @@ type Programmer interface{
 // GoProgrammer 结构体实现了 Programmer 接口
 type GoProgrammer struct{
 } 
-// WriteHelloWorld 方法实现了 Programmer 接口的 WriteHelloWorld 方法
+// WriteHelloWorld 方法实现了 Programmer 接口 of WriteHelloWorld 方法
 func (p *GoProgrammer) WriteHelloWorld() Code{
     return "fmt.Println(\"Hello world!\")"
 } 
 // JavaProgrammer 结构体实现了 Programmer 接口
 type JavaProgrammer struct{
 } 
-// WriteHelloWorld 方法实现了 Programmer 接口的 WriteHelloWorld 方法
+// WriteHelloWorld 方法实现了 Programmer 接口 of WriteHelloWorld 方法
 func (p *JavaProgrammer) WriteHelloWorld() Code{
     return "System.out.println(\"Hello world!\");"
 } 
@@ -428,6 +497,22 @@ func TestGetFibonacci(t *testing.T){
 > - 1. 及早失败可以避免在后续代码中处理无效状态
 > - 2. 避免在函数中嵌套多个条件判断语句,使代码更加清晰和易于维护
 
+### 7.2 2026年新增或删改内容
+
+> **Go 1.26：类型安全的错误检查 `errors.AsType`**
+>
+> 引入了泛型版本的 `errors.As`，名为 `errors.AsType`。它更简洁且类型安全，避免了使用反射带来的潜在风险。
+
+```go
+// 以前写法
+var target *MyError
+if errors.As(err, &target) { ... }
+
+// Go 1.26 写法
+if target, ok := errors.AsType[*MyError](err); ok {
+    fmt.Println(target.Message)
+}
+```
 
 ## 8. panic和recover
 
@@ -529,6 +614,12 @@ defer func(){
 >
 > 3. dep https://github.com/golang/dep
 
+### 10.2 2026年新增或删改内容
+
+> **Go 1.26：`go mod init` 默认版本优化**
+>
+> 现在 `go mod init` 会默认使用 `1.(N-1).0` 版本，以确保新创建的模块能兼容当前主流的 Go 版本。
+
 ## 11. 协程机制
 
 ### 11.1 Thread vs. Goroutine
@@ -555,6 +646,13 @@ func TestGoroutine(t *testing.T){
     t.Sleep(time.Second)
 }
 ```
+
+### 11.2 2026年新增或删改内容
+
+> **Go 1.25 & 1.26：调度与诊断增强**
+>
+> 1. **容器感知调度（Go 1.25）**：自动调整容器环境下的并行度，显著降低延迟。
+> 2. **Goroutine 泄漏剖析（Go 1.26）**：`runtime/pprof` 新增了 `goroutineleak` 配置文件，用于精准定位泄漏。
 
 ## 12. 共享内存并发机制
 
@@ -859,3 +957,9 @@ func TestCancel(t *testing.T) {
     time.Sleep(time.Second * 1) 
 }
 ```
+
+### 17.3 2026年新增或删改内容
+
+> **Go 1.24 & 1.25：`testing/synctest` 虚拟时间**
+>
+> 引入了 `testing/synctest` 包，通过虚拟化时间解决了异步并发测试中“等多久”的问题，使测试更可靠且瞬间完成。
