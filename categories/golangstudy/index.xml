@@ -1,4 +1,48 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>GolangStudy on Elari的博客</title><link>https://Elari39.github.io/categories/golangstudy/</link><description>Recent content from Elari的博客</description><generator>Hugo</generator><language>zh-cn</language><managingEditor>majo_elaina@qq.com (Elari39)</managingEditor><webMaster>majo_elaina@qq.com (Elari39)</webMaster><copyright>本博客所有文章除特别声明外，均采用 BY-NC-SA 许可协议。转载请注明出处！</copyright><lastBuildDate>Fri, 27 Feb 2026 23:00:00 +0800</lastBuildDate><atom:link href="https://Elari39.github.io/categories/golangstudy/index.xml" rel="self" type="application/rss+xml"/><item><title>Golang 笔记Day01 基础篇</title><link>https://Elari39.github.io/post/go-learning/1.notes/day01/</link><pubDate>Fri, 27 Feb 2026 23:00:00 +0800</pubDate><author>majo_elaina@qq.com (Elari39)</author><guid>https://Elari39.github.io/post/go-learning/1.notes/day01/</guid><description>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>GolangStudy on Elari的博客</title><link>https://Elari39.github.io/categories/golangstudy/</link><description>Recent content from Elari的博客</description><generator>Hugo</generator><language>zh-cn</language><managingEditor>majo_elaina@qq.com (Elari39)</managingEditor><webMaster>majo_elaina@qq.com (Elari39)</webMaster><copyright>本博客所有文章除特别声明外，均采用 BY-NC-SA 许可协议。转载请注明出处！</copyright><lastBuildDate>Sat, 28 Feb 2026 21:00:00 +0800</lastBuildDate><atom:link href="https://Elari39.github.io/categories/golangstudy/index.xml" rel="self" type="application/rss+xml"/><item><title>Golang 笔记Day02 基础篇</title><link>https://Elari39.github.io/post/go-learning/1.notes/day02/</link><pubDate>Sat, 28 Feb 2026 21:00:00 +0800</pubDate><author>majo_elaina@qq.com (Elari39)</author><guid>https://Elari39.github.io/post/go-learning/1.notes/day02/</guid><description>
+<![CDATA[<h1>Golang 笔记Day02 基础篇</h1><p>作者：Elari39（majo_elaina@qq.com）</p>
+        
+          <h2 id="1-go-语言的函数">
+<a class="header-anchor" href="#1-go-%e8%af%ad%e8%a8%80%e7%9a%84%e5%87%bd%e6%95%b0"></a>
+1. Go 语言的函数
+</h2><h3 id="11-函数是一等公民">
+<a class="header-anchor" href="#11-%e5%87%bd%e6%95%b0%e6%98%af%e4%b8%80%e7%ad%89%e5%85%ac%e6%b0%91"></a>
+1.1 函数是一等公民
+</h3><blockquote>
+<p>与其他主要编程语言的差异</p>
+<ol>
+<li>可以有多个返回值</li>
+<li>所有参数都是按值传递：slice，map，channel会有传引用的错觉</li>
+<li>函数可以作为变量的值</li>
+<li>函数可以作为参数和返回值</li>
+</ol>
+</blockquote>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="line"><span class="cl"><span class="kd">func</span><span class="w"> </span><span class="nf">returnMultiValues</span><span class="p">()(</span><span class="kt">int</span><span class="p">,</span><span class="kt">int</span><span class="p">){</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nx">rand</span><span class="p">.</span><span class="nf">Intn</span><span class="p">(</span><span class="mi">10</span><span class="p">),</span><span class="nx">fand</span><span class="p">.</span><span class="nf">Intn</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="p">}</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="c1">// timeSpent 是一个装饰器函数，用于计算函数执行时间</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="kd">func</span><span class="w"> </span><span class="nf">timeSpent</span><span class="p">(</span><span class="nx">inner</span><span class="w"> </span><span class="kd">func</span><span class="w"> </span><span class="p">(</span><span class="nx">op</span><span class="w"> </span><span class="kt">int</span><span class="p">)</span><span class="w"> </span><span class="kt">int</span><span class="p">)</span><span class="w"> </span><span class="kd">func</span><span class="w"> </span><span class="p">(</span><span class="nx">op</span><span class="w"> </span><span class="kt">int</span><span class="p">)</span><span class="w"> </span><span class="kt">int</span><span class="p">{</span><span class="c1">// inner 是被装饰的函数</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="kd">func</span><span class="p">(</span><span class="nx">n</span><span class="w"> </span><span class="kt">int</span><span class="p">)</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nx">start</span><span class="o">:=</span><span class="nx">time</span><span class="p">.</span><span class="nf">Now</span><span class="p">()</span><span class="c1">// 记录开始时间</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nx">ret</span><span class="o">:=</span><span class="nf">inner</span><span class="p">(</span><span class="nx">n</span><span class="p">)</span><span class="c1">// 调用原函数</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nx">fmt</span><span class="p">.</span><span class="nf">Println</span><span class="p">(</span><span class="s">&#34;time spent:&#34;</span><span class="p">,</span><span class="nx">time</span><span class="p">.</span><span class="nf">Since</span><span class="p">(</span><span class="nx">start</span><span class="p">))</span><span class="w"> </span><span class="c1">// 打印函数执行时间</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="nx">ret</span><span class="w"> </span><span class="c1">// 返回原函数的返回值</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="p">}</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="p">}</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="kd">func</span><span class="w"> </span><span class="nf">slowFun</span><span class="p">(</span><span class="nx">op</span><span class="w"> </span><span class="kt">int</span><span class="p">)</span><span class="w"> </span><span class="kt">int</span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nx">time</span><span class="p">.</span><span class="nf">Sleep</span><span class="p">(</span><span class="nx">time</span><span class="p">.</span><span class="nx">Second</span><span class="p">)</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nx">op</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="p">}</span><span class="w"> 
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="kd">func</span><span class="w"> </span><span class="nf">TestFn</span><span class="p">(</span><span class="nx">t</span><span class="w"> </span><span class="o">*</span><span class="nx">testing</span><span class="p">.</span><span class="nx">T</span><span class="p">){</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nx">a</span><span class="p">,</span><span class="nx">g</span><span class="o">:=</span><span class="nf">returnMultiValues</span><span class="p">()</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nx">t</span><span class="p">.</span><span class="nf">Log</span><span class="p">(</span><span class="nx">a</span><span class="p">,</span><span class="nx">b</span><span class="p">)</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nx">tsSF</span><span class="o">:=</span><span class="nf">timeSpent</span><span class="p">(</span><span class="nx">slowFun</span><span class="p">)</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nx">t</span><span class="p">.</span><span class="nf">Log</span><span class="p">(</span><span class="nf">tsSF</span><span class="p">(</span><span class="mi">10</span><span class="p">))</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="p">}</span><span class="w">
+</span></span></span></code></pre></div><blockquote>
+<p>推荐书籍：计算机程序的构造与解释</p>
+        
+        <hr><p>本文2026-02-28首发于<a href='https://Elari39.github.io/'>Elari的博客</a>，最后修改于2026-02-28</p>]]></description><category>GolangStudy</category></item><item><title>Golang 笔记Day01 基础篇</title><link>https://Elari39.github.io/post/go-learning/1.notes/day01/</link><pubDate>Fri, 27 Feb 2026 23:00:00 +0800</pubDate><author>majo_elaina@qq.com (Elari39)</author><guid>https://Elari39.github.io/post/go-learning/1.notes/day01/</guid><description>
 <![CDATA[<h1>Golang 笔记Day01 基础篇</h1><p>作者：Elari39（majo_elaina@qq.com）</p>
         
           <h2 id="1-编写第一个-go-程序">
@@ -69,18 +113,35 @@
 <a class="header-anchor" href="#go-%e5%9f%ba%e7%a1%80%e7%af%87"></a>
 Go 基础篇
 </h2><ul>
-<li>
-<p><strong>2026-02-27</strong>:</p>
-</li>
-<li>
-<p>基础类型结构</p>
-</li>
-<li>
-<p>常用集合</p>
-</li>
-<li>
-<p>字符串</p>
-</li>
+<li><strong>2026-02-27</strong>:</li>
 </ul>
+<blockquote>
+<p>Golang:
+* 基础类型结构
+* 常用集合
+* 字符串</p>
+</blockquote>
+<ul>
+<li><strong>2026-02-28</strong>:</li>
+</ul>
+<blockquote>
+<p>Golang:
+* 1. Go 语言的函数
+* 2. 可变参数和 defer
+* 3. 行为的定义和实现
+* 4. Go 语言的相关接口
+* 5. 扩展与复用
+* 6. 不一样的接口类型，一样的多态
+* 7. 编写好的错误处理
+* 8. panic 和 recover
+* 9. 构建可复用的模块（包）
+* 10. 依赖管理
+* 11. 协程机制
+* 12. 共享内存并发机制
+* 13. CSP 并发机制
+* 14. 多路选择和超时
+* 15. channel 的关闭和广播
+* 16. 任务的取消
+* 17. Context 与任务取消</p>
         
         <hr><p>本文2026-02-26首发于<a href='https://Elari39.github.io/'>Elari的博客</a>，最后修改于2026-02-26</p>]]></description><category>GolangStudy</category></item></channel></rss>

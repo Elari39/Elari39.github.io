@@ -8,18 +8,35 @@
 <a class="header-anchor" href="#go-%e5%9f%ba%e7%a1%80%e7%af%87"></a>
 Go 基础篇
 </h2><ul>
-<li>
-<p><strong>2026-02-27</strong>:</p>
-</li>
-<li>
-<p>基础类型结构</p>
-</li>
-<li>
-<p>常用集合</p>
-</li>
-<li>
-<p>字符串</p>
-</li>
+<li><strong>2026-02-27</strong>:</li>
 </ul>
+<blockquote>
+<p>Golang:
+* 基础类型结构
+* 常用集合
+* 字符串</p>
+</blockquote>
+<ul>
+<li><strong>2026-02-28</strong>:</li>
+</ul>
+<blockquote>
+<p>Golang:
+* 1. Go 语言的函数
+* 2. 可变参数和 defer
+* 3. 行为的定义和实现
+* 4. Go 语言的相关接口
+* 5. 扩展与复用
+* 6. 不一样的接口类型，一样的多态
+* 7. 编写好的错误处理
+* 8. panic 和 recover
+* 9. 构建可复用的模块（包）
+* 10. 依赖管理
+* 11. 协程机制
+* 12. 共享内存并发机制
+* 13. CSP 并发机制
+* 14. 多路选择和超时
+* 15. channel 的关闭和广播
+* 16. 任务的取消
+* 17. Context 与任务取消</p>
         
         <hr><p>本文2026-02-26首发于<a href='https://Elari39.github.io/'>Elari的博客</a>，最后修改于2026-02-26</p>]]></description><category>GolangStudy</category></item></channel></rss>
