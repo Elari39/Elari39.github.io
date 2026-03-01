@@ -4,6 +4,7 @@ date: 2026-03-01T15:00:00+08:00
 draft: false
 tags: ["Golang", "并发编程", "性能调优", "单元测试", "架构设计", "Chaos Engineering"]
 categories: ["Golang 学习笔记"]
+cover: "https://elari39.oss-cn-chengdu.aliyuncs.com/blog/20260301220828487.jpg"
 ---
 
 ## 1. 只运行一次
