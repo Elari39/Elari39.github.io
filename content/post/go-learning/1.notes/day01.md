@@ -5,6 +5,7 @@ draft: false
 tags: ["Golang", "Go 1.26", "基础语法", "后端开发"]
 categories: ["Golang 学习笔记"]
 cover: "https://elari39.oss-cn-chengdu.aliyuncs.com/blog/18a085a00341d8cec36657c0c1699988affc8b791c5000-ovUDyw.jpg"
+description: "Golang 学习笔记第一天，涵盖第一个 Go 程序编写、编译运行、Go 1.26 新特性、与其他语言的差异以及命令行参数获取等基础内容。"
 ---
 
 ## 1. 编写第一个 Go 程序

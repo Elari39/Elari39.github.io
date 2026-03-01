@@ -5,6 +5,7 @@ draft: true
 tags: ["Golang"]
 categories: ["Golang 学习笔记"]
 cover: "https://elari39.oss-cn-chengdu.aliyuncs.com/blog/20260301220828487.jpg"
+description: "重庆 Golang 就业市场适配规划与学习路线，包含短链接系统、分布式缓存 KamaCache、GopherAI 等实战项目计划及 LeetCode 刷题策略。"
 ---
 **重庆Golang就业市场适配规划（2026年3月-6月，保障6月前拿到实习）**
 

@@ -9,6 +9,7 @@ categories:
 tags:
   - Hugo
   - Blog
+description: "详细记录了 Hugo 博客的安装、初始化、主题配置、GitHub Actions 自动化部署以及相关配置文件的设置过程。"
 ---
 ## 按照必要环境
 1. Go环境：[All releases - The Go Programming Language](https://go.dev/dl/)

@@ -5,6 +5,7 @@ draft: false
 tags: ["Golang", "学习记录", "Go 1.26", "后端开发"]
 categories: ["GolangStudy", "Golang进阶"]
 cover: "https://elari39.oss-cn-chengdu.aliyuncs.com/blog/20200930104704_7950d.jpeg"
+description: "Golang 学习笔记第二天，深入讲解 Go 函数特性（一等公民、装饰器模式）、Go 1.26 新增的 new(expr) 语法、可变参数以及 defer 延迟执行机制。"
 ---
 
 ## 1. Go 语言的函数
