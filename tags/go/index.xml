@@ -1,4 +1,36 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Go on Elari的博客</title><link>https://Elari39.github.io/tags/go/</link><description>Recent content from Elari的博客</description><generator>Hugo</generator><language>zh-cn</language><managingEditor>majo_elaina@qq.com (Elari39)</managingEditor><webMaster>majo_elaina@qq.com (Elari39)</webMaster><copyright>本博客所有文章除特别声明外，均采用 BY-NC-SA 许可协议。转载请注明出处！</copyright><lastBuildDate>Tue, 17 Feb 2026 19:41:00 +0800</lastBuildDate><atom:link href="https://Elari39.github.io/tags/go/index.xml" rel="self" type="application/rss+xml"/><item><title>GoHttp库</title><link>https://Elari39.github.io/post/gohttpv1/</link><pubDate>Tue, 17 Feb 2026 19:41:00 +0800</pubDate><author>majo_elaina@qq.com (Elari39)</author><guid>https://Elari39.github.io/post/gohttpv1/</guid><description>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Go on Elari的博客</title><link>https://Elari39.github.io/tags/go/</link><description>Recent content from Elari的博客</description><generator>Hugo</generator><language>zh-cn</language><managingEditor>majo_elaina@qq.com (Elari39)</managingEditor><webMaster>majo_elaina@qq.com (Elari39)</webMaster><copyright>本博客所有文章除特别声明外，均采用 BY-NC-SA 许可协议。转载请注明出处！</copyright><lastBuildDate>Tue, 03 Mar 2026 16:00:00 +0800</lastBuildDate><atom:link href="https://Elari39.github.io/tags/go/index.xml" rel="self" type="application/rss+xml"/><item><title>代码随想录算法训练营 - 数组篇</title><link>https://Elari39.github.io/post/go-learning/3.algorithm/arraychapter/</link><pubDate>Tue, 03 Mar 2026 16:00:00 +0800</pubDate><author>majo_elaina@qq.com (Elari39)</author><guid>https://Elari39.github.io/post/go-learning/3.algorithm/arraychapter/</guid><description>
+<![CDATA[<h1>代码随想录算法训练营 - 数组篇</h1><p>作者：Elari39（majo_elaina@qq.com）</p>
+        
+          <h2 id="数组理论基础">
+<a class="header-anchor" href="#%e6%95%b0%e7%bb%84%e7%90%86%e8%ae%ba%e5%9f%ba%e7%a1%80"></a>
+数组理论基础
+</h2><p>在 Go 语言中，数组是一个固定长度的、包含相同数据类型元素的序列。与其他语言相比，Go 的数组有几个鲜明的特点，理解这些特点对写出地道的 Go 代码至关重要。</p>
+<ul>
+<li><strong>值语义</strong>：在 Go 中，数组是值类型。这意味着当你将一个数组赋值给另一个变量，或者将数组传递给一个函数时，会复制整个数组及其所有元素。对新副本的修改不会影响原始数组。这与切片（slice）的引用语义截然不同。</li>
+<li><strong>长度是类型的一部分</strong>：<code>[5]int</code> 和 <code>[10]int</code> 被视为两种不同的类型。数组的长度在编译期就确定了，且不可更改。</li>
+<li><strong>内存布局</strong>：数组的元素在内存中是连续存储的，这带来了优异的缓存局部性和访问效率。</li>
+<li><strong>可哈希性</strong>：由于数组是值类型且长度固定，它是 <strong>可比较</strong> 的。这意味着像 <code>[16]byte</code> 这样的数组可以直接作为 map 的键（key），这是切片无法做到的。在处理诸如 MD5 或 SHA256 哈希值时，这一特性非常有用。</li>
+</ul>
+<p>尽管在业务逻辑中，动态的切片使用得更广泛，但在需要精确控制内存、与 C 语言交互（CGO）、固定缓冲区或作为 map 键等场景下，数组依然具有不可替代的优势。</p>
+<p>此外，Go 的泛型功能也在持续进化。在近期的版本（Go 1.23+）中，社区正在积极探索如何更好地支持多维数组和矩阵运算。例如，未来的版本可能会引入新的泛型约束来处理固定大小的多维数组，使得在进行科学计算或图像处理时，既能保证内存连续性，又能享受泛型带来的类型安全。</p>
+<hr>
+<h2 id="二分查找">
+<a class="header-anchor" href="#%e4%ba%8c%e5%88%86%e6%9f%a5%e6%89%be"></a>
+二分查找
+</h2><h3 id="704-二分查找">
+<a class="header-anchor" href="#704-%e4%ba%8c%e5%88%86%e6%9f%a5%e6%89%be"></a>
+<a href="https://leetcode.cn/problems/binary-search/">704. 二分查找</a>
+</h3><h4 id="题目描述">
+<a class="header-anchor" href="#%e9%a2%98%e7%9b%ae%e6%8f%8f%e8%bf%b0"></a>
+题目描述
+</h4><p>给定一个 <code>n</code> 个元素有序的（升序）整型数组 <code>nums</code> 和一个目标值 <code>target</code>，写一个函数搜索 <code>nums</code> 中的 <code>target</code>，如果 <code>target</code> 存在返回下标，否则返回 <code>-1</code>。</p>
+<p>你必须编写一个具有 <code>O(log n)</code> 时间复杂度的算法。</p>
+<p><strong>示例 1：</strong>
+输入：<code>nums = [-1,0,3,5,9,12]</code>, <code>target = 9</code>
+输出：<code>4</code>
+解释：<code>9</code> 出现在 <code>nums</code> 中并且下标为 <code>4</code></p>
+        
+        <hr><p>本文2026-03-03首发于<a href='https://Elari39.github.io/'>Elari的博客</a>，最后修改于2026-03-03</p>]]></description><category>算法学习笔记</category></item><item><title>GoHttp库</title><link>https://Elari39.github.io/post/gohttpv1/</link><pubDate>Tue, 17 Feb 2026 19:41:00 +0800</pubDate><author>majo_elaina@qq.com (Elari39)</author><guid>https://Elari39.github.io/post/gohttpv1/</guid><description>
 <![CDATA[<h1>GoHttp库</h1><p>作者：Elari39（majo_elaina@qq.com）</p>
         
           Go 语言的 net/http 标准库是构建 HTTP 服务端和客户端的基石，它设计简洁、功能强大，并且是众多第三方 Web 框架（如 Gin、Echo）的底层依赖。无论你是想从零搭建一个高性能的 Web 服务，还是希望在使用框架时能深入理解其原理，掌握 net/http 都是必修课。本文将从零开始，以最新版本的 Go（语法层面无破坏性变更）为例，详细拆解 net/http 的核心概念、工作机制以及最佳实践。
