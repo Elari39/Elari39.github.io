@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>CLI on Elari的博客</title><link>https://Elari39.github.io/tags/cli/</link><description>Recent content from Elari的博客</description><generator>Hugo</generator><language>zh-cn</language><managingEditor>majo_elaina@qq.com (Elari39)</managingEditor><webMaster>majo_elaina@qq.com (Elari39)</webMaster><copyright>本博客所有文章除特别声明外，均采用 BY-NC-SA 许可协议。转载请注明出处！</copyright><lastBuildDate>Mon, 02 Mar 2026 18:00:00 +0800</lastBuildDate><atom:link href="https://Elari39.github.io/tags/cli/index.xml" rel="self" type="application/rss+xml"/><item><title>使用 Go flag 实现 Todo CLI</title><link>https://Elari39.github.io/post/go-learning/2.stdlib/todocli-flag/</link><pubDate>Mon, 02 Mar 2026 18:00:00 +0800</pubDate><author>majo_elaina@qq.com (Elari39)</author><guid>https://Elari39.github.io/post/go-learning/2.stdlib/todocli-flag/</guid><description>
+<![CDATA[<h1>使用 Go flag 实现 Todo CLI</h1><p>作者：Elari39（majo_elaina@qq.com）</p>
+        
+          <p>这篇文章带你用 <strong>Go 标准库 <code>flag</code> 包</strong>实现一个轻量级的 Todo CLI。</p>
+<p>和常见“只给代码”的教程不同，这里会：</p>
+<ul>
+<li>先讲清楚 <code>flag</code> 的使用方式；</li>
+<li>再按文件拆解项目结构；</li>
+<li>最后给出<strong>带详细注释</strong>的完整核心代码，方便你边看边学。</li>
+</ul>
+<h2 id="1-项目结构">
+<a class="header-anchor" href="#1-%e9%a1%b9%e7%9b%ae%e7%bb%93%e6%9e%84"></a>
+1. 项目结构
+</h2><div class="highlight"><pre tabindex="0" class="chroma"><code class="language-text" data-lang="text"><span class="line"><span class="cl">├── README.md
+</span></span><span class="line"><span class="cl">├── cmd
+</span></span><span class="line"><span class="cl">│   └── todocli
+</span></span><span class="line"><span class="cl">│       └── main.go
+</span></span><span class="line"><span class="cl">├── data.json
+</span></span><span class="line"><span class="cl">├── go.mod
+</span></span><span class="line"><span class="cl">├── go.sum
+</span></span><span class="line"><span class="cl">└── internal
+</span></span><span class="line"><span class="cl">    ├── app
+</span></span><span class="line"><span class="cl">    │   └── run.go
+</span></span><span class="line"><span class="cl">    ├── command
+</span></span><span class="line"><span class="cl">    │   ├── add.go
+</span></span><span class="line"><span class="cl">    │   ├── done.go
+</span></span><span class="line"><span class="cl">    │   └── list.go
+</span></span><span class="line"><span class="cl">    ├── domain
+</span></span><span class="line"><span class="cl">    │   └── task.go
+</span></span><span class="line"><span class="cl">    └── storage
+</span></span><span class="line"><span class="cl">        └── file.go
+</span></span></code></pre></div><p>各目录职责：</p>
+        
+        <hr><p>本文2026-03-02首发于<a href='https://Elari39.github.io/'>Elari的博客</a>，最后修改于2026-03-02</p>]]></description><category>Go</category></item></channel></rss>
