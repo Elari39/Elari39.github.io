@@ -13,36 +13,54 @@ description: "详细记录了 Hugo 博客的安装、初始化、主题配置、
 ---
 ## 按照必要环境
 1. Go环境：[All releases - The Go Programming Language](https://go.dev/dl/)
+
 2. Hugo插件：[Releases · gohugoio/hugo](https://github.com/gohugoio/hugo/releases)
+
 3. Git插件：[Git - Install for Windows](https://git-scm.com/install/windows)
+
 ## 初始化
 1. 初始化博客
+
 ```git
 hugo new site myblog
 cd myblog
 ```
+
 2. 初始化模块
+
 ```
 hugo mod init myblog
 ```
-3. 安装主题并启动服务： 
+
+3. 安装主题并启动服务：
+
 > 创建`config/_default/module.toml`,并在其中输入选择好的主题`(从[Hugo Themes](https://themes.gohugo.io/)从选择)`：
+
 ```toml
 [[imports]]
 path = "github.com/D-Sketon/hugo-theme-reimu"
 ```
+
 > 运行`hugo server`，自动安装主题并启动服务，`http://localhost:1313/`
+
 ## 配置文件
+
 1. 下载[D-Sketon/hugo-theme-reimu: 一款博丽灵梦风格的Hugo主题 | A Hakurei Reimu style Hugo theme. 💘Touhou💘](https://github.com/D-Sketon/hugo-theme-reimu)
+
 2. 将主题内的 `config/_default/params.yml` 复制到 `config/_default` 文件夹下，此文件作为主题配置文件，可在此文件中修改主题配置
+
 3. 将主题内的 `config/data/` 文件夹内的所有文件复制到外层 `data` 文件夹下，此文件夹内的文件用于配置主题内的数据：
+
 	- `covers.yml` 用于配置随机封面图片
+
 	- `friends.yml` 用于配置友链
+
 	- `vendor.yml` 用于配置第三方库的 CDN 源
+
 ## 构建与部署
+
 1. 创建`.gitignore`，忽略不需要上传的文件：
 
-   
 ```git
 # Hugo default
 /public/
@@ -63,7 +81,9 @@ Thumbs.db
 *.orig
 .history/
 ```
+
 2. 创建 GitHub Actions 部署脚本 `.github/workflows/deploy.yml`：
+
 ```yaml
 name: Deploy to GitHub Pages
 
@@ -108,9 +128,13 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./public
 ```
+
 3. 将整个项目上传至 GitHub 仓库（建议仓库名为 `your_name.github.io`）。
+
 4. 在 GitHub 仓库的 Settings -> Pages 中，将 Source 设置为 `Deploy from a branch`，Branch 选择 `gh-pages`。
+
 5. （可选）创建自动同步脚本 `sync.ps1`，用于快速提交并推送代码：
+
 ```powershell
 # 自动同步脚本
 # 功能：拉取最新代码 -> 添加所有更改 -> 提交 -> 推送
