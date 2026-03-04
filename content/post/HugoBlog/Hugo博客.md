@@ -41,6 +41,8 @@ path = "github.com/D-Sketon/hugo-theme-reimu"
 	- `vendor.yml` 用于配置第三方库的 CDN 源
 ## 构建与部署
 1. 创建`.gitignore`，忽略不需要上传的文件：
+
+   
 ```git
 # Hugo default
 /public/
