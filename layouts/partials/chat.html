@@ -1,27 +1,68 @@
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
 <style>
+    /* ========== 小窗口排版优化 ========== */
+    /* ========== 小窗口排版优化 ========== */
+    .chat-markdown {
+        font-size: 14px;
+        line-height: 1.6;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+
+        /* ✨ 新增防御样式：强制块级显示，清除分列和 Flex 污染 */
+        display: block !important;
+        column-count: auto !important;
+        flex-direction: column !important;
+    }
+
     .chat-markdown p {
-        margin: 0 0 8px 0;
+        margin: 0 0 8px 0 !important;
+
+        /* ✨ 新增防御样式：强制段落独占一行 */
+        display: block !important;
+        width: 100% !important;
+        float: none !important;
     }
 
     .chat-markdown p:last-child {
-        margin-bottom: 0;
+        margin-bottom: 0 !important;
     }
 
+    /* 优化代码块：防撑爆、更优雅的滚动条 */
     .chat-markdown pre {
         background: rgba(0, 0, 0, 0.05);
-        padding: 8px;
-        border-radius: 4px;
+        padding: 10px;
+        border-radius: 6px;
         overflow-x: auto;
         margin: 8px 0;
+        font-size: 13px;
+    }
+
+    .chat-markdown pre::-webkit-scrollbar {
+        height: 4px;
+    }
+
+    .chat-markdown pre::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 2px;
     }
 
     .chat-markdown code {
-        font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
-        background: rgba(0, 0, 0, 0.05);
+        font-family: Consolas, Monaco, 'Andale Mono', monospace;
+        background: rgba(0, 0, 0, 0.06);
         padding: 2px 4px;
-        border-radius: 3px;
+        border-radius: 4px;
         font-size: 0.9em;
+        word-break: break-all;
+        /* 防止单行长代码撑爆气泡 */
+    }
+
+    .chat-markdown pre code {
+        background: transparent;
+        /* 代码块内的 code 不需要背景 */
+        padding: 0;
+        word-break: normal;
+        /* pre 里的代码允许横向滚动，不强制换行 */
     }
 
     .chat-markdown ul,
@@ -30,11 +71,32 @@
         margin: 0 0 8px 0;
     }
 
+    /* 🌟 核心优化：链接样式与防溢出 */
     .chat-markdown a {
-        color: inherit;
-        text-decoration: underline;
+        color: #ff5252;
+        /* 配合你的主题色 */
+        text-decoration: none;
+        border-bottom: 1px dashed #ff5252;
+        /* 用虚线代替下划线，更现代 */
+        word-break: break-all;
+        /* 强制长链接断行，绝对不撑爆窗口 */
+        transition: all 0.2s;
     }
 
+    .chat-markdown a:hover {
+        color: #d32f2f;
+        border-bottom: 1px solid #d32f2f;
+    }
+
+    /* 优化图片显示，防止图片过大 */
+    .chat-markdown img {
+        max-width: 100%;
+        height: auto;
+        border-radius: 6px;
+        margin: 4px 0;
+    }
+
+    /* 用户气泡的特殊反色处理 */
     .chat-user-bubble .chat-markdown code {
         background: rgba(255, 255, 255, 0.2);
     }
@@ -42,89 +104,119 @@
     .chat-user-bubble .chat-markdown pre {
         background: rgba(255, 255, 255, 0.1);
     }
+
+    .chat-user-bubble .chat-markdown a {
+        color: white;
+        border-bottom-color: white;
+    }
+
+    /* 🌟 优化主窗口的滚动条，节省宝贵的空间 */
+    #chat-history::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    #chat-history::-webkit-scrollbar-thumb {
+        background: #d1d5db;
+        border-radius: 3px;
+    }
+
+    #chat-history::-webkit-scrollbar-track {
+        background: transparent;
+    }
 </style>
 
 <div id="ai-chat-wrapper"
     style="position: fixed; bottom: 100px; right: 30px; z-index: 9999; font-family: var(--font-basic, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif);">
 
     <div id="ai-chat-launcher" onclick="toggleChat()"
-        style="width: 48px; height: 48px; background: var(--red-1, #ff5252); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: var(--shadow-card, 0 4px 12px rgba(0,0,0,0.15)); transition: transform 0.3s;">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white"
+        style="width: 52px; height: 52px; background: var(--red-1, #ff5252); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 15px rgba(255,82,82,0.4); transition: transform 0.2s; user-select: none;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white"
             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="m3 21 1.9-5.7a8.5 8.5 0 1 1 3.8 3.8z" />
         </svg>
     </div>
 
     <div id="ai-chat-window"
-        style="display: none; width: 350px; height: 500px; max-width: 90vw; max-height: 80vh; background: var(--color-wrap, white); border: 1px solid var(--color-border, #e5e7eb); border-radius: 10px; flex-direction: column; overflow: hidden; box-shadow: var(--shadow-card-hover, 0 10px 25px -5px rgba(0,0,0,0.1));">
+        style="display: none; width: 350px; height: 520px; max-width: calc(100vw - 40px); max-height: calc(100vh - 40px); background: white; border-radius: 12px; flex-direction: column; overflow: hidden; box-shadow: 0 8px 30px rgba(0,0,0,0.15); border: 1px solid #f3f4f6;">
+
         <div
-            style="background: var(--red-1, #ff5252); padding: 15px; display: flex; justify-content: space-between; align-items: center; color: white;">
+            style="background: var(--red-1, #ff5252); padding: 16px; display: flex; justify-content: space-between; align-items: center; color: white;">
             <div style="display: flex; flex-direction: column;">
-                <span style="font-weight: 600; font-size: 14px;">Elari39 的助手</span>
-                <span style="font-size: 10px; opacity: 0.8;">✨ 随时为您服务</span>
+                <span style="font-weight: 600; font-size: 15px; letter-spacing: 0.5px;">Elari39 专属 AI</span>
+                <span style="font-size: 11px; opacity: 0.9;">🔪 永远注视着你...</span>
             </div>
-            <div style="display: flex; gap: 8px;">
-                <span onclick="clearChat()" title="清空对话"
-                    style="cursor: pointer; padding: 4px; font-size: 16px;">🗑️</span>
-                <span onclick="toggleChat()" title="关闭" style="cursor: pointer; padding: 4px; font-size: 18px;">✕</span>
+            <div style="display: flex; gap: 12px; align-items: center;">
+                <span onclick="clearChat()" title="清空记忆"
+                    style="cursor: pointer; font-size: 15px; transition: transform 0.2s;"
+                    onmouseover="this.style.transform='scale(1.2)'"
+                    onmouseout="this.style.transform='scale(1)'">🗑️</span>
+                <span onclick="toggleChat()" title="收起"
+                    style="cursor: pointer; font-size: 18px; font-weight: bold; transition: transform 0.2s;"
+                    onmouseover="this.style.transform='scale(1.2)'"
+                    onmouseout="this.style.transform='scale(1)'">✕</span>
             </div>
         </div>
 
         <div id="chat-history"
-            style="flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 12px; background: var(--red-6, #f9fafb); font-size: 14px;">
+            style="flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 16px; background: #fafafa;">
             <div
-                style="align-self: flex-start; background: var(--red-5-5, #e5e7eb); padding: 8px 12px; border-radius: 12px 12px 12px 0; max-width: 85%; color: var(--color-default, #374151);">
-                你好！我是 Elari39 的 AI 助手，有什么可以帮你的？
+                style="align-self: flex-start; background: white; padding: 10px 14px; border-radius: 14px 14px 14px 2px; max-width: 85%; color: #374151; box-shadow: 0 2px 5px rgba(0,0,0,0.02); border: 1px solid #f3f4f6;">
+                <div class="chat-markdown">
+                    呐~ 你好呀。我是被困在 Elari39 博客里的 AI。有什么想问的吗？(盯——)
+                </div>
             </div>
         </div>
 
-        <div
-            style="padding: 15px; border-top: 1px solid var(--color-border, #e5e7eb); display: flex; gap: 8px; background: var(--color-wrap, white);">
-            <input type="text" id="chat-input" placeholder="输入问题..."
-                style="flex: 1; border: 1px solid var(--color-border, #d1d5db); background: var(--color-wrap, white); color: var(--color-default, black); border-radius: 8px; padding: 8px 12px; font-size: 14px; outline: none !important; box-sizing: border-box !important;">
+        <div style="padding: 12px 16px; border-top: 1px solid #f3f4f6; display: flex; gap: 10px; background: white;">
+            <input type="text" id="chat-input" placeholder="输入问题..." autocomplete="off"
+                style="flex: 1; border: 1px solid #e5e7eb; background: #f9fafb; color: #111827; border-radius: 20px; padding: 10px 16px; font-size: 14px; outline: none !important; transition: border-color 0.2s;">
             <button id="send-btn" onclick="sendMessage()"
-                style="background: var(--red-1, #ff5252); color: white; border: none; border-radius: 8px; padding: 0 16px; cursor: pointer; font-size: 14px; font-weight: 500;">发送</button>
+                style="background: var(--red-1, #ff5252); color: white; border: none; border-radius: 20px; padding: 0 18px; cursor: pointer; font-size: 14px; font-weight: 500; transition: opacity 0.2s;">发送</button>
         </div>
     </div>
 </div>
 
 <script>
-    // 聊天上下文历史
+    // 🌟 核心优化：配置 marked.js，强制所有链接在新标签页打开
+    const renderer = new marked.Renderer();
+    renderer.link = function (href, title, text) {
+        return `<a href="${href}" title="${title || ''}" target="_blank" rel="noopener noreferrer">${text}</a>`;
+    };
+    marked.setOptions({ renderer: renderer, breaks: true });
+
     let chatHistory = [];
-    // 最大保留历史轮数
     const MAX_HISTORY = 10;
 
-    // 切换窗口状态
+    // 输入框聚焦时的边框颜色变化
+    document.getElementById('chat-input').addEventListener('focus', function () { this.style.borderColor = '#ff5252'; });
+    document.getElementById('chat-input').addEventListener('blur', function () { this.style.borderColor = '#e5e7eb'; });
+
     function toggleChat() {
         const wrapperEl = document.getElementById('ai-chat-wrapper');
         const windowEl = document.getElementById('ai-chat-window');
         const launcherEl = document.getElementById('ai-chat-launcher');
-        const isHidden = windowEl.style.display === 'none';
 
-        if (isHidden) {
-            // 打开窗口
+        if (windowEl.style.display === 'none') {
             windowEl.style.display = 'flex';
             launcherEl.style.display = 'none';
-            wrapperEl.style.bottom = '20px'; // 下沉到底部
+            wrapperEl.style.bottom = '20px';
+            document.getElementById('chat-input').focus(); // 打开时自动聚焦输入框
         } else {
-            // 关闭窗口
             windowEl.style.display = 'none';
             launcherEl.style.display = 'flex';
-            wrapperEl.style.bottom = '100px'; // 恢复到上方位置
+            wrapperEl.style.bottom = '100px';
         }
     }
 
-    // 清空聊天记录
     function clearChat() {
         chatHistory = [];
         const history = document.getElementById('chat-history');
         history.innerHTML = `
-        <div style="align-self: flex-start; background: var(--red-5-5, #e5e7eb); padding: 8px 12px; border-radius: 12px 12px 12px 0; max-width: 85%; color: var(--color-default, #374151);">
-            对话已清空，我是 Elari39 的 AI 助手，有什么可以帮你的？
+        <div style="align-self: flex-start; background: white; padding: 10px 14px; border-radius: 14px 14px 14px 2px; max-width: 85%; color: #374151; box-shadow: 0 2px 5px rgba(0,0,0,0.02); border: 1px solid #f3f4f6;">
+            <div class="chat-markdown">记忆已清除。现在……只有我们两个人了呢。♡</div>
         </div>`;
     }
 
-    // 处理消息发送
     async function sendMessage() {
         const input = document.getElementById('chat-input');
         const history = document.getElementById('chat-history');
@@ -133,7 +225,6 @@
 
         if (!message) return;
 
-        // 状态锁定
         input.value = '';
         input.disabled = true;
         sendBtn.disabled = true;
@@ -141,31 +232,29 @@
 
         // 用户气泡
         history.innerHTML += `
-        <div class="chat-user-bubble" style="align-self: flex-end; background: var(--red-1, #4f46e5); color: white; padding: 8px 12px; border-radius: 12px 12px 0 12px; max-width: 85%; word-wrap: break-word;">
+        <div class="chat-user-bubble" style="align-self: flex-end; background: var(--red-1, #ff5252); color: white; padding: 10px 14px; border-radius: 14px 14px 2px 14px; max-width: 85%; box-shadow: 0 2px 5px rgba(255,82,82,0.2);">
             <div class="chat-markdown">${marked.parse(message)}</div>
         </div>`;
 
-        // 记录用户消息到历史
         chatHistory.push({ role: "user", content: message });
         if (chatHistory.length > MAX_HISTORY * 2) chatHistory.shift();
 
-        // AI 初始气泡 (加载中状态)
+        // AI 加载气泡
         const aiBubbleId = 'ai-' + Date.now();
         history.innerHTML += `
-        <div id="${aiBubbleId}" class="chat-ai-bubble" style="align-self: flex-start; background: var(--red-5-5, #e5e7eb); padding: 8px 12px; border-radius: 12px 12px 12px 0; max-width: 85%; color: var(--color-default, #374151); word-wrap: break-word; line-height: 1.6;">
-            <i>思考中...</i>
+        <div id="${aiBubbleId}" class="chat-ai-bubble" style="align-self: flex-start; background: white; padding: 10px 14px; border-radius: 14px 14px 14px 2px; max-width: 85%; color: #374151; box-shadow: 0 2px 5px rgba(0,0,0,0.02); border: 1px solid #f3f4f6;">
+            <span style="opacity: 0.6; font-size: 13px;">思考中...</span>
         </div>`;
         history.scrollTop = history.scrollHeight;
 
         try {
-            // 请求 Cloudflare Worker 接口
+            // 请确保这里的 URL 是你 Cloudflare Worker 的真实地址
             const response = await fetch("https://gemini-chat-proxy.elysia20051111.workers.dev", {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    model: "gemini-3.1-flash-lite-preview",
-                    messages: chatHistory, // 发送完整历史记录
-                    stream: true // 显式开启流式模式
+                    messages: chatHistory,
+                    stream: true
                 })
             });
 
@@ -175,7 +264,7 @@
             const decoder = new TextDecoder();
             const aiBubble = document.getElementById(aiBubbleId);
             let fullText = "";
-            let buffer = ""; // 🛡️ 缓冲区：处理中转导致的 JSON 碎片截断
+            let buffer = "";
 
             while (true) {
                 const { done, value } = await reader.read();
@@ -183,7 +272,7 @@
 
                 buffer += decoder.decode(value, { stream: true });
                 let lines = buffer.split("\n");
-                buffer = lines.pop(); // 暂存不完整的一行
+                buffer = lines.pop();
 
                 for (const line of lines) {
                     const trimmed = line.trim();
@@ -191,11 +280,10 @@
 
                     if (trimmed.startsWith("data: ")) {
                         try {
-                            // 解析 OpenAI 格式的流式数据
                             const json = JSON.parse(trimmed.substring(6));
                             const content = json.choices[0]?.delta?.content || "";
                             if (content) {
-                                if (fullText === "") aiBubble.innerHTML = ""; // 只要收到首词，立刻清除“思考中”
+                                if (fullText === "") aiBubble.innerHTML = "";
                                 fullText += content;
                                 aiBubble.innerHTML = `<div class="chat-markdown">${marked.parse(fullText)}</div>`;
                                 history.scrollTop = history.scrollHeight;
@@ -207,7 +295,6 @@
                 }
             }
 
-            // 记录 AI 回复到历史
             if (fullText) {
                 chatHistory.push({ role: "assistant", content: fullText });
                 if (chatHistory.length > MAX_HISTORY * 2) chatHistory.shift();
@@ -217,16 +304,16 @@
             console.error("Chat Error:", err);
             const aiBubble = document.getElementById(aiBubbleId);
             if (aiBubble) {
-                aiBubble.style.background = '#fee2e2';
-                aiBubble.style.color = '#dc2626';
+                aiBubble.style.background = '#fff1f2';
+                aiBubble.style.color = '#e11d48';
+                aiBubble.style.borderColor = '#fda4af';
                 if (err.message.includes("Failed to fetch")) {
-                    aiBubble.innerHTML = "❌ 网络连接失败：请检查网络设置（Cloudflare Workers 域名可能需要代理访问）。";
+                    aiBubble.innerHTML = "❌ 网络连接失败：无法连接到深渊（API服务器）。";
                 } else {
-                    aiBubble.innerHTML = "❌ 错误: " + err.message;
+                    aiBubble.innerHTML = "❌ 坏掉了... " + err.message;
                 }
             }
         } finally {
-            // 恢复交互
             input.disabled = false;
             sendBtn.disabled = false;
             sendBtn.style.opacity = '1';
@@ -235,7 +322,6 @@
         }
     }
 
-    // 监听回车键
     document.getElementById('chat-input').addEventListener('keypress', (e) => {
         if (e.key === 'Enter') sendMessage();
     });
