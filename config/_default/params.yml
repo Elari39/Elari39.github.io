@@ -32,7 +32,6 @@ description: |
   请别在意。
   我是旅人，得继续旅行才行…
 subtitle: "Eden* They were only two,on the planet"
-
 # banner: "images/banner.webp"
 # 你也可以写成以下 URL 的形式
 banner: "https://elari39.oss-cn-chengdu.aliyuncs.com/blog/banner.webp"
@@ -91,14 +90,14 @@ footer:
   count: false
   busuanzi: true
   icon:
-    url: "https://elari39.oss-cn-chengdu.aliyuncs.com/blog/images/taichi.png" # 此路径是相对于 css/main.css 的，所以需要向上两级才能到达 images 文件夹
+    url: "../images/taichi.png" # 此路径是相对于 css/main.css 的，所以需要向上两级才能到达 images 文件夹
     rotate: true
     mask: true # 是否将图像用作蒙版
 # 侧边栏
 # sidebar: right # 已弃用，请改用 sidebar.position
 sidebar:
   position: right
-  menu: true  # 是否显示侧边栏菜单按钮，移动设备上忽略
+  menu: true # 是否显示侧边栏菜单按钮，移动设备上忽略
   article:
     show_common: false # 是否显示通用侧边栏，移动设备上忽略
 
@@ -150,13 +149,13 @@ show_update_time: false # 如果你想显示更新时间，请将其设置为 tr
 # 摘要内容
 summary:
   enable: false
-  style: 'subtitle' # 'subtitle' 或 'blockquote'
+  style: "subtitle" # 'subtitle' 或 'blockquote'
 
 # RSS 输出
 rss:
-  limit: 10             # 输出的最近文章数量，填写 -1 输出所有
+  limit: 10 # 输出的最近文章数量，填写 -1 输出所有
   showFullContent: false # 输出完整内容或描述
-  showCopyright: false   # 如果为 true，在文章末尾添加版权信息。
+  showCopyright: false # 如果为 true，在文章末尾添加版权信息。
 
 # 排序配置
 # 可选值: default, date, date-reverse, weight, weight-reverse
@@ -194,12 +193,9 @@ anchor_icon: # 默认使用 '#' 图标，你可以使用 fontawesome 或 icon_fo
 reimu_cursor:
   enable: true
   cursor:
-    default: 
-      https://elari39.oss-cn-chengdu.aliyuncs.com/blog/images/cursor/reimu-cursor-default.png # 此路径是相对于 css/main.css 的，所以需要向上两级才能到达 images 文件夹
-    pointer: 
-      https://elari39.oss-cn-chengdu.aliyuncs.com/blog/images/cursor/reimu-cursor-pointer.png
-    text: 
-      https://elari39.oss-cn-chengdu.aliyuncs.com/blog/images/cursor/reimu-cursor-text.png
+    default: https://elari39.oss-cn-chengdu.aliyuncs.com/blog/images/cursor/reimu-cursor-default.png # 此路径是相对于 css/main.css 的，所以需要向上两级才能到达 images 文件夹
+    pointer: https://elari39.oss-cn-chengdu.aliyuncs.com/blog/images/cursor/reimu-cursor-pointer.png
+    text: https://elari39.oss-cn-chengdu.aliyuncs.com/blog/images/cursor/reimu-cursor-text.png
 
 icon_font: 4552607_4k4bc36ef96
 
@@ -292,13 +288,29 @@ math:
     enable: true
   mathjax:
     enable: false
-    options: [{tex: {tags: "ams", useLabelIds: true, inlineMath: [["$", "$"], ['\\(',
-                  '\\)']], displayMath: [["$$", "$$"], ['\\[', '\\]']], processEscapes: true,
-            processEnvironments: true, autoload: {color: [], colorv2: ["color"]},
-            packages: {"[+]": ["noerrors"]}}, options: {skipHtmlTags: ["script", "noscript",
-              "style", "textarea", "pre", "code"], ignoreHtmlClass: "tex2jax_ignore",
-            processHtmlClass: "tex2jax_process"}, loader: {load: ["input/asciimath",
-              "[tex]/noerrors"]}}] # 参见 https://docs.mathjax.org/en/latest/web/configuration.html
+    options: [
+        {
+          tex:
+            {
+              tags: "ams",
+              useLabelIds: true,
+              inlineMath: [["$", "$"], ['\\(', '\\)']],
+              displayMath: [["$$", "$$"], ['\\[', '\\]']],
+              processEscapes: true,
+              processEnvironments: true,
+              autoload: { color: [], colorv2: ["color"] },
+              packages: { "[+]": ["noerrors"] },
+            },
+          options:
+            {
+              skipHtmlTags:
+                ["script", "noscript", "style", "textarea", "pre", "code"],
+              ignoreHtmlClass: "tex2jax_ignore",
+              processHtmlClass: "tex2jax_process",
+            },
+          loader: { load: ["input/asciimath", "[tex]/noerrors"] },
+        },
+      ] # 参见 https://docs.mathjax.org/en/latest/web/configuration.html
     # 我们需要将配置放在一个数组中，因为 hugo 会自动将键转换为小写
 
 ########################################
@@ -503,7 +515,7 @@ top:
   enable: true
   position: right # 左或右
   icon:
-    url: "https://elari39.oss-cn-chengdu.aliyuncs.com/blog/images/taichi.png" # 此路径是相对于 css/main.css 的，所以需要向上两级才能到达 images 文件夹
+    url: "../images/taichi.png" # 此路径是相对于 css/main.css 的，所以需要向上两级才能到达 images 文件夹
     rotate: true
     mask: true # 是否将图像用作蒙版
 
@@ -512,12 +524,14 @@ outdate:
   enable: false
   daysAgo: 180 # 文章被认为过时的天数
   message:
-    en: This article was last updated on {time}. Please note that the content may
+    en:
+      This article was last updated on {time}. Please note that the content may
       no longer be applicable.
     zh-CN: 本文最后更新于 {time}，请注意文中内容可能已不适用。
     zh-TW: 本文最後更新於 {time}，請注意文中內容可能已不適用。
     ja: この記事は最終更新日：{time}。記載内容が現在有効でない可能性がありますのでご注意ください。
-    pt-BR: Este artigo foi atualizado pela última vez em {time}. Observe que o conteúdo
+    pt-BR:
+      Este artigo foi atualizado pela última vez em {time}. Observe que o conteúdo
       pode não ser mais aplicável.
 
 # ICP 备案
@@ -540,7 +554,7 @@ sponsor:
     ja: コーヒーを買ってください
     pt-BR: Compre-me um café
   icon:
-    url: "https://elari39.oss-cn-chengdu.aliyuncs.com/blog/images/taichi.png" # 此路径是相对于 css/main.css 的，所以需要向上两级才能到达 images 文件夹
+    url: "../images/taichi.png" # 此路径是相对于 css/main.css 的，所以需要向上两级才能到达 images 文件夹
     rotate: true
     mask: true # 是否将图像用作蒙版
   qr:
@@ -653,8 +667,8 @@ player:
 ########################################
 
 pangu:
-  # 更多信息: https://github.com/vinta/pangu.js 
-  enable: false  # 启用 pangu.js 以在中文和英文之间添加空格
+  # 更多信息: https://github.com/vinta/pangu.js
+  enable: false # 启用 pangu.js 以在中文和英文之间添加空格
 
 ########################################
 # 主题
@@ -670,16 +684,16 @@ material_theme:
 
 internal_theme:
   light:
-    --red-0: '#ff0000'
-    --red-1: '#ff5252'
-    --red-2: '#ff7c7c'
-    --red-3: '#ffafaf'
-    --red-4: '#ffd0d0'
-    --red-5: '#ffecec'
-    --red-5-5: '#fff3f3'
-    --red-6: '#fff7f7'
-    --color-red-6-shadow: 'rgba(255, 78, 78, 0.6)'
-    --color-red-3-shadow: 'rgba(255, 78, 78, 0.3)'
+    --red-0: "#ff0000"
+    --red-1: "#ff5252"
+    --red-2: "#ff7c7c"
+    --red-3: "#ffafaf"
+    --red-4: "#ffd0d0"
+    --red-5: "#ffecec"
+    --red-5-5: "#fff3f3"
+    --red-6: "#fff7f7"
+    --color-red-6-shadow: "rgba(255, 78, 78, 0.6)"
+    --color-red-3-shadow: "rgba(255, 78, 78, 0.3)"
 
     --highlight-nav: "#f5f5f5"
     --highlight-scrollbar: "#d6d6d6"
@@ -699,10 +713,10 @@ internal_theme:
     --highlight-addition: "#22863a"
     --highlight-addition-bg: "#f0fff4"
   dark:
-    --red-4: 'rgba(255, 208, 208, 0.5)'
-    --red-5: 'rgba(255,228,228,0.15)'
-    --red-5-5: 'rgba(255,236,236,0.05)'
-    --red-6: 'rgba(255, 243, 243, 0.2)'
+    --red-4: "rgba(255, 208, 208, 0.5)"
+    --red-5: "rgba(255,228,228,0.15)"
+    --red-5-5: "rgba(255,236,236,0.05)"
+    --red-6: "rgba(255, 243, 243, 0.2)"
 
     --highlight-nav: "#222830"
     --highlight-scrollbar: "#454d59"
