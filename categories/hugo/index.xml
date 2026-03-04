@@ -149,9 +149,15 @@ Worker 代码
 <a class="header-anchor" href="#%e6%8c%89%e7%85%a7%e5%bf%85%e8%a6%81%e7%8e%af%e5%a2%83"></a>
 按照必要环境
 </h2><ol>
-<li>Go环境：<a href="https://go.dev/dl/">All releases - The Go Programming Language</a></li>
-<li>Hugo插件：<a href="https://github.com/gohugoio/hugo/releases">Releases · gohugoio/hugo</a></li>
-<li>Git插件：<a href="https://git-scm.com/install/windows">Git - Install for Windows</a></li>
+<li>
+<p>Go环境：<a href="https://go.dev/dl/">All releases - The Go Programming Language</a></p>
+</li>
+<li>
+<p>Hugo插件：<a href="https://github.com/gohugoio/hugo/releases">Releases · gohugoio/hugo</a></p>
+</li>
+<li>
+<p>Git插件：<a href="https://git-scm.com/install/windows">Git - Install for Windows</a></p>
+</li>
 </ol>
 <h2 id="初始化">
 <a class="header-anchor" href="#%e5%88%9d%e5%a7%8b%e5%8c%96"></a>
@@ -180,128 +186,22 @@ cd myblog
 <a class="header-anchor" href="#%e9%85%8d%e7%bd%ae%e6%96%87%e4%bb%b6"></a>
 配置文件
 </h2><ol>
-<li>下载<a href="https://github.com/D-Sketon/hugo-theme-reimu">D-Sketon/hugo-theme-reimu: 一款博丽灵梦风格的Hugo主题 | A Hakurei Reimu style Hugo theme. 💘Touhou💘</a></li>
-<li>将主题内的 <code>config/_default/params.yml</code> 复制到 <code>config/_default</code> 文件夹下，此文件作为主题配置文件，可在此文件中修改主题配置</li>
-<li>将主题内的 <code>config/data/</code> 文件夹内的所有文件复制到外层 <code>data</code> 文件夹下，此文件夹内的文件用于配置主题内的数据：
-<ul>
-<li><code>covers.yml</code> 用于配置随机封面图片</li>
-<li><code>friends.yml</code> 用于配置友链</li>
-<li><code>vendor.yml</code> 用于配置第三方库的 CDN 源</li>
-</ul>
+<li>
+<p>下载<a href="https://github.com/D-Sketon/hugo-theme-reimu">D-Sketon/hugo-theme-reimu: 一款博丽灵梦风格的Hugo主题 | A Hakurei Reimu style Hugo theme. 💘Touhou💘</a></p>
 </li>
-</ol>
-<h2 id="构建与部署">
-<a class="header-anchor" href="#%e6%9e%84%e5%bb%ba%e4%b8%8e%e9%83%a8%e7%bd%b2"></a>
-构建与部署
-</h2><ol>
-<li>创建<code>.gitignore</code>，忽略不需要上传的文件：</li>
-</ol>
-<pre tabindex="0"><code class="language-git" data-lang="git"># Hugo default
-/public/
-/resources/_gen/
-.hugo_build.lock
-/hugo_stats.json
-
-# System Files
-.DS_Store
-Thumbs.db
-
-# IDE &amp; Editors
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-*.orig
-.history/
-</code></pre><ol start="2">
-<li>创建 GitHub Actions 部署脚本 <code>.github/workflows/deploy.yml</code>：</li>
-</ol>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl"><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">Deploy to GitHub Pages</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="nt">on</span><span class="p">:</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">push</span><span class="p">:</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">branches</span><span class="p">:</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="l">main</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">workflow_dispatch</span><span class="p">:</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="nt">permissions</span><span class="p">:</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">contents</span><span class="p">:</span><span class="w"> </span><span class="l">write</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="nt">jobs</span><span class="p">:</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">deploy</span><span class="p">:</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">runs-on</span><span class="p">:</span><span class="w"> </span><span class="l">ubuntu-22.04</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">concurrency</span><span class="p">:</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">      </span><span class="nt">group</span><span class="p">:</span><span class="w"> </span><span class="l">${{ github.workflow }}-${{ github.ref }}</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">steps</span><span class="p">:</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="nt">uses</span><span class="p">:</span><span class="w"> </span><span class="l">actions/checkout@v4</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">with</span><span class="p">:</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">          </span><span class="nt">submodules</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">          </span><span class="nt">fetch-depth</span><span class="p">:</span><span class="w"> </span><span class="m">0</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">Setup Go</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">uses</span><span class="p">:</span><span class="w"> </span><span class="l">actions/setup-go@v5</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">with</span><span class="p">:</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">          </span><span class="nt">go-version</span><span class="p">:</span><span class="w"> </span><span class="s1">&#39;1.21&#39;</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">Setup Hugo</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">uses</span><span class="p">:</span><span class="w"> </span><span class="l">peaceiris/actions-hugo@v3</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">with</span><span class="p">:</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">          </span><span class="nt">hugo-version</span><span class="p">:</span><span class="w"> </span><span class="s1">&#39;latest&#39;</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">          </span><span class="nt">extended</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">Build</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">run</span><span class="p">:</span><span class="w"> </span><span class="l">hugo --minify --buildFuture</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l">Deploy</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">uses</span><span class="p">:</span><span class="w"> </span><span class="l">peaceiris/actions-gh-pages@v4</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">if</span><span class="p">:</span><span class="w"> </span><span class="l">github.ref == &#39;refs/heads/main&#39;</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">        </span><span class="nt">with</span><span class="p">:</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">          </span><span class="nt">github_token</span><span class="p">:</span><span class="w"> </span><span class="l">${{ secrets.GITHUB_TOKEN }}</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">          </span><span class="nt">publish_dir</span><span class="p">:</span><span class="w"> </span><span class="l">./public</span><span class="w">
-</span></span></span></code></pre></div><ol start="3">
-<li>将整个项目上传至 GitHub 仓库（建议仓库名为 <code>your_name.github.io</code>）。</li>
-<li>在 GitHub 仓库的 Settings -&gt; Pages 中，将 Source 设置为 <code>Deploy from a branch</code>，Branch 选择 <code>gh-pages</code>。</li>
-<li>（可选）创建自动同步脚本 <code>sync.ps1</code>，用于快速提交并推送代码：</li>
-</ol>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-powershell" data-lang="powershell"><span class="line"><span class="cl"><span class="c"># 自动同步脚本</span>
-</span></span><span class="line"><span class="cl"><span class="c"># 功能：拉取最新代码 -&gt; 添加所有更改 -&gt; 提交 -&gt; 推送</span>
-</span></span><span class="line"><span class="cl">
-</span></span><span class="line"><span class="cl"><span class="c"># 设置控制台输出编码为 UTF-8，防止乱码</span>
-</span></span><span class="line"><span class="cl"><span class="p">[</span><span class="no">Console</span><span class="p">]::</span><span class="n">OutputEncoding</span> <span class="p">=</span> <span class="p">[</span><span class="no">System.Text.Encoding</span><span class="p">]::</span><span class="n">UTF8</span>
-</span></span><span class="line"><span class="cl">
-</span></span><span class="line"><span class="cl"><span class="nb">Write-Host</span> <span class="s2">&#34;正在拉取最新代码...&#34;</span> <span class="n">-ForegroundColor</span> <span class="n">Cyan</span>
-</span></span><span class="line"><span class="cl"><span class="n">git</span> <span class="n">pull</span>
-</span></span><span class="line"><span class="cl"><span class="k">if</span> <span class="p">(</span><span class="nv">$LASTEXITCODE</span> <span class="o">-ne</span> <span class="mf">0</span><span class="p">)</span> <span class="p">{</span>
-</span></span><span class="line"><span class="cl">    <span class="nb">Write-Error</span> <span class="s2">&#34;拉取失败，请检查冲突或网络连接。&#34;</span>
-</span></span><span class="line"><span class="cl">    <span class="n">exit</span> <span class="nv">$LASTEXITCODE</span>
-</span></span><span class="line"><span class="cl"><span class="p">}</span>
-</span></span><span class="line"><span class="cl">
-</span></span><span class="line"><span class="cl"><span class="nb">Write-Host</span> <span class="s2">&#34;正在添加更改...&#34;</span> <span class="n">-ForegroundColor</span> <span class="n">Cyan</span>
-</span></span><span class="line"><span class="cl"><span class="n">git</span> <span class="n">add</span> <span class="p">.</span>
-</span></span><span class="line"><span class="cl">
-</span></span><span class="line"><span class="cl"><span class="nv">$hasChanges</span> <span class="p">=</span> <span class="n">git</span> <span class="n">status</span> <span class="p">-</span><span class="n">-porcelain</span>
-</span></span><span class="line"><span class="cl"><span class="k">if</span> <span class="p">(</span><span class="o">-not</span> <span class="nv">$hasChanges</span><span class="p">)</span> <span class="p">{</span>
-</span></span><span class="line"><span class="cl">    <span class="nb">Write-Host</span> <span class="s2">&#34;没有检测到更改。&#34;</span> <span class="n">-ForegroundColor</span> <span class="n">Yellow</span>
-</span></span><span class="line"><span class="cl">    <span class="n">exit</span> <span class="mf">0</span>
-</span></span><span class="line"><span class="cl"><span class="p">}</span>
-</span></span><span class="line"><span class="cl">
-</span></span><span class="line"><span class="cl"><span class="nv">$commitMessage</span> <span class="p">=</span> <span class="nb">Read-Host</span> <span class="s2">&#34;请输入提交信息 (默认为 &#39;Update blog content&#39;)&#34;</span>
-</span></span><span class="line"><span class="cl"><span class="k">if</span> <span class="p">([</span><span class="no">string</span><span class="p">]::</span><span class="n">IsNullOrWhiteSpace</span><span class="p">(</span><span class="nv">$commitMessage</span><span class="p">))</span> <span class="p">{</span>
-</span></span><span class="line"><span class="cl">    <span class="nv">$commitMessage</span> <span class="p">=</span> <span class="s2">&#34;Update blog content&#34;</span>
-</span></span><span class="line"><span class="cl"><span class="p">}</span>
-</span></span><span class="line"><span class="cl">
-</span></span><span class="line"><span class="cl"><span class="nb">Write-Host</span> <span class="s2">&#34;正在提交更改...&#34;</span> <span class="n">-ForegroundColor</span> <span class="n">Cyan</span>
-</span></span><span class="line"><span class="cl"><span class="n">git</span> <span class="n">commit</span> <span class="n">-m</span> <span class="s2">&#34;</span><span class="nv">$commitMessage</span><span class="s2">&#34;</span>
-</span></span><span class="line"><span class="cl">
-</span></span><span class="line"><span class="cl"><span class="nb">Write-Host</span> <span class="s2">&#34;正在推送到远程仓库...&#34;</span> <span class="n">-ForegroundColor</span> <span class="n">Cyan</span>
-</span></span><span class="line"><span class="cl"><span class="n">git</span> <span class="n">push</span>
-</span></span><span class="line"><span class="cl">
-</span></span><span class="line"><span class="cl"><span class="k">if</span> <span class="p">(</span><span class="nv">$LASTEXITCODE</span> <span class="o">-eq</span> <span class="mf">0</span><span class="p">)</span> <span class="p">{</span>
-</span></span><span class="line"><span class="cl">    <span class="nb">Write-Host</span> <span class="s2">&#34;同步完成，GitHub Actions 将自动开始构建和部署。&#34;</span> <span class="n">-ForegroundColor</span> <span class="n">Green</span>
-</span></span><span class="line"><span class="cl"><span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
-</span></span><span class="line"><span class="cl">    <span class="nb">Write-Error</span> <span class="s2">&#34;推送失败，请检查网络连接或权限。&#34;</span>
-</span></span><span class="line"><span class="cl"><span class="p">}</span>
-</span></span></code></pre></div>
+<li>
+<p>将主题内的 <code>config/_default/params.yml</code> 复制到 <code>config/_default</code> 文件夹下，此文件作为主题配置文件，可在此文件中修改主题配置</p>
+</li>
+<li>
+<p>将主题内的 <code>config/data/</code> 文件夹内的所有文件复制到外层 <code>data</code> 文件夹下，此文件夹内的文件用于配置主题内的数据：</p>
+<ul>
+<li>
+<p><code>covers.yml</code> 用于配置随机封面图片</p>
+</li>
+<li>
+<p><code>friends.yml</code> 用于配置友链</p>
+</li>
+<li>
+<p><code>vendor.yml</code> 用于配置第三方库的 CDN 源</p>
         
         <hr><p>本文2026-02-14首发于<a href='https://Elari39.github.io/'>Elari的博客</a>，最后修改于2026-02-14</p>]]></description><category>Hugo</category></item></channel></rss>
