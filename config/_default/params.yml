@@ -246,7 +246,7 @@ dark_mode:
 ########################################
 
 baidu_analytics: false
-google_analytics: "G-FR1GBDTR58"
+# google_analytics: "G-FR1GBDTR58"
 clarity: false
 
 ########################################
