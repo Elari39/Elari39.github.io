@@ -1,4 +1,57 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Elari的博客</title><link>https://Elari39.github.io/</link><description>Recent content from Elari的博客</description><generator>Hugo</generator><language>zh-cn</language><managingEditor>majo_elaina@qq.com (Elari39)</managingEditor><webMaster>majo_elaina@qq.com (Elari39)</webMaster><copyright>本博客所有文章除特别声明外，均采用 BY-NC-SA 许可协议。转载请注明出处！</copyright><lastBuildDate>Wed, 04 Mar 2026 16:00:00 +0800</lastBuildDate><atom:link href="https://Elari39.github.io/index.xml" rel="self" type="application/rss+xml"/><item><title>JWT (JSON Web Token) 深入浅出</title><link>https://Elari39.github.io/post/jwt/jwt-learn/</link><pubDate>Wed, 04 Mar 2026 16:00:00 +0800</pubDate><author>majo_elaina@qq.com (Elari39)</author><guid>https://Elari39.github.io/post/jwt/jwt-learn/</guid><description>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Elari的博客</title><link>https://Elari39.github.io/</link><description>Recent content from Elari的博客</description><generator>Hugo</generator><language>zh-cn</language><managingEditor>majo_elaina@qq.com (Elari39)</managingEditor><webMaster>majo_elaina@qq.com (Elari39)</webMaster><copyright>本博客所有文章除特别声明外，均采用 BY-NC-SA 许可协议。转载请注明出处！</copyright><lastBuildDate>Thu, 05 Mar 2026 21:35:00 +0800</lastBuildDate><atom:link href="https://Elari39.github.io/index.xml" rel="self" type="application/rss+xml"/><item><title>从零实现 Web 框架 (Gee)</title><link>https://Elari39.github.io/post/go-learning/4.projects/geektutu/web/webgee/</link><pubDate>Thu, 05 Mar 2026 21:35:00 +0800</pubDate><author>majo_elaina@qq.com (Elari39)</author><guid>https://Elari39.github.io/post/go-learning/4.projects/geektutu/web/webgee/</guid><description>
+<![CDATA[<h1>从零实现 Web 框架 (Gee)</h1><p>作者：Elari39（majo_elaina@qq.com）</p>
+        
+          <h2 id="前情提要">
+<a class="header-anchor" href="#%e5%89%8d%e6%83%85%e6%8f%90%e8%a6%81"></a>
+前情提要
+</h2><p>本项目为2026年学习[7天用Go从零实现Web框架Gee教程](<a href="https://geektutu.com/post/gee.html">7天用Go从零实现Web框架Gee教程 | 极客兔兔</a>)的学习笔记</p>
+<p>在写代码之前，我们需要先去vscode上安装插件<strong>REST Client</strong>（作者：Huachao Mao）。</p>
+<ol>
+<li>打开 VS Code，按 Ctrl+Shift+X（或点击左侧扩展图标）。</li>
+<li>搜索 <strong>REST Client</strong>（作者：Huachao Mao）。</li>
+<li>点击 <strong>安装</strong>（免费，无需额外配置）。</li>
+<li>创建一个名为<code>api.http</code>的文件
+<ul>
+<li>示例：GET <a href="https://api.mossia.top/duckMo">https://api.mossia.top/duckMo</a> HTTP/1.1</li>
+</ul>
+</li>
+<li>按Ctrl + Alt + R或者在请求行上方会出现蓝色 Send Request 按钮发送信息</li>
+</ol>
+<h2 id="http基础">
+<a class="header-anchor" href="#http%e5%9f%ba%e7%a1%80"></a>
+Http基础
+</h2><h3 id="功能需求分析">
+<a class="header-anchor" href="#%e5%8a%9f%e8%83%bd%e9%9c%80%e6%b1%82%e5%88%86%e6%9e%90"></a>
+功能需求分析
+</h3><p>首先需要明确我们现在需要完成的任务是什么？我们应该实现如下的一个基础的main功能</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="line"><span class="cl"><span class="kn">package</span><span class="w"> </span><span class="nx">main</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="kn">import</span><span class="w"> </span><span class="p">(</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">	</span><span class="s">&#34;elari/elaina&#34;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">	</span><span class="s">&#34;fmt&#34;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">	</span><span class="s">&#34;net/http&#34;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="p">)</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="kd">func</span><span class="w"> </span><span class="nf">main</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">	</span><span class="nx">e</span><span class="w"> </span><span class="o">:=</span><span class="w"> </span><span class="nx">elaina</span><span class="p">.</span><span class="nf">New</span><span class="p">()</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">	</span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">		</span><span class="nx">e</span><span class="p">.</span><span class="nf">Get</span><span class="p">(</span><span class="s">&#34;/&#34;</span><span class="p">,</span><span class="w"> </span><span class="nx">index</span><span class="p">)</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">		</span><span class="nx">e</span><span class="p">.</span><span class="nf">Post</span><span class="p">(</span><span class="s">&#34;/&#34;</span><span class="p">,</span><span class="w"> </span><span class="nx">post</span><span class="p">)</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">	</span><span class="p">}</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">	</span><span class="nx">e</span><span class="p">.</span><span class="nf">Run</span><span class="p">(</span><span class="s">&#34;:8080&#34;</span><span class="p">)</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="p">}</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="kd">func</span><span class="w"> </span><span class="nf">index</span><span class="p">(</span><span class="nx">w</span><span class="w"> </span><span class="nx">http</span><span class="p">.</span><span class="nx">ResponseWriter</span><span class="p">,</span><span class="w"> </span><span class="nx">r</span><span class="w"> </span><span class="o">*</span><span class="nx">http</span><span class="p">.</span><span class="nx">Request</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">	</span><span class="nx">fmt</span><span class="p">.</span><span class="nf">Fprintf</span><span class="p">(</span><span class="nx">w</span><span class="p">,</span><span class="w"> </span><span class="s">&#34;hello elaina&#34;</span><span class="p">)</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="p">}</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="kd">func</span><span class="w"> </span><span class="nf">post</span><span class="p">(</span><span class="nx">w</span><span class="w"> </span><span class="nx">http</span><span class="p">.</span><span class="nx">ResponseWriter</span><span class="p">,</span><span class="w"> </span><span class="nx">r</span><span class="w"> </span><span class="o">*</span><span class="nx">http</span><span class="p">.</span><span class="nx">Request</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">	</span><span class="nx">fmt</span><span class="p">.</span><span class="nf">Fprintf</span><span class="p">(</span><span class="nx">w</span><span class="p">,</span><span class="w"> </span><span class="s">&#34;hello post&#34;</span><span class="p">)</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="p">}</span><span class="w">
+</span></span></span></code></pre></div><h3 id="功能设计与实现">
+<a class="header-anchor" href="#%e5%8a%9f%e8%83%bd%e8%ae%be%e8%ae%a1%e4%b8%8e%e5%ae%9e%e7%8e%b0"></a>
+功能设计与实现
+</h3><p>我们需要实现如下三个功能：</p>
+        
+        <hr><p>本文2026-03-05首发于<a href='https://Elari39.github.io/'>Elari的博客</a>，最后修改于2026-03-05</p>]]></description><category>Golang 学习笔记</category></item><item><title>JWT (JSON Web Token) 深入浅出</title><link>https://Elari39.github.io/post/jwt/jwt-learn/</link><pubDate>Wed, 04 Mar 2026 16:00:00 +0800</pubDate><author>majo_elaina@qq.com (Elari39)</author><guid>https://Elari39.github.io/post/jwt/jwt-learn/</guid><description>
 <![CDATA[<h1>JWT (JSON Web Token) 深入浅出</h1><p>作者：Elari39（majo_elaina@qq.com）</p>
         
           <h2 id="-什么是-jwt">
@@ -506,6 +559,7 @@
           <th style="text-align: center">学习时间</th>
           <th style="text-align: center">学习内容</th>
           <th style="text-align: center">看番内容</th>
+          <th style="text-align: center">英语</th>
       </tr>
   </thead>
   <tbody>
@@ -515,12 +569,14 @@
           <td style="text-align: center">6小时</td>
           <td style="text-align: center">Go并发+测试+架构+调优</td>
           <td style="text-align: center"></td>
+          <td style="text-align: center"></td>
       </tr>
       <tr>
           <td style="text-align: center">3月2日</td>
           <td style="text-align: center">周一</td>
           <td style="text-align: center">9小时</td>
           <td style="text-align: center">Flag+cli项目+数组篇+EINO RAG部分</td>
+          <td style="text-align: center"></td>
           <td style="text-align: center"></td>
       </tr>
       <tr>
@@ -529,6 +585,7 @@
           <td style="text-align: center">7小时</td>
           <td style="text-align: center">EINO+Redis复习+完成一个验证码功能</td>
           <td style="text-align: center"></td>
+          <td style="text-align: center"></td>
       </tr>
       <tr>
           <td style="text-align: center">3月4日</td>
@@ -536,17 +593,20 @@
           <td style="text-align: center">7小时</td>
           <td style="text-align: center">学习RabbitMQ+复习jwt并写一个文档</td>
           <td style="text-align: center"></td>
+          <td style="text-align: center"></td>
       </tr>
       <tr>
           <td style="text-align: center">3月5日</td>
           <td style="text-align: center">周四</td>
+          <td style="text-align: center">5小时</td>
+          <td style="text-align: center">从零开始实现web框架（上）</td>
           <td style="text-align: center"></td>
-          <td style="text-align: center"></td>
-          <td style="text-align: center"></td>
+          <td style="text-align: center">1小时</td>
       </tr>
       <tr>
           <td style="text-align: center">3月6日</td>
           <td style="text-align: center">周五</td>
+          <td style="text-align: center"></td>
           <td style="text-align: center"></td>
           <td style="text-align: center"></td>
           <td style="text-align: center"></td>
@@ -557,10 +617,12 @@
           <td style="text-align: center"></td>
           <td style="text-align: center"></td>
           <td style="text-align: center"></td>
+          <td style="text-align: center"></td>
       </tr>
       <tr>
           <td style="text-align: center">3月8日</td>
           <td style="text-align: center">周日</td>
+          <td style="text-align: center"></td>
           <td style="text-align: center"></td>
           <td style="text-align: center"></td>
           <td style="text-align: center"></td>
@@ -571,10 +633,12 @@
           <td style="text-align: center"></td>
           <td style="text-align: center"></td>
           <td style="text-align: center"></td>
+          <td style="text-align: center"></td>
       </tr>
       <tr>
           <td style="text-align: center">3月10日</td>
           <td style="text-align: center">周二</td>
+          <td style="text-align: center"></td>
           <td style="text-align: center"></td>
           <td style="text-align: center"></td>
           <td style="text-align: center"></td>
@@ -585,10 +649,12 @@
           <td style="text-align: center"></td>
           <td style="text-align: center"></td>
           <td style="text-align: center"></td>
+          <td style="text-align: center"></td>
       </tr>
       <tr>
           <td style="text-align: center">3月12日</td>
           <td style="text-align: center">周四</td>
+          <td style="text-align: center"></td>
           <td style="text-align: center"></td>
           <td style="text-align: center"></td>
           <td style="text-align: center"></td>
@@ -599,10 +665,12 @@
           <td style="text-align: center"></td>
           <td style="text-align: center"></td>
           <td style="text-align: center"></td>
+          <td style="text-align: center"></td>
       </tr>
       <tr>
           <td style="text-align: center">3月14日</td>
           <td style="text-align: center">周六</td>
+          <td style="text-align: center"></td>
           <td style="text-align: center"></td>
           <td style="text-align: center"></td>
           <td style="text-align: center"></td>
@@ -613,10 +681,12 @@
           <td style="text-align: center"></td>
           <td style="text-align: center"></td>
           <td style="text-align: center"></td>
+          <td style="text-align: center"></td>
       </tr>
       <tr>
           <td style="text-align: center">3月16日</td>
           <td style="text-align: center">周一</td>
+          <td style="text-align: center"></td>
           <td style="text-align: center"></td>
           <td style="text-align: center"></td>
           <td style="text-align: center"></td>
@@ -627,10 +697,12 @@
           <td style="text-align: center"></td>
           <td style="text-align: center"></td>
           <td style="text-align: center"></td>
+          <td style="text-align: center"></td>
       </tr>
       <tr>
           <td style="text-align: center">3月18日</td>
           <td style="text-align: center">周三</td>
+          <td style="text-align: center"></td>
           <td style="text-align: center"></td>
           <td style="text-align: center"></td>
           <td style="text-align: center"></td>
@@ -641,10 +713,12 @@
           <td style="text-align: center"></td>
           <td style="text-align: center"></td>
           <td style="text-align: center"></td>
+          <td style="text-align: center"></td>
       </tr>
       <tr>
           <td style="text-align: center">3月20日</td>
           <td style="text-align: center">周五</td>
+          <td style="text-align: center"></td>
           <td style="text-align: center"></td>
           <td style="text-align: center"></td>
           <td style="text-align: center"></td>
@@ -655,10 +729,12 @@
           <td style="text-align: center"></td>
           <td style="text-align: center"></td>
           <td style="text-align: center"></td>
+          <td style="text-align: center"></td>
       </tr>
       <tr>
           <td style="text-align: center">3月22日</td>
           <td style="text-align: center">周日</td>
+          <td style="text-align: center"></td>
           <td style="text-align: center"></td>
           <td style="text-align: center"></td>
           <td style="text-align: center"></td>
@@ -669,10 +745,12 @@
           <td style="text-align: center"></td>
           <td style="text-align: center"></td>
           <td style="text-align: center"></td>
+          <td style="text-align: center"></td>
       </tr>
       <tr>
           <td style="text-align: center">3月24日</td>
           <td style="text-align: center">周二</td>
+          <td style="text-align: center"></td>
           <td style="text-align: center"></td>
           <td style="text-align: center"></td>
           <td style="text-align: center"></td>
@@ -683,10 +761,12 @@
           <td style="text-align: center"></td>
           <td style="text-align: center"></td>
           <td style="text-align: center"></td>
+          <td style="text-align: center"></td>
       </tr>
       <tr>
           <td style="text-align: center">3月26日</td>
           <td style="text-align: center">周四</td>
+          <td style="text-align: center"></td>
           <td style="text-align: center"></td>
           <td style="text-align: center"></td>
           <td style="text-align: center"></td>
@@ -697,10 +777,12 @@
           <td style="text-align: center"></td>
           <td style="text-align: center"></td>
           <td style="text-align: center"></td>
+          <td style="text-align: center"></td>
       </tr>
       <tr>
           <td style="text-align: center">3月28日</td>
           <td style="text-align: center">周六</td>
+          <td style="text-align: center"></td>
           <td style="text-align: center"></td>
           <td style="text-align: center"></td>
           <td style="text-align: center"></td>
@@ -711,6 +793,7 @@
           <td style="text-align: center"></td>
           <td style="text-align: center"></td>
           <td style="text-align: center"></td>
+          <td style="text-align: center"></td>
       </tr>
       <tr>
           <td style="text-align: center">3月30日</td>
@@ -718,10 +801,12 @@
           <td style="text-align: center"></td>
           <td style="text-align: center"></td>
           <td style="text-align: center"></td>
+          <td style="text-align: center"></td>
       </tr>
       <tr>
           <td style="text-align: center">3月31日</td>
           <td style="text-align: center">周二</td>
+          <td style="text-align: center"></td>
           <td style="text-align: center"></td>
           <td style="text-align: center"></td>
           <td style="text-align: center"></td>
@@ -849,51 +934,4 @@
         
           Go 语言的 net/http 标准库是构建 HTTP 服务端和客户端的基石，它设计简洁、功能强大，并且是众多第三方 Web 框架（如 Gin、Echo）的底层依赖。无论你是想从零搭建一个高性能的 Web 服务，还是希望在使用框架时能深入理解其原理，掌握 net/http 都是必修课。本文将从零开始，以最新版本的 Go（语法层面无破坏性变更）为例，详细拆解 net/http 的核心概念、工作机制以及最佳实践。
         
-        <hr><p>本文2026-02-17首发于<a href='https://Elari39.github.io/'>Elari的博客</a>，最后修改于2026-02-17</p>]]></description><category>Go</category></item><item><title>在 Hugo 博客中使用阿里云 OSS 托管图片（含自动化迁移脚本）</title><link>https://Elari39.github.io/post/hugooss/</link><pubDate>Mon, 16 Feb 2026 20:00:00 +0800</pubDate><author>majo_elaina@qq.com (Elari39)</author><guid>https://Elari39.github.io/post/hugooss/</guid><description>
-<![CDATA[<h1>在 Hugo 博客中使用阿里云 OSS 托管图片（含自动化迁移脚本）</h1><p>作者：Elari39（majo_elaina@qq.com）</p>
-        
-          <p>随着博客文章的增多，本地图片的管理和加载速度逐渐成为瓶颈。将图片托管到对象存储（如阿里云 OSS）不仅可以提升访问速度，还能减轻 Git 仓库的体积压力。</p>
-<p>本文将详细介绍如何配置阿里云 OSS，并分享一个自动化脚本，帮助你一键迁移现有图片。</p>
-<h2 id="为什么要用-oss">
-<a class="header-anchor" href="#%e4%b8%ba%e4%bb%80%e4%b9%88%e8%a6%81%e7%94%a8-oss"></a>
-为什么要用 OSS？
-</h2><ol>
-<li><strong>访问速度快</strong>：配合 CDN，可以实现全球加速。</li>
-<li><strong>节省流量</strong>：Git 仓库不再臃肿，克隆速度更快。</li>
-<li><strong>管理方便</strong>：统一的云端管理，支持防盗链、水印等功能。</li>
-</ol>
-<h2 id="第一步阿里云-oss-配置">
-<a class="header-anchor" href="#%e7%ac%ac%e4%b8%80%e6%ad%a5%e9%98%bf%e9%87%8c%e4%ba%91-oss-%e9%85%8d%e7%bd%ae"></a>
-第一步：阿里云 OSS 配置
-</h2><h3 id="1-创建-bucket">
-<a class="header-anchor" href="#1-%e5%88%9b%e5%bb%ba-bucket"></a>
-1. 创建 Bucket
-</h3><p>登录 <a href="https://oss.console.aliyun.com/">阿里云 OSS 控制台</a>，点击“创建 Bucket”。</p>
-<ul>
-<li><strong>区域</strong>：选择离你（或你的受众）最近的区域。</li>
-<li><strong>存储类型</strong>：标准存储。</li>
-<li><strong>读写权限</strong>：<strong>公共读</strong>（必须，否则访客无法看到图片）。</li>
-</ul>
-<h3 id="2-获取-accesskey">
-<a class="header-anchor" href="#2-%e8%8e%b7%e5%8f%96-accesskey"></a>
-2. 获取 AccessKey
-</h3><p>为了让脚本能自动上传图片，我们需要创建一个 AccessKey。</p>
-<ol>
-<li>进入 <a href="https://ram.console.aliyun.com/">RAM 访问控制</a>。</li>
-<li>创建一个新用户，勾选“OpenAPI 调用访问”。</li>
-<li>给该用户授权 <code>AliyunOSSFullAccess</code>（或者更精细的 <code>AliyunOSSWriteAccess</code>）。</li>
-<li>记录下 <code>AccessKey ID</code> 和 <code>AccessKey Secret</code>。</li>
-</ol>
-<h2 id="第二步自动化迁移脚本">
-<a class="header-anchor" href="#%e7%ac%ac%e4%ba%8c%e6%ad%a5%e8%87%aa%e5%8a%a8%e5%8c%96%e8%bf%81%e7%a7%bb%e8%84%9a%e6%9c%ac"></a>
-第二步：自动化迁移脚本
-</h2><p>为了避免手动一张张上传和替换链接的繁琐，我编写了一个 Python 脚本。它会自动扫描 <code>content</code> 目录下的所有 Markdown 文件，识别本地图片引用，上传到 OSS，并替换为云端链接。</p>
-<h3 id="1-准备环境">
-<a class="header-anchor" href="#1-%e5%87%86%e5%a4%87%e7%8e%af%e5%a2%83"></a>
-1. 准备环境
-</h3><p>在博客根目录下创建 <code>.env</code> 文件，填入你的密钥（<strong>注意不要提交到 Git</strong>）：</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-ini" data-lang="ini"><span class="line"><span class="cl"><span class="na">OSS_ACCESS_KEY_ID</span><span class="o">=</span><span class="s">你的AccessKeyID</span>
-</span></span><span class="line"><span class="cl"><span class="na">OSS_ACCESS_KEY_SECRET</span><span class="o">=</span><span class="s">你的AccessKeySecret</span>
-</span></span></code></pre></div><p>确保 <code>.gitignore</code> 中包含 <code>.env</code>。</p>
-        
-        <hr><p>本文2026-02-16首发于<a href='https://Elari39.github.io/'>Elari的博客</a>，最后修改于2026-02-16</p>]]></description><category>Hugo</category><category>技术教程</category></item></channel></rss>
+        <hr><p>本文2026-02-17首发于<a href='https://Elari39.github.io/'>Elari的博客</a>，最后修改于2026-02-17</p>]]></description><category>Go</category></item></channel></rss>
