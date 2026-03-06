@@ -21,10 +21,10 @@ menu:
 mainSections: ["post"]
 # 年，月，日及时间的格式化样式
 # Format style for year,month,date & time
-yearFormat: "2006"
-monthFormat: "2006-01-02"
-dateFormat: "2006-01-02"
-timeFormat: "2006-01-02 15:04:05"
+yearFormat: "06"
+monthFormat: "06-01-02 15:04"
+dateFormat: "06-01-02 15:04"
+timeFormat: "06-01-02 15:04:05"
 
 author: Elari39
 email: majo_elaina@qq.com
@@ -38,7 +38,7 @@ banner: "https://elari39.oss-cn-chengdu.aliyuncs.com/blog/banner.webp"
 
 # 如果你想使用 srcset 属性，请启用它
 banner_srcset:
-  enable: false
+  enable: true
   srcset:
     - src: "https://elari39.oss-cn-chengdu.aliyuncs.com/blog/images/banner-600w.webp"
       media: "(max-width: 479px)"
@@ -47,7 +47,8 @@ banner_srcset:
     - src: "https://elari39.oss-cn-chengdu.aliyuncs.com/blog/images/banner.webp"
       media: "(min-width: 800px)"
 
-avatar: "https://elari39.oss-cn-chengdu.aliyuncs.com/blog/avatar.webp" # "avatar.webp"
+# avatar: "https://elari39.oss-cn-chengdu.aliyuncs.com/blog/avatar.webp" # "avatar.webp"
+avatar: "https://elari39.oss-cn-chengdu.aliyuncs.com/blog/banner.png"
 
 # 控制文章封面的显示
 # 如果未设置，默认显示 banner 图片
@@ -71,7 +72,7 @@ open_graph:
     #fb_app_id: <fb:app_id>
 
 # 内容
-excerpt_link: Read More
+excerpt_link: "阅读全文"
 
 # 页脚版权
 # 在页脚版权处注入代码片段
@@ -104,26 +105,11 @@ sidebar:
 social:
   email: mailto:majo_elaina@qq.com
   github: https://github.com/Elari39
-  # google: https://plus.google.com/yourname
-  # twitter: https://twitter.com/yourname
-  # facebook: https://www.facebook.com/yourname
-  # instagram: https://www.instagram.com/yourname
-  # linkedin: https://www.linkedin.com/in/yourname
-  # pinterest: https://www.pinterest.com/yourname
   # youtube: https://www.youtube.com/channel/yourname
-  # vimeo: https://vimeo.com/yourname
-  # flickr: https://www.flickr.com/photos/yourname
-  # dribbble: https://dribbble.com/yourname
-  # behance: https://www.behance.net/yourname
   # bilibili: https://space.bilibili.com/yourname
   # weibo: https://weibo.com/yourname
   # zhihu: https://www.zhihu.com/people/yourname
   # reddit: https://www.reddit.com/user/yourname
-  # tumblr: https://yourname.tumblr.com
-  # medium: https://medium.com/@yourname
-  # deviantart: https://yourname.deviantart.com
-  # stackoverflow: https://stackoverflow.com/users/yourname
-  # keybase: https://keybase.io/yourname
   # telegram: https://t.me/yourname
   # discord: https://discordapp.com/users/yourname
   # steam: https://steamcommunity.com/id/yourname
@@ -144,7 +130,7 @@ tagcloud_limits: 20
 only_show_capsule_in_index: false # 如果你有大量的标签和分类，可以设置为 true 以仅在索引页显示胶囊，以获得更好的性能
 uppercase_capsule: true # 如果你想保持分类胶囊不变，请将其设置为 false
 
-show_update_time: false # 如果你想显示更新时间，请将其设置为 true
+show_update_time: true # 如果你想显示更新时间，请将其设置为 true
 
 # 摘要内容
 summary:
@@ -389,7 +375,7 @@ gitalk:
 
 # https://giscus.app/zh-CN
 giscus:
-  enable: true
+  enable: false
   repo: Elari39/Elari39.github.io
   repoId: R_kgDORQCxPA
   category: Announcements

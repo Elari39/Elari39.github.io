@@ -4,6 +4,9 @@ languageCode = 'zh-cn'
 timeZone = "Asia/Shanghai"
 title = 'Elari的博客'
 
+[frontmatter]
+  lastmod = [":git", "lastmod", "date", "publishDate"]
+
 [markup]
   [markup.highlight]
     noClasses = false
