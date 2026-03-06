@@ -1,7 +1,7 @@
 ---
 title: "从零实现 Web 框架 (Gee)"
 date: 2026-03-05T21:00:00+08:00
-lastmod: 2026-03-06T23:26:00+08:00
+lastmod: "2026-03-06T23:35:00+08:00"
 draft: false
 tags: ["Go", "Web", "Gee", "框架开发"]
 categories: ["Golang 学习笔记"]
@@ -656,7 +656,7 @@ Connection: close
 
 第三天的目标是实现**动态路由**，支持两种常见写法（这也是目前主流框架的标准能力）：
 
-- **命名参数**（named parameter）：`/hello/:name`、` /p/:lang/doc`
+- **命名参数**（named parameter）：`/hello/:name`、` /majotabi/:name/:birthday`
 
 - **通配符**（wildcard）：`/assets/*filepath`
 
@@ -785,7 +785,7 @@ func parsePattern(pattern string) []string {
 
 示例：
 
-- "/p/:lang/doc" → ["p", ":lang", "doc"]
+- "/majotabi/:name/:birthday" → ["majotabi", ":name", ":birthday"]
 
 - "/assets/*filepath" → ["assets", "*filepath"]
 
@@ -833,9 +833,9 @@ func (n *node) matchChild(part string) *node {
 }
 ```
 
-插入过程举例（插入 GET /p/:lang/doc）：
+插入过程举例（插入 GET /majotabi/:name/:birthday）：
 
-parts = ["p", ":lang", "doc"]
+parts = ["majotabi", ":name", ":birthday"]
 
 - height=0，part="majotabi" → 新建节点 part="majotabi", isWild=false
 
