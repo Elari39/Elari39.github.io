@@ -1,10 +1,10 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Gee on Elari的博客</title><link>https://Elari39.github.io/tags/gee/</link><description>Recent content from Elari的博客</description><generator>Hugo</generator><language>zh-cn</language><managingEditor>majo_elaina@qq.com (Elari39)</managingEditor><webMaster>majo_elaina@qq.com (Elari39)</webMaster><copyright>本博客所有文章除特别声明外，均采用 BY-NC-SA 许可协议。转载请注明出处！</copyright><lastBuildDate>Fri, 06 Mar 2026 23:35:00 +0800</lastBuildDate><atom:link href="https://Elari39.github.io/tags/gee/index.xml" rel="self" type="application/rss+xml"/><item><title>从零实现 Web 框架 (Gee)</title><link>https://Elari39.github.io/post/go-learning/4.projects/geektutu/web/webgee/</link><pubDate>Thu, 05 Mar 2026 21:00:00 +0800</pubDate><author>majo_elaina@qq.com (Elari39)</author><guid>https://Elari39.github.io/post/go-learning/4.projects/geektutu/web/webgee/</guid><description>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Gee on Elari的博客</title><link>https://Elari39.github.io/tags/gee/</link><description>Recent content from Elari的博客</description><generator>Hugo</generator><language>zh-cn</language><managingEditor>majo_elaina@qq.com (Elari39)</managingEditor><webMaster>majo_elaina@qq.com (Elari39)</webMaster><copyright>本博客所有文章除特别声明外，均采用 BY-NC-SA 许可协议。转载请注明出处！</copyright><lastBuildDate>Thu, 05 Mar 2026 21:00:00 +0800</lastBuildDate><atom:link href="https://Elari39.github.io/tags/gee/index.xml" rel="self" type="application/rss+xml"/><item><title>从零实现 Web 框架 (Gee)</title><link>https://Elari39.github.io/post/go-learning/4.projects/geektutu/web/webgee/</link><pubDate>Thu, 05 Mar 2026 21:00:00 +0800</pubDate><author>majo_elaina@qq.com (Elari39)</author><guid>https://Elari39.github.io/post/go-learning/4.projects/geektutu/web/webgee/</guid><description>
 <![CDATA[<h1>从零实现 Web 框架 (Gee)</h1><p>作者：Elari39（majo_elaina@qq.com）</p>
         
           <h2 id="前情提要">
 <a class="header-anchor" href="#%e5%89%8d%e6%83%85%e6%8f%90%e8%a6%81"></a>
 前情提要
-</h2><p>本项目为2026年学习[7天用Go从零实现Web框架Gee教程](<a href="https://geektutu.com/post/gee.html">7天用Go从零实现Web框架Gee教程 | 极客兔兔</a>)的学习笔记</p>
+</h2><p>本项目为2026年学习<a href="https://geektutu.com/post/gee.html">7部分用Go从零实现Web框架Gee教程 | 极客兔兔</a>的学习笔记。</p>
 <p>在写代码之前，我们需要先去vscode上安装插件<strong>REST Client</strong>（作者：Huachao Mao）。</p>
 <ol>
 <li>
@@ -44,8 +44,8 @@ Http基础
 </span></span></span><span class="line"><span class="cl"><span class="kd">func</span><span class="w"> </span><span class="nf">main</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="w">	</span><span class="nx">e</span><span class="w"> </span><span class="o">:=</span><span class="w"> </span><span class="nx">elaina</span><span class="p">.</span><span class="nf">New</span><span class="p">()</span><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="w">	</span><span class="p">{</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">		</span><span class="nx">e</span><span class="p">.</span><span class="nf">Get</span><span class="p">(</span><span class="s">&#34;/&#34;</span><span class="p">,</span><span class="w"> </span><span class="nx">index</span><span class="p">)</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">		</span><span class="nx">e</span><span class="p">.</span><span class="nf">Post</span><span class="p">(</span><span class="s">&#34;/&#34;</span><span class="p">,</span><span class="w"> </span><span class="nx">post</span><span class="p">)</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">		</span><span class="nx">e</span><span class="p">.</span><span class="nf">GET</span><span class="p">(</span><span class="s">&#34;/&#34;</span><span class="p">,</span><span class="w"> </span><span class="nx">index</span><span class="p">)</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">		</span><span class="nx">e</span><span class="p">.</span><span class="nf">POST</span><span class="p">(</span><span class="s">&#34;/&#34;</span><span class="p">,</span><span class="w"> </span><span class="nx">post</span><span class="p">)</span><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="w">	</span><span class="p">}</span><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="w">	</span><span class="nx">e</span><span class="p">.</span><span class="nf">Run</span><span class="p">(</span><span class="s">&#34;:8080&#34;</span><span class="p">)</span><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="p">}</span><span class="w">
@@ -60,4 +60,4 @@ Http基础
 功能设计与实现
 </h3><p>我们需要实现如下三个功能：</p>
         
-        <hr><p>本文2026-03-05首发于<a href='https://Elari39.github.io/'>Elari的博客</a>，最后修改于2026-03-06</p>]]></description><category>Golang 学习笔记</category></item></channel></rss>
+        <hr><p>本文2026-03-05首发于<a href='https://Elari39.github.io/'>Elari的博客</a>，最后修改于2026-03-05</p>]]></description><category>Golang 学习笔记</category></item></channel></rss>
