@@ -43,7 +43,7 @@ cover: "https://elari39.oss-cn-chengdu.aliyuncs.com/blog/20260305230526137.png"
 
 - 可以选择`高级设置`-`外部端口访问`
 
-![安装OpenClaw](https://elari39.oss-cn-chengdu.aliyuncs.com/blog/20260307131704234.png)
+![安装OpenClaw](https://elari39.oss-cn-chengdu.aliyuncs.com/blog/20260307134804457.png)
 
 ## 配置OpenClaw
 
