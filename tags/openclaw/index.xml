@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>OpenClaw on Elari的博客</title><link>https://Elari39.github.io/tags/openclaw/</link><description>Recent content from Elari的博客</description><generator>Hugo</generator><language>zh-cn</language><managingEditor>majo_elaina@qq.com (Elari39)</managingEditor><webMaster>majo_elaina@qq.com (Elari39)</webMaster><copyright>本博客所有文章除特别声明外，均采用 BY-NC-SA 许可协议。转载请注明出处！</copyright><lastBuildDate>Sat, 07 Mar 2026 13:00:00 +0800</lastBuildDate><atom:link href="https://Elari39.github.io/tags/openclaw/index.xml" rel="self" type="application/rss+xml"/><item><title>腾讯云1Panel安装OpenClaw配置QQ机器人</title><link>https://Elari39.github.io/post/openclaw/openclaw-qq-1panel/</link><pubDate>Sat, 07 Mar 2026 13:00:00 +0800</pubDate><author>majo_elaina@qq.com (Elari39)</author><guid>https://Elari39.github.io/post/openclaw/openclaw-qq-1panel/</guid><description>
+<![CDATA[<h1>腾讯云1Panel安装OpenClaw配置QQ机器人</h1><p>作者：Elari39（majo_elaina@qq.com）</p>
+        
+          <h2 id="创建qq机器人">
+<a class="header-anchor" href="#%e5%88%9b%e5%bb%baqq%e6%9c%ba%e5%99%a8%e4%ba%ba"></a>
+创建qq机器人
+</h2><ol>
+<li>
+<p>打开<a href="https://q.qq.com/qqbot/openclaw/login.html">OpenClaw QQ 机器人登录页面</a></p>
+</li>
+<li>
+<p>使用QQ进行扫码登录</p>
+</li>
+<li>
+<p>登录成功后，点击创建机器人</p>
+</li>
+</ol>
+<p><img src="https://elari39.oss-cn-chengdu.aliyuncs.com/blog/20260307130300449.png" alt="创建机器人"></p>
+<ol start="4">
+<li>将原生接入流程中的命令保存下来，尤其是id和token</li>
+</ol>
+<ul>
+<li>可以先<code>扫码聊天</code>添加机器人</li>
+</ul>
+<h2 id="使用腾讯云安装1panel">
+<a class="header-anchor" href="#%e4%bd%bf%e7%94%a8%e8%85%be%e8%ae%af%e4%ba%91%e5%ae%89%e8%a3%851panel"></a>
+使用腾讯云安装1Panel
+</h2><ol>
+<li>点击<a href="https://console.cloud.tencent.com/lighthouse/instance">腾讯云服务器</a>，选择<code>使用模版应用</code>使用<code>1Panel Linux面板</code>创建服务器</li>
+</ol>
+<p><img src="https://elari39.oss-cn-chengdu.aliyuncs.com/blog/20260307130713012.png" alt="安装1Panel"></p>
+<ol start="2">
+<li>点击<code>防火墙</code>，添加规则，允许<code>TCP</code>端口<code>18789</code>和<code>8090</code>，分别为openclaw和1Panel的端口</li>
+</ol>
+<p><img src="https://elari39.oss-cn-chengdu.aliyuncs.com/blog/20260307131138787.png" alt="添加防火墙规则"></p>
+<ol start="3">
+<li>点击<code>应用管理</code>，复制<code>sudo /opt/1panel/get-1panel-info.sh</code>再点击<code>登录</code>,获取默认账号和密码登录1Panel
+<img src="https://elari39.oss-cn-chengdu.aliyuncs.com/blog/20260307131408995.png" alt="登录1Panel"></li>
+</ol>
+<h2 id="安装openclaw">
+<a class="header-anchor" href="#%e5%ae%89%e8%a3%85openclaw"></a>
+安装OpenClaw
+</h2><ol>
+<li>
+<p>登录1Panel后，点击<code>应用商店</code>，点击<code>全部</code>-&gt;<code>OpenClaw</code>，点击<code>安装</code></p>
+</li>
+<li>
+<p>将模型提供商改成<code>模型提供商</code>，模型改成<code>deepseek/deepseek-chat</code>，然后输入<code>api密钥</code>后点击确认，等待安装完成</p>
+</li>
+</ol>
+<ul>
+<li>可以选择<code>高级设置</code>-<code>外部端口访问</code></li>
+</ul>
+<p><img src="https://elari39.oss-cn-chengdu.aliyuncs.com/blog/20260307131704234.png" alt="安装OpenClaw"></p>
+<h2 id="配置openclaw">
+<a class="header-anchor" href="#%e9%85%8d%e7%bd%aeopenclaw"></a>
+配置OpenClaw
+</h2><ol>
+<li>
+<p>点击<code>系统</code>-&gt;<code>文件</code> ，找到并打开<code>data/config/openclaw.json</code></p>
+</li>
+<li>
+<p>复制其中的token字段</p>
+</li>
+</ol>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-json" data-lang="json"><span class="line"><span class="cl"><span class="s2">&#34;auth&#34;</span><span class="err">:</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">      <span class="nt">&#34;mode&#34;</span><span class="p">:</span> <span class="s2">&#34;token&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">      <span class="nt">&#34;token&#34;</span><span class="p">:</span> <span class="s2">&#34;ciallo&#34;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span></code></pre></div><p><img src="https://elari39.oss-cn-chengdu.aliyuncs.com/blog/20260307132604912.png" alt="复制token"></p>
+<ol start="3">
+<li>为openclaw添加令牌：点击<code>应用商店</code>-&gt;<code>已安装</code>-&gt;<code>OpenClaw</code>-&gt;<code>参数</code>-&gt;<code>编辑</code>-&gt;<code>令牌</code>-&gt;<code>输入 token</code>-&gt;<code>点击确认</code></li>
+</ol>
+<p><img src="https://elari39.oss-cn-chengdu.aliyuncs.com/blog/20260307132747033.png" alt="添加令牌"></p>
+<ul>
+<li>后续可以通过<code>http://服务器IP:18789?token=ciallo</code>进行访问面板</li>
+</ul>
+<h2 id="配置qq机器人">
+<a class="header-anchor" href="#%e9%85%8d%e7%bd%aeqq%e6%9c%ba%e5%99%a8%e4%ba%ba"></a>
+配置QQ机器人
+</h2><ol>
+<li>
+<p>点击终端 先输入docker ps获取openclaw容器名称</p>
+</li>
+<li>
+<p>输入<code>docker exec -it openclaw-container-name sh</code>进入容器</p>
+</li>
+</ol>
+<p><img src="https://elari39.oss-cn-chengdu.aliyuncs.com/blog/20260307133511039.png" alt="进入容器"></p>
+<ol start="3">
+<li>输入创建qq机器人时的命令</li>
+</ol>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-sh" data-lang="sh"><span class="line"><span class="cl">openclaw plugins install @sliverp/qqbot@latest
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">openclaw channels add --channel qqbot --token <span class="s2">&#34;id:token&#34;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">openclaw gateway restart
+</span></span></code></pre></div><ol start="4">
+<li>重启即可开始聊天</li>
+</ol>
+<p><img src="https://elari39.oss-cn-chengdu.aliyuncs.com/blog/20260307133630409.png" alt="开始聊天"></p>
+        
+        <hr><p>本文2026-03-07首发于<a href='https://Elari39.github.io/'>Elari的博客</a>，最后修改于2026-03-07</p>]]></description><category>OpenClaw</category><category>QQ</category><category>1Panel</category></item></channel></rss>
