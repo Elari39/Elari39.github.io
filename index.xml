@@ -1,4 +1,80 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Elari的博客</title><link>https://Elari39.github.io/</link><description>Recent content from Elari的博客</description><generator>Hugo</generator><language>zh-cn</language><managingEditor>majo_elaina@qq.com (Elari39)</managingEditor><webMaster>majo_elaina@qq.com (Elari39)</webMaster><copyright>本博客所有文章除特别声明外，均采用 BY-NC-SA 许可协议。转载请注明出处！</copyright><lastBuildDate>Sat, 07 Mar 2026 13:00:00 +0800</lastBuildDate><atom:link href="https://Elari39.github.io/index.xml" rel="self" type="application/rss+xml"/><item><title>腾讯云1Panel安装OpenClaw配置QQ机器人</title><link>https://Elari39.github.io/post/openclaw/openclaw-qq-1panel/</link><pubDate>Sat, 07 Mar 2026 13:00:00 +0800</pubDate><author>majo_elaina@qq.com (Elari39)</author><guid>https://Elari39.github.io/post/openclaw/openclaw-qq-1panel/</guid><description>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Elari的博客</title><link>https://Elari39.github.io/</link><description>Recent content from Elari的博客</description><generator>Hugo</generator><language>zh-cn</language><managingEditor>majo_elaina@qq.com (Elari39)</managingEditor><webMaster>majo_elaina@qq.com (Elari39)</webMaster><copyright>本博客所有文章除特别声明外，均采用 BY-NC-SA 许可协议。转载请注明出处！</copyright><lastBuildDate>Sun, 08 Mar 2026 18:30:00 +0800</lastBuildDate><atom:link href="https://Elari39.github.io/index.xml" rel="self" type="application/rss+xml"/><item><title>Go 语言配置管理神器：Viper 基础使用指南</title><link>https://Elari39.github.io/post/viper/golang-viper-guide/</link><pubDate>Sun, 08 Mar 2026 18:30:00 +0800</pubDate><author>majo_elaina@qq.com (Elari39)</author><guid>https://Elari39.github.io/post/viper/golang-viper-guide/</guid><description>
+<![CDATA[<h1>Go 语言配置管理神器：Viper 基础使用指南</h1><p>作者：Elari39（majo_elaina@qq.com）</p>
+        
+          <h2 id="前言">
+<a class="header-anchor" href="#%e5%89%8d%e8%a8%80"></a>
+前言
+</h2><p>在 Go 项目里，配置通常会越来越多：接口地址、模型参数、数据库连接、Redis
+地址，都会慢慢堆起来。<br>
+如果继续把这些值硬编码在代码里，后期维护会很痛苦。</p>
+<p>这时候就可以用 <a href="https://github.com/spf13/viper">Viper</a> 来做配置管理。</p>
+<p>这篇文章不讲一堆抽象概念，而是直接基于示例代码进行讲解，带你完成一套最常见的流程：</p>
+<ol>
+<li>
+<p>准备 <code>yaml</code> 配置文件</p>
+</li>
+<li>
+<p>用结构体定义配置模型</p>
+</li>
+<li>
+<p>用 Viper 读取配置</p>
+</li>
+<li>
+<p>把配置映射到 Go 结构体</p>
+</li>
+<li>
+<p>在程序里直接使用配置值</p>
+</li>
+</ol>
+<p>需要先说明一点：当前示例实现的是 <strong>基础配置读取</strong>，并 <strong>没有</strong> 包含热更新、环境变量覆盖、多环境切换这些功能，文章也只围绕已经实现的内容展开。</p>
+<h2 id="示例目录结构">
+<a class="header-anchor" href="#%e7%a4%ba%e4%be%8b%e7%9b%ae%e5%bd%95%e7%bb%93%e6%9e%84"></a>
+示例目录结构
+</h2><p>目录非常小，但非常适合入门：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-text" data-lang="text"><span class="line"><span class="cl">viper_use/
+</span></span><span class="line"><span class="cl">├── config/
+</span></span><span class="line"><span class="cl">│   ├── config.go
+</span></span><span class="line"><span class="cl">│   └── config.yaml
+</span></span><span class="line"><span class="cl">├── go.mod
+</span></span><span class="line"><span class="cl">└── main.go
+</span></span></code></pre></div><p>各文件职责如下：</p>
+<ul>
+<li>
+<p><code>config/config.yaml</code>：配置文件本体</p>
+</li>
+<li>
+<p><code>config/config.go</code>：配置结构体定义</p>
+</li>
+<li>
+<p><code>main.go</code>：Viper 读取配置并打印结果</p>
+</li>
+<li>
+<p><code>go.mod</code>：项目依赖声明</p>
+</li>
+</ul>
+<h2 id="安装-viper">
+<a class="header-anchor" href="#%e5%ae%89%e8%a3%85-viper"></a>
+安装 Viper
+</h2><div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">go get github.com/spf13/viper
+</span></span></code></pre></div><h2 id="第一步准备配置文件">
+<a class="header-anchor" href="#%e7%ac%ac%e4%b8%80%e6%ad%a5%e5%87%86%e5%a4%87%e9%85%8d%e7%bd%ae%e6%96%87%e4%bb%b6"></a>
+第一步：准备配置文件
+</h2><p>示例里的配置文件是 <code>config/config.yaml</code>：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl"><span class="nt">api</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">url</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;https://api.example.com&#34;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">key</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;123456&#34;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">model</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;gpt-5.4&#34;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">max_tokens</span><span class="p">:</span><span class="w"> </span><span class="m">1024</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">temperature</span><span class="p">:</span><span class="w"> </span><span class="m">1.0</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="nt">redis</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">host</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;localhost&#34;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">port</span><span class="p">:</span><span class="w"> </span><span class="m">6379</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">db</span><span class="p">:</span><span class="w"> </span><span class="m">0</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">password</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;123456&#34;</span><span class="w">
+</span></span></span></code></pre></div><p>这里定义了两组配置：</p>
+        
+        <hr><p>本文2026-03-08首发于<a href='https://Elari39.github.io/'>Elari的博客</a>，最后修改于2026-03-08</p>]]></description><category>Go 语言</category><category>后端技术</category></item><item><title>腾讯云1Panel安装OpenClaw配置QQ机器人</title><link>https://Elari39.github.io/post/openclaw/openclaw-qq-1panel/</link><pubDate>Sat, 07 Mar 2026 13:00:00 +0800</pubDate><author>majo_elaina@qq.com (Elari39)</author><guid>https://Elari39.github.io/post/openclaw/openclaw-qq-1panel/</guid><description>
 <![CDATA[<h1>腾讯云1Panel安装OpenClaw配置QQ机器人</h1><p>作者：Elari39（majo_elaina@qq.com）</p>
         
           <h2 id="创建qq机器人">
@@ -971,73 +1047,4 @@ Http基础
 </span></span></span></code></pre></div><blockquote>
 <p>推荐书籍：计算机程序的构造与解释</p>
         
-        <hr><p>本文2026-02-28首发于<a href='https://Elari39.github.io/'>Elari的博客</a>，最后修改于2026-02-28</p>]]></description><category>GolangStudy</category><category>Golang进阶</category></item><item><title>Golang 笔记Day01 基础篇</title><link>https://Elari39.github.io/post/go-learning/1.notes/day01/</link><pubDate>Fri, 27 Feb 2026 23:00:00 +0800</pubDate><author>majo_elaina@qq.com (Elari39)</author><guid>https://Elari39.github.io/post/go-learning/1.notes/day01/</guid><description>
-<![CDATA[<h1>Golang 笔记Day01 基础篇</h1><p>作者：Elari39（majo_elaina@qq.com）</p>
-        
-          <h2 id="1-编写第一个-go-程序">
-<a class="header-anchor" href="#1-%e7%bc%96%e5%86%99%e7%ac%ac%e4%b8%80%e4%b8%aa-go-%e7%a8%8b%e5%ba%8f"></a>
-1. 编写第一个 Go 程序
-</h2><h3 id="11-程序源码">
-<a class="header-anchor" href="#11-%e7%a8%8b%e5%ba%8f%e6%ba%90%e7%a0%81"></a>
-1.1 程序源码
-</h3><div class="highlight"><pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="line"><span class="cl"><span class="kn">package</span><span class="w"> </span><span class="nx">main</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="kn">import</span><span class="w"> </span><span class="s">&#34;fmt&#34;</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="kd">func</span><span class="w"> </span><span class="nf">main</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nx">fmt</span><span class="p">.</span><span class="nf">Println</span><span class="p">(</span><span class="s">&#34;Hello world!&#34;</span><span class="p">)</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="p">}</span><span class="w">
-</span></span></span></code></pre></div><h3 id="12-运行和编译">
-<a class="header-anchor" href="#12-%e8%bf%90%e8%a1%8c%e5%92%8c%e7%bc%96%e8%af%91"></a>
-1.2 运行和编译
-</h3><ul>
-<li><strong>运行命令：</strong>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-shell" data-lang="shell"><span class="line"><span class="cl">go run main.go
-</span></span></code></pre></div></li>
-<li><strong>编译后运行：</strong>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-shell" data-lang="shell"><span class="line"><span class="cl">go build main.go
-</span></span><span class="line"><span class="cl">./main
-</span></span></code></pre></div></li>
-</ul>
-<h3 id="13-2026-年新增或删改内容-go-124126">
-<a class="header-anchor" href="#13-2026-%e5%b9%b4%e6%96%b0%e5%a2%9e%e6%88%96%e5%88%a0%e6%94%b9%e5%86%85%e5%ae%b9-go-124126"></a>
-1.3 2026 年新增或删改内容 (Go 1.24/1.26)
-</h3><ul>
-<li><strong>工具链优化：</strong> <code>go mod init</code> 现在默认指定较低的 Go 版本（例如 1.25.0），以增强模块的向后兼容性。</li>
-<li><strong>命令行工具：</strong> 原有的 <code>go tool doc</code> 已被弃用并删除，建议全面切换到 <code>go doc</code> 命令。</li>
-<li><strong>自动版本嵌入：</strong> <code>go build</code> 现在会自动根据版本控制系统（VCS）的标签或提交记录在编译后的二进制文件中嵌入主模块版本。</li>
-</ul>
-<blockquote>
-<p><strong>💡 注意：</strong></p>
-<ol>
-<li>必须是 <code>main</code> 包：<code>package main</code></li>
-<li>必须有 <code>main</code> 函数：<code>func main()</code></li>
-<li>文件名不一定是 <code>main.go</code></li>
-</ol>
-</blockquote>
-<hr>
-<h2 id="2-与其他编程语言的差异">
-<a class="header-anchor" href="#2-%e4%b8%8e%e5%85%b6%e4%bb%96%e7%bc%96%e7%a8%8b%e8%af%ad%e8%a8%80%e7%9a%84%e5%b7%ae%e5%bc%82"></a>
-2. 与其他编程语言的差异
-</h2><h3 id="21-返回值">
-<a class="header-anchor" href="#21-%e8%bf%94%e5%9b%9e%e5%80%bc"></a>
-2.1 返回值
-</h3><ul>
-<li>Go 中 <code>main</code> 函数不支持任何返回值。</li>
-<li>通过 <code>os.Exit()</code> 函数退出程序。</li>
-</ul>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="line"><span class="cl"><span class="kn">package</span><span class="w"> </span><span class="nx">main</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="kn">import</span><span class="w"> </span><span class="p">(</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="s">&#34;fmt&#34;</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="s">&#34;os&#34;</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="p">)</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="kd">func</span><span class="w"> </span><span class="nf">main</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nx">fmt</span><span class="p">.</span><span class="nf">Println</span><span class="p">(</span><span class="s">&#34;Hello world!&#34;</span><span class="p">)</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nx">os</span><span class="p">.</span><span class="nf">Exit</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="p">}</span><span class="w">
-</span></span></span></code></pre></div><blockquote>
-<p><strong>⚠️ 注意：</strong></p>
-        
-        <hr><p>本文2026-02-27首发于<a href='https://Elari39.github.io/'>Elari的博客</a>，最后修改于2026-02-27</p>]]></description><category>Golang 学习笔记</category></item></channel></rss>
+        <hr><p>本文2026-02-28首发于<a href='https://Elari39.github.io/'>Elari的博客</a>，最后修改于2026-02-28</p>]]></description><category>GolangStudy</category><category>Golang进阶</category></item></channel></rss>

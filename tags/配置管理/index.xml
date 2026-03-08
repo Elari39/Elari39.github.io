@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>配置管理 on Elari的博客</title><link>https://Elari39.github.io/tags/%E9%85%8D%E7%BD%AE%E7%AE%A1%E7%90%86/</link><description>Recent content from Elari的博客</description><generator>Hugo</generator><language>zh-cn</language><managingEditor>majo_elaina@qq.com (Elari39)</managingEditor><webMaster>majo_elaina@qq.com (Elari39)</webMaster><copyright>本博客所有文章除特别声明外，均采用 BY-NC-SA 许可协议。转载请注明出处！</copyright><lastBuildDate>Sun, 08 Mar 2026 18:30:00 +0800</lastBuildDate><atom:link href="https://Elari39.github.io/tags/%E9%85%8D%E7%BD%AE%E7%AE%A1%E7%90%86/index.xml" rel="self" type="application/rss+xml"/><item><title>Go 语言配置管理神器：Viper 基础使用指南</title><link>https://Elari39.github.io/post/viper/golang-viper-guide/</link><pubDate>Sun, 08 Mar 2026 18:30:00 +0800</pubDate><author>majo_elaina@qq.com (Elari39)</author><guid>https://Elari39.github.io/post/viper/golang-viper-guide/</guid><description>
+<![CDATA[<h1>Go 语言配置管理神器：Viper 基础使用指南</h1><p>作者：Elari39（majo_elaina@qq.com）</p>
+        
+          <h2 id="前言">
+<a class="header-anchor" href="#%e5%89%8d%e8%a8%80"></a>
+前言
+</h2><p>在 Go 项目里，配置通常会越来越多：接口地址、模型参数、数据库连接、Redis
+地址，都会慢慢堆起来。<br>
+如果继续把这些值硬编码在代码里，后期维护会很痛苦。</p>
+<p>这时候就可以用 <a href="https://github.com/spf13/viper">Viper</a> 来做配置管理。</p>
+<p>这篇文章不讲一堆抽象概念，而是直接基于示例代码进行讲解，带你完成一套最常见的流程：</p>
+<ol>
+<li>
+<p>准备 <code>yaml</code> 配置文件</p>
+</li>
+<li>
+<p>用结构体定义配置模型</p>
+</li>
+<li>
+<p>用 Viper 读取配置</p>
+</li>
+<li>
+<p>把配置映射到 Go 结构体</p>
+</li>
+<li>
+<p>在程序里直接使用配置值</p>
+</li>
+</ol>
+<p>需要先说明一点：当前示例实现的是 <strong>基础配置读取</strong>，并 <strong>没有</strong> 包含热更新、环境变量覆盖、多环境切换这些功能，文章也只围绕已经实现的内容展开。</p>
+<h2 id="示例目录结构">
+<a class="header-anchor" href="#%e7%a4%ba%e4%be%8b%e7%9b%ae%e5%bd%95%e7%bb%93%e6%9e%84"></a>
+示例目录结构
+</h2><p>目录非常小，但非常适合入门：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-text" data-lang="text"><span class="line"><span class="cl">viper_use/
+</span></span><span class="line"><span class="cl">├── config/
+</span></span><span class="line"><span class="cl">│   ├── config.go
+</span></span><span class="line"><span class="cl">│   └── config.yaml
+</span></span><span class="line"><span class="cl">├── go.mod
+</span></span><span class="line"><span class="cl">└── main.go
+</span></span></code></pre></div><p>各文件职责如下：</p>
+<ul>
+<li>
+<p><code>config/config.yaml</code>：配置文件本体</p>
+</li>
+<li>
+<p><code>config/config.go</code>：配置结构体定义</p>
+</li>
+<li>
+<p><code>main.go</code>：Viper 读取配置并打印结果</p>
+</li>
+<li>
+<p><code>go.mod</code>：项目依赖声明</p>
+</li>
+</ul>
+<h2 id="安装-viper">
+<a class="header-anchor" href="#%e5%ae%89%e8%a3%85-viper"></a>
+安装 Viper
+</h2><div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">go get github.com/spf13/viper
+</span></span></code></pre></div><h2 id="第一步准备配置文件">
+<a class="header-anchor" href="#%e7%ac%ac%e4%b8%80%e6%ad%a5%e5%87%86%e5%a4%87%e9%85%8d%e7%bd%ae%e6%96%87%e4%bb%b6"></a>
+第一步：准备配置文件
+</h2><p>示例里的配置文件是 <code>config/config.yaml</code>：</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl"><span class="nt">api</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">url</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;https://api.example.com&#34;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">key</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;123456&#34;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">model</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;gpt-5.4&#34;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">max_tokens</span><span class="p">:</span><span class="w"> </span><span class="m">1024</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">temperature</span><span class="p">:</span><span class="w"> </span><span class="m">1.0</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="nt">redis</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">host</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;localhost&#34;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">port</span><span class="p">:</span><span class="w"> </span><span class="m">6379</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">db</span><span class="p">:</span><span class="w"> </span><span class="m">0</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">password</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;123456&#34;</span><span class="w">
+</span></span></span></code></pre></div><p>这里定义了两组配置：</p>
+        
+        <hr><p>本文2026-03-08首发于<a href='https://Elari39.github.io/'>Elari的博客</a>，最后修改于2026-03-08</p>]]></description><category>Go 语言</category><category>后端技术</category></item></channel></rss>
