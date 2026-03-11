@@ -1,4 +1,5 @@
-baseURL = 'https://Elari39.github.io/'
+# baseURL = 'https://Elari39.github.io/'
+baseURL = 'https://blog.miku831.fun/'
 enableRobotsTXT = true
 languageCode = 'zh-cn'
 timeZone = "Asia/Shanghai"
