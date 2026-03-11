@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Go on Elari的博客</title><link>https://Elari39.github.io/tags/go/</link><description>Recent content from Elari的博客</description><generator>Hugo</generator><language>zh-cn</language><managingEditor>majo_elaina@qq.com (Elari39)</managingEditor><webMaster>majo_elaina@qq.com (Elari39)</webMaster><copyright>本博客所有文章除特别声明外，均采用 BY-NC-SA 许可协议。转载请注明出处！</copyright><lastBuildDate>Sun, 08 Mar 2026 18:30:00 +0800</lastBuildDate><atom:link href="https://Elari39.github.io/tags/go/index.xml" rel="self" type="application/rss+xml"/><item><title>Go 语言配置管理神器：Viper 基础使用指南</title><link>https://Elari39.github.io/post/viper/golang-viper-guide/</link><pubDate>Sun, 08 Mar 2026 18:30:00 +0800</pubDate><author>majo_elaina@qq.com (Elari39)</author><guid>https://Elari39.github.io/post/viper/golang-viper-guide/</guid><description>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Go on Elari的博客</title><link>https://blog.miku831.fun/tags/go/</link><description>Recent content from Elari的博客</description><generator>Hugo</generator><language>zh-cn</language><managingEditor>majo_elaina@qq.com (Elari39)</managingEditor><webMaster>majo_elaina@qq.com (Elari39)</webMaster><copyright>本博客所有文章除特别声明外，均采用 BY-NC-SA 许可协议。转载请注明出处！</copyright><lastBuildDate>Sun, 08 Mar 2026 18:30:00 +0800</lastBuildDate><atom:link href="https://blog.miku831.fun/tags/go/index.xml" rel="self" type="application/rss+xml"/><item><title>Go 语言配置管理神器：Viper 基础使用指南</title><link>https://blog.miku831.fun/post/viper/golang-viper-guide/</link><pubDate>Sun, 08 Mar 2026 18:30:00 +0800</pubDate><author>majo_elaina@qq.com (Elari39)</author><guid>https://blog.miku831.fun/post/viper/golang-viper-guide/</guid><description>
 <![CDATA[<h1>Go 语言配置管理神器：Viper 基础使用指南</h1><p>作者：Elari39（majo_elaina@qq.com）</p>
         
           <h2 id="前言">
@@ -74,7 +74,7 @@
 </span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">password</span><span class="p">:</span><span class="w"> </span><span class="s2">&#34;123456&#34;</span><span class="w">
 </span></span></span></code></pre></div><p>这里定义了两组配置：</p>
         
-        <hr><p>本文2026-03-08首发于<a href='https://Elari39.github.io/'>Elari的博客</a>，最后修改于2026-03-08</p>]]></description><category>Go 语言</category><category>后端技术</category></item><item><title>从零实现 Web 框架 (Gee)</title><link>https://Elari39.github.io/post/go-learning/4.projects/geektutu/web/webgee/</link><pubDate>Thu, 05 Mar 2026 21:00:00 +0800</pubDate><author>majo_elaina@qq.com (Elari39)</author><guid>https://Elari39.github.io/post/go-learning/4.projects/geektutu/web/webgee/</guid><description>
+        <hr><p>本文2026-03-08首发于<a href='https://blog.miku831.fun/'>Elari的博客</a>，最后修改于2026-03-08</p>]]></description><category>Go 语言</category><category>后端技术</category></item><item><title>从零实现 Web 框架 (Gee)</title><link>https://blog.miku831.fun/post/go-learning/4.projects/geektutu/web/webgee/</link><pubDate>Thu, 05 Mar 2026 21:00:00 +0800</pubDate><author>majo_elaina@qq.com (Elari39)</author><guid>https://blog.miku831.fun/post/go-learning/4.projects/geektutu/web/webgee/</guid><description>
 <![CDATA[<h1>从零实现 Web 框架 (Gee)</h1><p>作者：Elari39（majo_elaina@qq.com）</p>
         
           <h2 id="前情提要">
@@ -136,7 +136,7 @@ Http基础
 功能设计与实现
 </h3><p>我们需要实现如下三个功能：</p>
         
-        <hr><p>本文2026-03-05首发于<a href='https://Elari39.github.io/'>Elari的博客</a>，最后修改于2026-03-05</p>]]></description><category>Golang 学习笔记</category></item><item><title>JWT (JSON Web Token) 深入浅出</title><link>https://Elari39.github.io/post/jwt/jwt-learn/</link><pubDate>Wed, 04 Mar 2026 16:00:00 +0800</pubDate><author>majo_elaina@qq.com (Elari39)</author><guid>https://Elari39.github.io/post/jwt/jwt-learn/</guid><description>
+        <hr><p>本文2026-03-05首发于<a href='https://blog.miku831.fun/'>Elari的博客</a>，最后修改于2026-03-05</p>]]></description><category>Golang 学习笔记</category></item><item><title>JWT (JSON Web Token) 深入浅出</title><link>https://blog.miku831.fun/post/jwt/jwt-learn/</link><pubDate>Wed, 04 Mar 2026 16:00:00 +0800</pubDate><author>majo_elaina@qq.com (Elari39)</author><guid>https://blog.miku831.fun/post/jwt/jwt-learn/</guid><description>
 <![CDATA[<h1>JWT (JSON Web Token) 深入浅出</h1><p>作者：Elari39（majo_elaina@qq.com）</p>
         
           <h2 id="-什么是-jwt">
@@ -181,7 +181,7 @@ Http基础
 2️⃣ 载荷 (Payload)
 </h3><p>包含了用户的相关信息（Claims），如用户 ID、用户名、过期时间等。</p>
         
-        <hr><p>本文2026-03-04首发于<a href='https://Elari39.github.io/'>Elari的博客</a>，最后修改于2026-03-04</p>]]></description><category>Backend</category><category>Go Learning</category></item><item><title>使用 Go flag 实现 Todo CLI</title><link>https://Elari39.github.io/post/go-learning/2.stdlib/todocli-flag/</link><pubDate>Mon, 02 Mar 2026 18:00:00 +0800</pubDate><author>majo_elaina@qq.com (Elari39)</author><guid>https://Elari39.github.io/post/go-learning/2.stdlib/todocli-flag/</guid><description>
+        <hr><p>本文2026-03-04首发于<a href='https://blog.miku831.fun/'>Elari的博客</a>，最后修改于2026-03-04</p>]]></description><category>Backend</category><category>Go Learning</category></item><item><title>使用 Go flag 实现 Todo CLI</title><link>https://blog.miku831.fun/post/go-learning/2.stdlib/todocli-flag/</link><pubDate>Mon, 02 Mar 2026 18:00:00 +0800</pubDate><author>majo_elaina@qq.com (Elari39)</author><guid>https://blog.miku831.fun/post/go-learning/2.stdlib/todocli-flag/</guid><description>
 <![CDATA[<h1>使用 Go flag 实现 Todo CLI</h1><p>作者：Elari39（majo_elaina@qq.com）</p>
         
           <p>这篇文章带你用 <strong>Go 标准库 <code>flag</code> 包</strong>实现一个轻量级的 Todo CLI。</p>
@@ -214,7 +214,7 @@ Http基础
 </span></span><span class="line"><span class="cl">        └── file.go
 </span></span></code></pre></div><p>各目录职责：</p>
         
-        <hr><p>本文2026-03-02首发于<a href='https://Elari39.github.io/'>Elari的博客</a>，最后修改于2026-03-02</p>]]></description><category>Go</category></item><item><title>代码随想录算法训练营 - 数组篇</title><link>https://Elari39.github.io/post/go-learning/3.algorithm/arraychapter/</link><pubDate>Mon, 02 Mar 2026 16:00:00 +0800</pubDate><author>majo_elaina@qq.com (Elari39)</author><guid>https://Elari39.github.io/post/go-learning/3.algorithm/arraychapter/</guid><description>
+        <hr><p>本文2026-03-02首发于<a href='https://blog.miku831.fun/'>Elari的博客</a>，最后修改于2026-03-02</p>]]></description><category>Go</category></item><item><title>代码随想录算法训练营 - 数组篇</title><link>https://blog.miku831.fun/post/go-learning/3.algorithm/arraychapter/</link><pubDate>Mon, 02 Mar 2026 16:00:00 +0800</pubDate><author>majo_elaina@qq.com (Elari39)</author><guid>https://blog.miku831.fun/post/go-learning/3.algorithm/arraychapter/</guid><description>
 <![CDATA[<h1>代码随想录算法训练营 - 数组篇</h1><p>作者：Elari39（majo_elaina@qq.com）</p>
         
           <h2 id="数组理论基础">
@@ -246,9 +246,9 @@ Http基础
 输出：<code>4</code>
 解释：<code>9</code> 出现在 <code>nums</code> 中并且下标为 <code>4</code></p>
         
-        <hr><p>本文2026-03-02首发于<a href='https://Elari39.github.io/'>Elari的博客</a>，最后修改于2026-03-02</p>]]></description><category>算法学习笔记</category></item><item><title>GoHttp库</title><link>https://Elari39.github.io/post/gohttpv1/</link><pubDate>Tue, 17 Feb 2026 19:41:00 +0800</pubDate><author>majo_elaina@qq.com (Elari39)</author><guid>https://Elari39.github.io/post/gohttpv1/</guid><description>
+        <hr><p>本文2026-03-02首发于<a href='https://blog.miku831.fun/'>Elari的博客</a>，最后修改于2026-03-02</p>]]></description><category>算法学习笔记</category></item><item><title>GoHttp库</title><link>https://blog.miku831.fun/post/gohttpv1/</link><pubDate>Tue, 17 Feb 2026 19:41:00 +0800</pubDate><author>majo_elaina@qq.com (Elari39)</author><guid>https://blog.miku831.fun/post/gohttpv1/</guid><description>
 <![CDATA[<h1>GoHttp库</h1><p>作者：Elari39（majo_elaina@qq.com）</p>
         
           Go 语言的 net/http 标准库是构建 HTTP 服务端和客户端的基石，它设计简洁、功能强大，并且是众多第三方 Web 框架（如 Gin、Echo）的底层依赖。无论你是想从零搭建一个高性能的 Web 服务，还是希望在使用框架时能深入理解其原理，掌握 net/http 都是必修课。本文将从零开始，以最新版本的 Go（语法层面无破坏性变更）为例，详细拆解 net/http 的核心概念、工作机制以及最佳实践。
         
-        <hr><p>本文2026-02-17首发于<a href='https://Elari39.github.io/'>Elari的博客</a>，最后修改于2026-02-17</p>]]></description><category>Go</category></item></channel></rss>
+        <hr><p>本文2026-02-17首发于<a href='https://blog.miku831.fun/'>Elari的博客</a>，最后修改于2026-02-17</p>]]></description><category>Go</category></item></channel></rss>

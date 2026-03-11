@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Go 1.26 on Elari的博客</title><link>https://Elari39.github.io/tags/go-1.26/</link><description>Recent content from Elari的博客</description><generator>Hugo</generator><language>zh-cn</language><managingEditor>majo_elaina@qq.com (Elari39)</managingEditor><webMaster>majo_elaina@qq.com (Elari39)</webMaster><copyright>本博客所有文章除特别声明外，均采用 BY-NC-SA 许可协议。转载请注明出处！</copyright><lastBuildDate>Sat, 28 Feb 2026 21:00:00 +0800</lastBuildDate><atom:link href="https://Elari39.github.io/tags/go-1.26/index.xml" rel="self" type="application/rss+xml"/><item><title>Golang 笔记Day02 基础篇</title><link>https://Elari39.github.io/post/go-learning/1.notes/day02/</link><pubDate>Sat, 28 Feb 2026 21:00:00 +0800</pubDate><author>majo_elaina@qq.com (Elari39)</author><guid>https://Elari39.github.io/post/go-learning/1.notes/day02/</guid><description>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Go 1.26 on Elari的博客</title><link>https://blog.miku831.fun/tags/go-1.26/</link><description>Recent content from Elari的博客</description><generator>Hugo</generator><language>zh-cn</language><managingEditor>majo_elaina@qq.com (Elari39)</managingEditor><webMaster>majo_elaina@qq.com (Elari39)</webMaster><copyright>本博客所有文章除特别声明外，均采用 BY-NC-SA 许可协议。转载请注明出处！</copyright><lastBuildDate>Sat, 28 Feb 2026 21:00:00 +0800</lastBuildDate><atom:link href="https://blog.miku831.fun/tags/go-1.26/index.xml" rel="self" type="application/rss+xml"/><item><title>Golang 笔记Day02 基础篇</title><link>https://blog.miku831.fun/post/go-learning/1.notes/day02/</link><pubDate>Sat, 28 Feb 2026 21:00:00 +0800</pubDate><author>majo_elaina@qq.com (Elari39)</author><guid>https://blog.miku831.fun/post/go-learning/1.notes/day02/</guid><description>
 <![CDATA[<h1>Golang 笔记Day02 基础篇</h1><p>作者：Elari39（majo_elaina@qq.com）</p>
         
           <h2 id="1-go-语言的函数">
@@ -44,7 +44,7 @@
 </span></span></span></code></pre></div><blockquote>
 <p>推荐书籍：计算机程序的构造与解释</p>
         
-        <hr><p>本文2026-02-28首发于<a href='https://Elari39.github.io/'>Elari的博客</a>，最后修改于2026-02-28</p>]]></description><category>GolangStudy</category><category>Golang进阶</category></item><item><title>Golang 笔记Day01 基础篇</title><link>https://Elari39.github.io/post/go-learning/1.notes/day01/</link><pubDate>Fri, 27 Feb 2026 23:00:00 +0800</pubDate><author>majo_elaina@qq.com (Elari39)</author><guid>https://Elari39.github.io/post/go-learning/1.notes/day01/</guid><description>
+        <hr><p>本文2026-02-28首发于<a href='https://blog.miku831.fun/'>Elari的博客</a>，最后修改于2026-02-28</p>]]></description><category>GolangStudy</category><category>Golang进阶</category></item><item><title>Golang 笔记Day01 基础篇</title><link>https://blog.miku831.fun/post/go-learning/1.notes/day01/</link><pubDate>Fri, 27 Feb 2026 23:00:00 +0800</pubDate><author>majo_elaina@qq.com (Elari39)</author><guid>https://blog.miku831.fun/post/go-learning/1.notes/day01/</guid><description>
 <![CDATA[<h1>Golang 笔记Day01 基础篇</h1><p>作者：Elari39（majo_elaina@qq.com）</p>
         
           <h2 id="1-编写第一个-go-程序">
@@ -113,4 +113,4 @@
 </span></span></span></code></pre></div><blockquote>
 <p><strong>⚠️ 注意：</strong></p>
         
-        <hr><p>本文2026-02-27首发于<a href='https://Elari39.github.io/'>Elari的博客</a>，最后修改于2026-02-27</p>]]></description><category>Golang 学习笔记</category></item></channel></rss>
+        <hr><p>本文2026-02-27首发于<a href='https://blog.miku831.fun/'>Elari的博客</a>，最后修改于2026-02-27</p>]]></description><category>Golang 学习笔记</category></item></channel></rss>

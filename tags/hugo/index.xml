@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Hugo on Elari的博客</title><link>https://Elari39.github.io/tags/hugo/</link><description>Recent content from Elari的博客</description><generator>Hugo</generator><language>zh-cn</language><managingEditor>majo_elaina@qq.com (Elari39)</managingEditor><webMaster>majo_elaina@qq.com (Elari39)</webMaster><copyright>本博客所有文章除特别声明外，均采用 BY-NC-SA 许可协议。转载请注明出处！</copyright><lastBuildDate>Mon, 16 Feb 2026 20:00:00 +0800</lastBuildDate><atom:link href="https://Elari39.github.io/tags/hugo/index.xml" rel="self" type="application/rss+xml"/><item><title>在 Hugo 博客中使用阿里云 OSS 托管图片（含自动化迁移脚本）</title><link>https://Elari39.github.io/post/hugooss/</link><pubDate>Mon, 16 Feb 2026 20:00:00 +0800</pubDate><author>majo_elaina@qq.com (Elari39)</author><guid>https://Elari39.github.io/post/hugooss/</guid><description>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Hugo on Elari的博客</title><link>https://blog.miku831.fun/tags/hugo/</link><description>Recent content from Elari的博客</description><generator>Hugo</generator><language>zh-cn</language><managingEditor>majo_elaina@qq.com (Elari39)</managingEditor><webMaster>majo_elaina@qq.com (Elari39)</webMaster><copyright>本博客所有文章除特别声明外，均采用 BY-NC-SA 许可协议。转载请注明出处！</copyright><lastBuildDate>Mon, 16 Feb 2026 20:00:00 +0800</lastBuildDate><atom:link href="https://blog.miku831.fun/tags/hugo/index.xml" rel="self" type="application/rss+xml"/><item><title>在 Hugo 博客中使用阿里云 OSS 托管图片（含自动化迁移脚本）</title><link>https://blog.miku831.fun/post/hugooss/</link><pubDate>Mon, 16 Feb 2026 20:00:00 +0800</pubDate><author>majo_elaina@qq.com (Elari39)</author><guid>https://blog.miku831.fun/post/hugooss/</guid><description>
 <![CDATA[<h1>在 Hugo 博客中使用阿里云 OSS 托管图片（含自动化迁移脚本）</h1><p>作者：Elari39（majo_elaina@qq.com）</p>
         
           <p>随着博客文章的增多，本地图片的管理和加载速度逐渐成为瓶颈。将图片托管到对象存储（如阿里云 OSS）不仅可以提升访问速度，还能减轻 Git 仓库的体积压力。</p>
@@ -45,7 +45,7 @@
 </span></span><span class="line"><span class="cl"><span class="na">OSS_ACCESS_KEY_SECRET</span><span class="o">=</span><span class="s">你的AccessKeySecret</span>
 </span></span></code></pre></div><p>确保 <code>.gitignore</code> 中包含 <code>.env</code>。</p>
         
-        <hr><p>本文2026-02-16首发于<a href='https://Elari39.github.io/'>Elari的博客</a>，最后修改于2026-02-16</p>]]></description><category>Hugo</category><category>技术教程</category></item><item><title>在 Hugo 博客中部署 OpenAI 格式的 AI 助手</title><link>https://Elari39.github.io/post/hugoai/</link><pubDate>Mon, 16 Feb 2026 19:17:00 +0800</pubDate><author>majo_elaina@qq.com (Elari39)</author><guid>https://Elari39.github.io/post/hugoai/</guid><description>
+        <hr><p>本文2026-02-16首发于<a href='https://blog.miku831.fun/'>Elari的博客</a>，最后修改于2026-02-16</p>]]></description><category>Hugo</category><category>技术教程</category></item><item><title>在 Hugo 博客中部署 OpenAI 格式的 AI 助手</title><link>https://blog.miku831.fun/post/hugoai/</link><pubDate>Mon, 16 Feb 2026 19:17:00 +0800</pubDate><author>majo_elaina@qq.com (Elari39)</author><guid>https://blog.miku831.fun/post/hugoai/</guid><description>
 <![CDATA[<h1>在 Hugo 博客中部署 OpenAI 格式的 AI 助手</h1><p>作者：Elari39（majo_elaina@qq.com）</p>
         
           <p>在这个 AI 普及的时代，给自己的个人博客添加一个 AI 助手似乎成了一种新的“标配”。不仅可以增加互动性，还能让访客快速了解博客内容或进行闲聊。</p>
@@ -142,7 +142,7 @@ Worker 代码
 </span></span><span class="line"><span class="cl"><span class="p">};</span>
 </span></span></code></pre></div><p>记得在 Cloudflare 后台配置环境变量 <code>GEMINI_API_URL</code> 和 <code>GEMINI_API_KEY</code>。</p>
         
-        <hr><p>本文2026-02-16首发于<a href='https://Elari39.github.io/'>Elari的博客</a>，最后修改于2026-02-16</p>]]></description><category>Hugo</category><category>AI</category></item><item><title>Hugo博客配置</title><link>https://Elari39.github.io/post/hugoblog/hugo%E5%8D%9A%E5%AE%A2/</link><pubDate>Sat, 14 Feb 2026 12:00:00 +0800</pubDate><author>majo_elaina@qq.com (Elari39)</author><guid>https://Elari39.github.io/post/hugoblog/hugo%E5%8D%9A%E5%AE%A2/</guid><description>
+        <hr><p>本文2026-02-16首发于<a href='https://blog.miku831.fun/'>Elari的博客</a>，最后修改于2026-02-16</p>]]></description><category>Hugo</category><category>AI</category></item><item><title>Hugo博客配置</title><link>https://blog.miku831.fun/post/hugoblog/hugo%E5%8D%9A%E5%AE%A2/</link><pubDate>Sat, 14 Feb 2026 12:00:00 +0800</pubDate><author>majo_elaina@qq.com (Elari39)</author><guid>https://blog.miku831.fun/post/hugoblog/hugo%E5%8D%9A%E5%AE%A2/</guid><description>
 <![CDATA[<h1>Hugo博客配置</h1><p>作者：Elari39（majo_elaina@qq.com）</p>
         
           <h2 id="按照必要环境">
@@ -204,4 +204,4 @@ cd myblog
 <li>
 <p><code>vendor.yml</code> 用于配置第三方库的 CDN 源</p>
         
-        <hr><p>本文2026-02-14首发于<a href='https://Elari39.github.io/'>Elari的博客</a>，最后修改于2026-02-14</p>]]></description><category>Hugo</category></item></channel></rss>
+        <hr><p>本文2026-02-14首发于<a href='https://blog.miku831.fun/'>Elari的博客</a>，最后修改于2026-02-14</p>]]></description><category>Hugo</category></item></channel></rss>

@@ -1,2 +1,2 @@
 User-agent: *
-Sitemap: https://Elari39.github.io/sitemap.xml
+Sitemap: https://blog.miku831.fun/sitemap.xml
