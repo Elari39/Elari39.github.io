@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+
+# @astrojs/sitemap 生成的是索引 + 分片
+Sitemap: https://elari39.github.io/sitemap-index.xml

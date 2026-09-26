@@ -1,0 +1,91 @@
+<!doctype html>
+<!--
+  OG 卡片模板。
+  由 scripts/prepare-assets.py 用无头 Chrome 渲染成 public/og.png（1200×630）。
+  这里刻意不引任何外部资源：字体走系统字体栈，图形是 CSS，
+  和站点本体保持同一套色板（见 src/styles/global.css）。
+-->
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+      }
+
+      body {
+        width: 1200px;
+        height: 630px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding: 0 84px;
+        background-color: #121110;
+        background-image:
+          radial-gradient(760px 380px at 14% -14%, rgba(224, 141, 109, 0.34), transparent 62%),
+          radial-gradient(520px 300px at 100% 4%, rgba(93, 184, 166, 0.18), transparent 58%);
+        color: #faf9f5;
+        font-family: 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia,
+          'Microsoft YaHei', 'PingFang SC', sans-serif;
+      }
+
+      .rule {
+        width: 96px;
+        height: 4px;
+        background: linear-gradient(90deg, #e08d6d, rgba(224, 141, 109, 0.15));
+        margin-bottom: 34px;
+      }
+
+      h1 {
+        font-size: 78px;
+        font-weight: 400;
+        line-height: 1.06;
+        letter-spacing: -1.5px;
+      }
+
+      .cn {
+        margin-top: 18px;
+        font-size: 34px;
+        color: #e9a389;
+        letter-spacing: 4px;
+      }
+
+      .sub {
+        margin-top: 30px;
+        max-width: 900px;
+        font-size: 25px;
+        line-height: 1.5;
+        color: #d8d4cb;
+      }
+
+      .entries {
+        margin-top: 42px;
+        display: flex;
+        gap: 18px;
+        font-family: ui-monospace, Consolas, monospace;
+        font-size: 21px;
+        color: #a09d96;
+        letter-spacing: 0.5px;
+      }
+
+      .entries span {
+        padding: 9px 20px;
+        border: 1px solid #2e2c28;
+        border-radius: 999px;
+        background: rgba(31, 30, 27, 0.7);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="rule"></div>
+    <h1>Ashen Witch's Grimoire</h1>
+    <p class="cn">灰烬女巫的魔典</p>
+    <p class="sub">三个自建项目的条目库：博客系统、短链服务，以及一个本地文档保险箱。</p>
+    <div class="entries">
+      <span>Notes of Ashen</span>
+      <span>AshenCourier</span>
+      <span>CryptoWitch</span>
+    </div>
+  </body>
+</html>

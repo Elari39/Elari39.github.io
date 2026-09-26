@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Ashen Witch's Grimoire">
+  <rect width="64" height="64" rx="14" fill="#181715" />
+  <path d="M32 8.5 55.5 32 32 55.5 8.5 32Z" fill="none" stroke="#e08d6d" stroke-width="2.6" stroke-linejoin="round" />
+  <path d="M32 21 43 32 32 43 21 32Z" fill="#e8a55a" />
+  <path d="M32 8.5v12.5M55.5 32H43M32 55.5V43M8.5 32H21" stroke="#e08d6d" stroke-width="2.2" stroke-linecap="round" />
+</svg>

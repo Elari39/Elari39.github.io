@@ -1,0 +1,50 @@
+---
+import { SITE } from '../data/site';
+import Glyph from './Glyph.astro';
+import ThemeToggle from './ThemeToggle.astro';
+
+const path = Astro.url.pathname;
+
+/** 当前页高亮：锚点链接只看路径部分 */
+function isCurrent(href: string): boolean {
+  const clean = href.split('#')[0] ?? '/';
+  if (clean === '/') return path === '/';
+  return path.startsWith(clean);
+}
+---
+
+<header class="sticky top-0 z-50 border-b border-hairline bg-canvas/85 backdrop-blur-md">
+  <div class="mx-auto flex max-w-5xl items-center gap-3 px-5 py-3">
+    <a href="/" class="flex items-center gap-3 no-underline">
+      <span class="text-primary">
+        <Glyph name="sigil" size={26} />
+      </span>
+      <span class="flex flex-col leading-tight">
+        <span class="font-display text-[1.0625rem] text-ink">{SITE.title}</span>
+        <span class="label text-[0.6875rem] tracking-[0.18em]">{SITE.subtitle}</span>
+      </span>
+    </a>
+
+    <nav class="ml-auto flex items-center gap-0.5" aria-label="站点导航">
+      {
+        SITE.nav.map((item) => (
+          <a
+            href={item.href}
+            aria-current={isCurrent(item.href) ? 'page' : undefined}
+            class="rounded-full px-3 py-1.5 text-sm text-muted no-underline transition-colors hover:bg-card hover:text-ink aria-[current=page]:bg-card aria-[current=page]:text-ink"
+          >
+            {item.label}
+          </a>
+        ))
+      }
+      <a
+        href={SITE.author.github}
+        rel="noopener noreferrer"
+        class="hidden rounded-full px-3 py-1.5 text-sm text-muted no-underline transition-colors hover:bg-card hover:text-ink sm:inline-flex"
+      >
+        GitHub
+      </a>
+      <ThemeToggle />
+    </nav>
+  </div>
+</header>

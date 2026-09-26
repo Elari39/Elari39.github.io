@@ -1,0 +1,117 @@
+---
+import { getCollection } from 'astro:content';
+
+import ProjectCard from '../components/ProjectCard.astro';
+import { SITE } from '../data/site';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import type { GlyphName, ProjectStatus, ProjectView } from '../lib/entry';
+
+const entries = (await getCollection('projects', ({ data }) => !data.draft)).sort(
+  (a, b) => a.data.order - b.data.order,
+);
+
+/** 内容集合 -> 组件视图：唯一一处需要知道集合形状的地方 */
+const projects: ProjectView[] = entries.map((entry) => ({
+  slug: entry.id,
+  title: entry.data.title,
+  tagline: entry.data.tagline,
+  summary: entry.data.summary,
+  status: entry.data.status as ProjectStatus,
+  year: entry.data.year,
+  role: entry.data.role,
+  accent: entry.data.accent,
+  glyph: entry.data.glyph as GlyphName,
+  order: entry.data.order,
+  stack: [...entry.data.stack],
+  highlights: [...entry.data.highlights],
+  links: { ...entry.data.links },
+  gallery: entry.data.gallery.map((plate) => ({ ...plate })),
+}));
+
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: SITE.title,
+    alternateName: SITE.subtitle,
+    url: SITE.url,
+    description: SITE.description,
+    inLanguage: SITE.lang,
+    author: {
+      '@type': 'Person',
+      name: SITE.author.handle,
+      url: SITE.author.github,
+    },
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: '项目条目',
+    itemListElement: projects.map((project, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: project.title,
+      description: project.tagline,
+      url: `${SITE.url}/projects/${project.slug}/`,
+    })),
+  },
+];
+---
+
+<BaseLayout jsonLd={jsonLd}>
+  <section class="border-b border-hairline">
+    <div class="mx-auto max-w-5xl px-5 pt-16 pb-14">
+      <p class="label">序言 · Prologue</p>
+      <h1 class="mt-4 text-4xl sm:text-6xl">{SITE.title}</h1>
+      <p class="mt-4 font-display text-xl text-primary-ink">{SITE.subtitle}</p>
+      <p class="mt-7 max-w-2xl text-lg text-body">
+        三个自己设计、实现并部署的项目，写成一本可以翻的魔典。每一条都是完整的工程记录：做了什么、
+        为什么这样做、以及在哪些地方刻意没有那样做。
+      </p>
+      <div class="mt-8 flex flex-wrap gap-2">
+        <a class="btn btn-primary" href="#entries">翻开条目</a>
+        <a class="btn" href="/about/">关于本站</a>
+        <a class="btn" href={SITE.author.github} rel="noopener noreferrer">GitHub</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="mx-auto max-w-5xl px-5 py-12" aria-label="本站的自我约束">
+    <ul class="grid gap-4 sm:grid-cols-3">
+      {
+        SITE.principles.map((item) => (
+          <li class="rounded-card border border-hairline bg-surface p-5">
+            <h2 class="font-display text-base text-ink">{item.title}</h2>
+            <p class="mt-2 text-sm text-muted">{item.body}</p>
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+
+  <section id="entries" class="mx-auto max-w-4xl scroll-mt-24 px-5 pb-8">
+    <div class="flex items-baseline justify-between gap-4 border-b border-hairline pb-4">
+      <h2 class="text-2xl">条目</h2>
+      <p class="label">{projects.length} 条 · 按年份排序</p>
+    </div>
+
+    <div class="mt-8 space-y-6">
+      {projects.map((project, index) => <ProjectCard project={project} index={index} />)}
+    </div>
+  </section>
+
+  <section class="mx-auto max-w-4xl px-5 pb-16">
+    <div class="rounded-card border border-hairline bg-surface p-6">
+      <h2 class="font-display text-lg text-ink">还有别的</h2>
+      <p class="mt-2 text-sm text-muted">
+        这里只收录当下最值得展开的三个项目。其余的小工具、实验与半成品都在 GitHub 上——包括原生微信小程序工具箱
+        shiki-toolbox、多活动打卡桌面应用 miku-chrono 等等。
+      </p>
+      <div class="mt-5">
+        <a class="btn" href={SITE.author.github} rel="noopener noreferrer">
+          在 GitHub 上看全部
+        </a>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

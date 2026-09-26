@@ -1,0 +1,102 @@
+# Ashen Witch's Grimoire —— 发布到 GitHub Pages
+#
+# 形态：这是**用户站点**。仓库名必须是 Elari39.github.io，站点根就是
+# https://elari39.github.io/ —— 没有子路径，所以 astro.config.mjs 里不设 base，
+# 而这也是为什么它和项目站点（elari39.github.io/<repo>/）的配置不一样。
+#
+# 发布走官方三件套（configure-pages / upload-pages-artifact / deploy-pages）：
+# 产物以 artifact 上传，不落 gh-pages 分支，也不需要 .nojekyll。
+# 与 elari39.github.io 下另一个 Pages 项目（shiki-toolbox）保持同一套流程。
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+# 同一时间只允许一个 Pages 发布，且发布中不取消 —— 避免线上出现半成品
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  # 每次 push 与 PR 都跑：类型检查、构建、以及对构建产物的守卫。
+  # 守卫失败就等于这次提交不满足站点对外的承诺（零外链、CSP 完整、
+  # 对比度达标、图版尺寸已声明……），所以它挡在发布前面。
+  verify:
+    name: 类型检查 · 构建 · 守卫
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+
+      # 不写 version：pnpm/action-setup 会读 package.json 的 packageManager 字段，
+      # 保证 CI 与本机用的是同一个 pnpm。
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: 安装依赖
+        run: pnpm install --frozen-lockfile
+
+      - name: 类型检查（astro sync + tsc + astro check）
+        run: pnpm run check
+
+      - name: 构建
+        run: pnpm run build
+
+      - name: 守卫构建产物
+        run: pnpm run guard
+
+  deploy:
+    name: 发布到 GitHub Pages
+    needs: verify
+    # PR 只验证不发布；只有 main 上的推送（或手动触发）才发布
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: 安装依赖
+        run: pnpm install --frozen-lockfile
+
+      - name: 构建
+        run: pnpm run build
+
+      # 用户站点的产品根就是 dist/。这一步是个便宜的护栏：
+      # 万一将来有人改了 outDir 或加了一层 base，会在发布前就炸掉，
+      # 而不是等到线上出现一个空白首页。
+      - name: 确认产物根正确
+        run: |
+          test -f dist/index.html || { echo "dist/index.html 不存在，检查 astro.config.mjs 的 build.outDir / base"; exit 1; }
+          test -f dist/404.html || { echo "dist/404.html 不存在"; exit 1; }
+
+      - uses: actions/configure-pages@v6
+
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: dist
+
+      - id: deploy
+        uses: actions/deploy-pages@v5

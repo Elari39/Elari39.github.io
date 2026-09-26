@@ -1,0 +1,37 @@
+{
+  "name": "ashen-grimoire",
+  "type": "module",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Ashen Witch's Grimoire —— 灰烬女巫的魔典：三个自建项目的条目库",
+  "packageManager": "pnpm@12.5.1",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "check": "astro sync && tsc --noEmit && astro check",
+    "guard": "node scripts/check-site.mjs",
+    "verify": "pnpm run check && pnpm run build && pnpm run guard",
+    "verify:browser": "node scripts/verify-browser.mjs",
+    "assets": "python scripts/prepare-assets.py",
+    "assets:inspect": "python scripts/prepare-assets.py --inspect",
+    "astro": "astro"
+  },
+  "dependencies": {
+    "@astrojs/sitemap": "^3.7.4",
+    "astro": "^7.3.5"
+  },
+  "allowScripts": {
+    "esbuild": true
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.10",
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/node": "^26.6.2",
+    "tailwindcss": "^4.3.3",
+    "typescript": "~5.9.3"
+  }
+}

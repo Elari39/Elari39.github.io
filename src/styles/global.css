@@ -1,0 +1,596 @@
+/* =============================================================================
+   Ashen Witch's Grimoire — 设计系统
+   -----------------------------------------------------------------------------
+   色板取自 AshenCourier/DESIGN.md（暖奶油画布 + 珊瑚主色 + 深色面板），
+   再补一套「深色灰烬」变体，让本站与三个被展示的项目保持同一套视觉语汇。
+
+   两套主题都只是 CSS 变量：Tailwind 通过 `@theme inline` 直接引用这些变量，
+   所以 `bg-canvas` / `text-ink` 这类工具类会在运行时而跟着 data-theme 变色，
+   而不需要为每个主题各写一份工具类。
+
+   主题的解析顺序：
+     1. <html data-theme="dark|light"> —— 由 <head> 里的内联引导脚本写入
+     2. 引导脚本没跑（JS 被禁用）时，下面的 prefers-color-scheme 查询兜底
+   ========================================================================== */
+
+@import 'tailwindcss';
+
+/* dark: 变体绑定到 data-theme，而不是 Tailwind 默认的 .dark 类 */
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
+/* -----------------------------------------------------------------------------
+   1. 主题变量
+   -------------------------------------------------------------------------- */
+
+/* 明亮主题：羊皮纸 */
+:root {
+  color-scheme: light;
+
+  --c-canvas: #faf9f5;
+  --c-surface: #f5f0e8;
+  --c-card: #efe9de;
+  --c-card-strong: #e8e0d2;
+  --c-hairline: #e6dfd8;
+  --c-hairline-soft: #ebe6df;
+  --c-ink: #141413;
+  --c-body: #3d3d3a;
+  --c-muted: #67655f;
+  --c-muted-soft: #716f68;
+  --c-primary: #cc785c;
+  --c-primary-ink: #a9583e;
+  /* 珊瑚底上的文字用近黑而不是白：白字对 #cc785c 只有 3.3:1，
+     过不了 WCAG AA 的 4.5:1 —— 而按钮与跳转链接都是小字号。
+     这条约束由 scripts/check-site.mjs 的对比度检查盯着。 */
+  --c-on-primary: #1a1512;
+  --c-amber: #8f5a10;
+  --c-teal: #276b5e;
+  --c-code: #efe9de;
+}
+
+/* 深色主题：灰烬 */
+[data-theme='dark'] {
+  color-scheme: dark;
+
+  --c-canvas: #121110;
+  --c-surface: #181715;
+  --c-card: #1f1e1b;
+  --c-card-strong: #252320;
+  --c-hairline: #2e2c28;
+  --c-hairline-soft: #262421;
+  --c-ink: #faf9f5;
+  --c-body: #d8d4cb;
+  --c-muted: #a09d96;
+  --c-muted-soft: #8e8b82;
+  --c-primary: #e08d6d;
+  --c-primary-ink: #e9a389;
+  --c-on-primary: #1a1512;
+  --c-amber: #e8a55a;
+  --c-teal: #5db8a6;
+  --c-code: #1f1e1b;
+}
+
+/* 没有 JS 时（data-theme 不存在）跟随系统 */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    color-scheme: dark;
+
+    --c-canvas: #121110;
+    --c-surface: #181715;
+    --c-card: #1f1e1b;
+    --c-card-strong: #252320;
+    --c-hairline: #2e2c28;
+    --c-hairline-soft: #262421;
+    --c-ink: #faf9f5;
+    --c-body: #d8d4cb;
+    --c-muted: #a09d96;
+    --c-muted-soft: #8e8b82;
+    --c-primary: #e08d6d;
+    --c-primary-ink: #e9a389;
+    --c-on-primary: #1a1512;
+    --c-amber: #e8a55a;
+    --c-teal: #5db8a6;
+    --c-code: #1f1e1b;
+  }
+}
+
+@theme inline {
+  --color-canvas: var(--c-canvas);
+  --color-surface: var(--c-surface);
+  --color-card: var(--c-card);
+  --color-card-strong: var(--c-card-strong);
+  --color-hairline: var(--c-hairline);
+  --color-hairline-soft: var(--c-hairline-soft);
+  --color-ink: var(--c-ink);
+  --color-body: var(--c-body);
+  --color-muted: var(--c-muted);
+  --color-muted-soft: var(--c-muted-soft);
+  --color-primary: var(--c-primary);
+  --color-primary-ink: var(--c-primary-ink);
+  --color-on-primary: var(--c-on-primary);
+  --color-amber: var(--c-amber);
+  --color-teal: var(--c-teal);
+  --color-code: var(--c-code);
+
+  --font-display: 'Iowan Old Style', 'Palatino Linotype', Palatino, 'Book Antiqua',
+    Georgia, 'Songti SC', 'Noto Serif CJK SC', 'Source Han Serif SC', serif;
+  --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue',
+    'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, 'Cascadia Mono', Consolas,
+    'Liberation Mono', Menlo, monospace;
+
+  --radius-card: 0.875rem;
+}
+
+/* -----------------------------------------------------------------------------
+   2. 基础层
+   -------------------------------------------------------------------------- */
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    /* 吸顶导航的高度，锚点跳转时不要被它盖住 */
+    scroll-padding-top: 5.5rem;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--c-canvas);
+    color: var(--c-body);
+    font-family: var(--font-sans);
+    /* 中文正文比拉丁文需要更大的字号与行高 */
+    font-size: 1.0625rem;
+    line-height: 1.75;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* 页面底纹：顶部一抹余烬与一缕冷色，纯 CSS，不请求任何图片 */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+      radial-gradient(
+        68rem 34rem at 12% -12%,
+        color-mix(in oklab, var(--c-primary) 22%, transparent),
+        transparent 62%
+      ),
+      radial-gradient(
+        46rem 28rem at 100% 2%,
+        color-mix(in oklab, var(--c-teal) 14%, transparent),
+        transparent 58%
+      );
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    color: var(--c-ink);
+    font-weight: 400;
+    line-height: 1.25;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+  }
+
+  a {
+    color: inherit;
+    text-decoration-color: color-mix(in oklab, var(--c-primary) 60%, transparent);
+    text-underline-offset: 0.2em;
+  }
+
+  a:hover {
+    text-decoration-color: var(--c-primary);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--c-primary);
+    outline-offset: 3px;
+    border-radius: 0.25rem;
+  }
+
+  ::selection {
+    background: color-mix(in oklab, var(--c-primary) 32%, transparent);
+    color: var(--c-ink);
+  }
+
+  code,
+  kbd,
+  samp {
+    font-family: var(--font-mono);
+    font-size: 0.9em;
+  }
+
+  img {
+    max-width: 100%;
+    height: auto;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+/* -----------------------------------------------------------------------------
+   3. 组件
+   全部是原生 CSS（不依赖 @apply），颜色一律走 var(--c-*)，
+   所以主题切换不需要重新生成任何工具类。
+   -------------------------------------------------------------------------- */
+
+@layer components {
+  .skip-link {
+    position: absolute;
+    left: 0.75rem;
+    top: -4rem;
+    z-index: 100;
+    padding: 0.6rem 1rem;
+    border-radius: 0 0 0.5rem 0.5rem;
+    background: var(--c-primary);
+    color: var(--c-on-primary);
+    font-size: 0.9375rem;
+    text-decoration: none;
+    transition: top 0.18s ease;
+  }
+
+  .skip-link:focus {
+    top: 0;
+  }
+
+  /* 小号等宽标签，用于「条目 I」「序言」这类标记 */
+  .label {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--c-muted);
+  }
+
+  /* 余烬分隔线 */
+  .rule-ember {
+    height: 1px;
+    border: 0;
+    background: linear-gradient(
+      90deg,
+      var(--c-primary),
+      color-mix(in oklab, var(--c-primary) 25%, transparent) 42%,
+      transparent
+    );
+  }
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.22rem 0.6rem;
+    border: 1px solid var(--c-hairline);
+    border-radius: 999px;
+    background: color-mix(in oklab, var(--c-card) 70%, transparent);
+    color: var(--c-muted);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    line-height: 1.5;
+    white-space: nowrap;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.55rem 1.05rem;
+    border: 1px solid var(--c-hairline);
+    border-radius: 999px;
+    background: var(--c-card);
+    color: var(--c-ink);
+    font-size: 0.9375rem;
+    line-height: 1.5;
+    text-decoration: none;
+    transition:
+      border-color 0.18s ease,
+      background-color 0.18s ease,
+      color 0.18s ease,
+      transform 0.18s ease;
+  }
+
+  .btn:hover {
+    border-color: color-mix(in oklab, var(--c-primary) 55%, var(--c-hairline));
+    transform: translateY(-1px);
+  }
+
+  .btn-primary {
+    border-color: transparent;
+    background: var(--c-primary);
+    color: var(--c-on-primary);
+    font-weight: 500;
+  }
+
+  .btn-primary:hover {
+    background: color-mix(in oklab, var(--c-primary) 88%, var(--c-ink));
+  }
+
+  /* 状态标记：.badge 给骨架，.badge-* 只换颜色 */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex: none;
+    padding: 0.2rem 0.6rem;
+    border-radius: 999px;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    white-space: nowrap;
+  }
+
+  .badge::before {
+    content: '';
+    width: 0.4rem;
+    height: 0.4rem;
+    border-radius: 999px;
+    background: currentColor;
+  }
+
+  .badge-live {
+    background: color-mix(in oklab, var(--c-teal) 16%, transparent);
+    color: var(--c-teal);
+  }
+
+  .badge-wip {
+    background: color-mix(in oklab, var(--c-amber) 18%, transparent);
+    color: var(--c-amber);
+  }
+
+  .badge-archived {
+    background: color-mix(in oklab, var(--c-muted) 18%, transparent);
+    color: var(--c-muted);
+  }
+
+  /* 条目强调色。颜色必须来自 CSS 类：行内 style 属性会被自己的 CSP 拦掉，
+     而 style 属性的哈希（'unsafe-hashes'）不值得为三个颜色去开。 */
+  .accent-coral {
+    --entry-accent: var(--c-primary);
+  }
+
+  .accent-teal {
+    --entry-accent: var(--c-teal);
+  }
+
+  .accent-amber {
+    --entry-accent: var(--c-amber);
+  }
+
+  /* 主题图标：两个 SVG 都在 DOM 里，由这里决定显示哪一个 ——
+     这样连「没有 JS、跟随系统」的情况也能显示正确的图标 */
+  .theme-icon-moon {
+    display: none;
+  }
+
+  [data-theme='dark'] .theme-icon-sun {
+    display: none;
+  }
+
+  [data-theme='dark'] .theme-icon-moon {
+    display: block;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme]) .theme-icon-sun {
+      display: none;
+    }
+
+    :root:not([data-theme]) .theme-icon-moon {
+      display: block;
+    }
+  }
+
+  /* 「条目」卡片：书页的质感 —— 发丝描边 + 悬停抬起 + 顶部一道强调色 */
+  .entry-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--c-hairline);
+    border-radius: var(--radius-card);
+    background: linear-gradient(
+      170deg,
+      color-mix(in oklab, var(--c-card) 92%, transparent),
+      var(--c-surface)
+    );
+    box-shadow: 0 1px 0 color-mix(in oklab, var(--c-ink) 4%, transparent);
+    transition:
+      transform 0.24s ease,
+      border-color 0.24s ease,
+      box-shadow 0.24s ease;
+  }
+
+  .entry-card:hover {
+    transform: translateY(-3px);
+    border-color: color-mix(in oklab, var(--entry-accent, var(--c-primary)) 60%, var(--c-hairline));
+    box-shadow:
+      0 18px 40px -24px
+        color-mix(in oklab, var(--entry-accent, var(--c-primary)) 55%, transparent),
+      0 1px 0 color-mix(in oklab, var(--c-ink) 5%, transparent);
+  }
+
+  .entry-card::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 3px;
+    border-radius: var(--radius-card) var(--radius-card) 0 0;
+    background: linear-gradient(
+      90deg,
+      var(--entry-accent, var(--c-primary)),
+      color-mix(in oklab, var(--entry-accent, var(--c-primary)) 20%, transparent)
+    );
+  }
+
+  /* 项目字形标记：圆角方块里放一枚内联 SVG */
+  .glyph {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 3rem;
+    height: 3rem;
+    border: 1px solid var(--c-hairline);
+    border-radius: 0.75rem;
+    background: var(--c-surface);
+    color: var(--entry-accent, var(--c-primary));
+  }
+
+  .glyph svg {
+    width: 1.5rem;
+    height: 1.5rem;
+  }
+
+  /* 详情页的标题区 */
+  .entry-header {
+    border-bottom: 1px solid var(--c-hairline);
+    background: linear-gradient(
+      180deg,
+      color-mix(in oklab, var(--entry-accent, var(--c-primary)) 12%, transparent),
+      transparent
+    );
+  }
+
+  /* 截图：像贴在书页上的图版 */
+  .plate {
+    display: block;
+    width: 100%;
+    height: auto;
+    border: 1px solid var(--c-hairline);
+    border-radius: 0.75rem;
+    background: var(--c-surface);
+  }
+
+  /* ---- 渲染 Markdown 正文用的排版（不引 @tailwindcss/typography） ---- */
+
+  .prose-grimoire {
+    color: var(--c-body);
+  }
+
+  .prose-grimoire > * + * {
+    margin-top: 1.15em;
+  }
+
+  .prose-grimoire h2 {
+    margin-top: 2.75rem;
+    margin-bottom: 0.25rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--c-hairline);
+    font-size: 1.4rem;
+  }
+
+  .prose-grimoire h3 {
+    margin-top: 2rem;
+    font-size: 1.1rem;
+    color: var(--c-ink);
+  }
+
+  .prose-grimoire p,
+  .prose-grimoire li {
+    line-height: 1.85;
+  }
+
+  .prose-grimoire strong {
+    color: var(--c-ink);
+    font-weight: 600;
+  }
+
+  .prose-grimoire a {
+    color: var(--c-primary-ink);
+    text-decoration: underline;
+  }
+
+  .prose-grimoire ul,
+  .prose-grimoire ol {
+    padding-left: 1.4em;
+  }
+
+  .prose-grimoire ul {
+    list-style: disc;
+  }
+
+  .prose-grimoire ol {
+    list-style: decimal;
+  }
+
+  .prose-grimoire li + li {
+    margin-top: 0.4em;
+  }
+
+  .prose-grimoire li::marker {
+    color: color-mix(in oklab, var(--c-primary) 80%, var(--c-muted));
+  }
+
+  .prose-grimoire code {
+    padding: 0.12em 0.4em;
+    border: 1px solid var(--c-hairline);
+    border-radius: 0.35rem;
+    background: var(--c-code);
+    color: var(--c-ink);
+    word-break: break-word;
+  }
+
+  .prose-grimoire pre {
+    overflow-x: auto;
+    padding: 1rem 1.15rem;
+    border: 1px solid var(--c-hairline);
+    border-radius: 0.75rem;
+    background: var(--c-code);
+    font-size: 0.85rem;
+    line-height: 1.7;
+  }
+
+  .prose-grimoire pre code {
+    padding: 0;
+    border: 0;
+    background: none;
+    font-size: inherit;
+  }
+
+  .prose-grimoire blockquote {
+    padding: 0.2rem 0 0.2rem 1.1rem;
+    border-left: 3px solid color-mix(in oklab, var(--c-primary) 70%, transparent);
+    color: var(--c-muted);
+  }
+
+  .prose-grimoire hr {
+    margin: 2.5rem 0;
+    border: 0;
+    border-top: 1px solid var(--c-hairline);
+  }
+
+  .prose-grimoire table {
+    display: block;
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9375rem;
+    overflow-x: auto;
+  }
+
+  .prose-grimoire th,
+  .prose-grimoire td {
+    padding: 0.55rem 0.75rem;
+    border: 1px solid var(--c-hairline);
+    text-align: left;
+    vertical-align: top;
+  }
+
+  .prose-grimoire th {
+    background: var(--c-card);
+    color: var(--c-ink);
+    font-weight: 500;
+  }
+}

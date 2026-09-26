@@ -1,0 +1,77 @@
+---
+import '../styles/global.css';
+
+import Footer from '../components/Footer.astro';
+import Header from '../components/Header.astro';
+import { SITE } from '../data/site';
+import { THEME_BOOT_SCRIPT } from '../lib/theme';
+
+interface Props {
+  /** 页面标题（不含站点名）；不传则用「站名 · 副题」 */
+  title?: string;
+  description?: string;
+  ogType?: 'website' | 'article';
+  /** 详情页用条目自己的强调色，让整页的标记与线条跟着走 */
+  accent?: 'coral' | 'teal' | 'amber';
+  jsonLd?: Record<string, unknown> | Record<string, unknown>[];
+}
+
+const { title, description = SITE.description, ogType = 'website', accent, jsonLd } = Astro.props;
+
+const pageTitle = title ? `${title} · ${SITE.title}` : `${SITE.title} · ${SITE.subtitle}`;
+const canonical = new URL(Astro.url.pathname, SITE.url).href;
+const ogImage = new URL('/og.png', SITE.url).href;
+const jsonLdBlocks = jsonLd ? (Array.isArray(jsonLd) ? jsonLd : [jsonLd]) : [];
+---
+
+<!doctype html>
+<html lang={SITE.lang}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{pageTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <meta name="author" content={SITE.author.handle} />
+    <meta name="generator" content={Astro.generator} />
+
+    <meta property="og:type" content={ogType} />
+    <meta property="og:site_name" content={SITE.title} />
+    <meta property="og:locale" content="zh_CN" />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content={`${SITE.title} —— ${SITE.subtitle}`} />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <meta name="theme-color" content="#faf9f5" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#121110" media="(prefers-color-scheme: dark)" />
+
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
+    {/*
+      主题引导：必须同步执行、且在样式生效之前。
+      这也是整站唯一的内联脚本 —— 由 Astro 的 security.csp 生成哈希放行。
+    */}
+    <script is:inline set:html={THEME_BOOT_SCRIPT}></script>
+
+    {
+      jsonLdBlocks.map((block) => (
+        <script type="application/ld+json" set:html={JSON.stringify(block)}></script>
+      ))
+    }
+  </head>
+
+  <body class={accent ? `accent-${accent}` : undefined}>
+    <a class="skip-link" href="#main">跳到主要内容</a>
+    <Header />
+    <main id="main">
+      <slot />
+    </main>
+    <Footer />
+  </body>
+</html>

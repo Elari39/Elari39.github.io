@@ -1,0 +1,25 @@
+# 构建产物
+dist/
+# astro sync 生成的类型
+.astro/
+
+# 依赖
+node_modules/
+
+# 素材流水线的中间产物（原始截图与 Chrome 日志）
+.assets-raw/
+
+# 日志
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# 环境变量
+.env
+.env.production
+
+# 系统与编辑器
+.DS_Store
+Thumbs.db
+.idea/

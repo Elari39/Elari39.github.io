@@ -1,0 +1,78 @@
+---
+import { SITE } from '../data/site';
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+  title="关于本站"
+  description="Ashen Witch's Grimoire 是什么、为什么这样搭，以及怎么往里加一个新条目。"
+>
+  <div class="mx-auto max-w-3xl px-5 py-14">
+    <p class="label">关于本站</p>
+    <h1 class="mt-3 text-3xl sm:text-4xl">一本可以翻的魔典</h1>
+
+    <div class="prose-grimoire mt-8">
+      <p>
+        这个站点是 {SITE.author.handle} 的项目条目库。每个项目是魔典里的一条：
+        结构化字段写在 frontmatter，长文叙述写在正文，页面由 Astro 在构建期渲染成纯静态 HTML。
+        目前收录三条，都是自己从零设计、实现并部署的项目。
+      </p>
+
+      <h2>三条自我约束</h2>
+      <p>这不是宣传语，是能被检查的约束——<code>scripts/check-site.mjs</code> 会对着构建产物逐条验证。</p>
+    </div>
+
+    <ul class="mt-6 grid gap-4 sm:grid-cols-3">
+      {
+        SITE.principles.map((item) => (
+          <li class="rounded-card border border-hairline bg-surface p-5">
+            <h2 class="text-base text-ink">{item.title}</h2>
+            <p class="mt-2 text-sm text-muted">{item.body}</p>
+          </li>
+        ))
+      }
+    </ul>
+
+    <div class="prose-grimoire mt-12">
+      <h2>怎么搭的</h2>
+      <ul>
+        {SITE.builtWith.map((item) => <li>{item}</li>)}
+      </ul>
+
+      <h2>怎么加一个条目</h2>
+      <ol>
+        <li>
+          在 <code>src/content/projects/</code> 下新建一份 <code>.md</code>：文件名就是路由片段
+          （<code>my-project.md</code> → <code>/projects/my-project/</code>）。
+        </li>
+        <li>
+          按 <code>src/content.config.ts</code> 里的 schema 写 frontmatter。字段不全、
+          亮点少于三条、仓库地址不指向自己的 GitHub，构建就会直接失败——这是刻意的。
+        </li>
+        <li>
+          正文用普通 Markdown 写。强调色只能从色板里挑（<code>coral</code> / <code>teal</code> /
+          <code>amber</code>），因为颜色要靠 CSS 类实现——行内 <code>style</code> 属性会被自己的
+          CSP 拦掉。
+        </li>
+        <li>
+          跑 <code>pnpm verify</code>：类型检查、构建与守卫脚本全绿，再提交即可。
+        </li>
+      </ol>
+
+      <h2>关于隐私</h2>
+      <p>
+        本站没有分析脚本、没有 Cookie、没有第三方请求，也不会向任何外部服务器发送你的访问信息。
+        字体使用系统字体栈，图标是内联 SVG，页面样式与脚本都由本站自己提供。
+        内容安全策略（CSP）以 <code>&lt;meta&gt;</code> 形式声明——GitHub Pages 不允许自定义响应头，
+        所以能做的只到这里。
+      </p>
+
+      <h2>联系</h2>
+      <p>
+        源码与其余项目都在 GitHub：<a href={SITE.author.github} rel="noopener noreferrer"
+          >{SITE.author.github}</a
+        >。
+      </p>
+    </div>
+  </div>
+</BaseLayout>
