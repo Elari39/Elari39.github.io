@@ -1,0 +1,147 @@
+---
+/**
+ * 序言区的印记：一枚「仪表化的符文阵」。
+ *
+ * 构图是尺规化的，五个同心带从里到外：
+ *   核心余烬（径向光晕 + 实心菱形）→ 八芒星封缄 → 24 等分刻度环
+ *   → 四段符文弧与象限记号 → 外圈发丝环与分度点环
+ * 两个旋转层反向自转（140s / 96s），转速差让它在静止时是一个完整的阵、
+ * 停留两秒能察觉它"活着"。
+ *
+ * 全部内联 SVG + CSS：没有图片、没有脚本，客户端 JS 仍然是 0。
+ * 几何由下面的函数**算出来**而不是手写坐标 —— 24 段刻度合成一条 path，
+ * 于是 24 个分度只占一个节点；等分数也只需要改一个常量。
+ *
+ * 整块是纯装饰，所以 aria-hidden —— 守卫脚本会强制页面上每个 <svg> 都有它。
+ */
+
+interface Props {
+  /**
+   * 线宽倍率。viewBox 是 200，实际渲染 144–288px，所以 1 单位的线在
+   * 288px 下是 1.44px、在 144px 下只有 0.72px —— 后者会被抗锯齿糊掉。
+   * 小尺寸的调用方（404 页，9rem）因此要把它调粗。
+   */
+  weight?: number;
+}
+
+const { weight = 1 } = Astro.props;
+
+/** 外圈发丝环与分度点环相对主线的粗细，保证层次不随 weight 走样 */
+const hairlineWidth = weight * 0.8;
+const dotWidth = weight * 1.5;
+
+/** 极坐标 → viewBox 坐标（圆心固定 100,100，0° 指向正上方） */
+function point(radius: number, angleDeg: number): [number, number] {
+  const rad = ((angleDeg - 90) * Math.PI) / 180;
+  return [100 + radius * Math.cos(rad), 100 + radius * Math.sin(rad)];
+}
+
+const round = (value: number) => value.toFixed(2);
+
+/** 24 等分刻度环：长 7 / 短 3.5 交替，24 段合成一条 path */
+const TICK_COUNT = 24;
+const tickRing = Array.from({ length: TICK_COUNT }, (_, index) => {
+  const angle = (index * 360) / TICK_COUNT;
+  const inner = 54;
+  const outer = inner + (index % 2 === 0 ? 7 : 3.5);
+  const [x0, y0] = point(inner, angle);
+  const [x1, y1] = point(outer, angle);
+  return `M${round(x0)} ${round(y0)}L${round(x1)} ${round(y1)}`;
+}).join('');
+
+/** 4 段 68° 符文弧：缺口 22° 正落在四个对角线上，象限记号就画在缺口里 */
+const ARC_RADIUS = 72;
+const ARC_SPAN = 68;
+const runeArcs = [0, 90, 180, 270]
+  .map((center) => {
+    const [x0, y0] = point(ARC_RADIUS, center - ARC_SPAN / 2);
+    const [x1, y1] = point(ARC_RADIUS, center + ARC_SPAN / 2);
+    return `M${round(x0)} ${round(y0)}A${ARC_RADIUS} ${ARC_RADIUS} 0 0 1 ${round(x1)} ${round(y1)}`;
+  })
+  .join('');
+
+/** 象限记号：一道径向长笔画 + 两道垂直短横，做成三段式的"符文" */
+const RUNE_MARK = 'M100 28V37M96.6 31.5h6.8M97.6 34.5h4.8';
+const RUNE_ANGLES = [45, 135, 225, 315];
+---
+
+<div class="hero-sigil" aria-hidden="true">
+  {/* 从印记中心发出的光（原来那块盖住整个序言区的软光斑已经删掉）。 */}
+  <span class="hero-sigil__aura"></span>
+
+  <svg
+    viewBox="0 0 200 200"
+    width="200"
+    height="200"
+    fill="none"
+    stroke="currentColor"
+    stroke-width={weight}
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    aria-hidden="true"
+    focusable="false"
+  >
+    <defs>
+      {/* 描边的方向性光源：左上亮、右下暗 */}
+      <linearGradient id="sigil-stroke" x1="18%" y1="0%" x2="82%" y2="100%">
+        <stop offset="0%" stop-color="currentColor" stop-opacity="0.95"></stop>
+        <stop offset="55%" stop-color="currentColor" stop-opacity="0.5"></stop>
+        <stop offset="100%" stop-color="currentColor" stop-opacity="0.26"></stop>
+      </linearGradient>
+      {/* 核心光晕：渐变本身就是平滑的，所以不需要 filter: blur，也就少一次重绘 */}
+      <radialGradient id="sigil-core" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="currentColor" stop-opacity="0.85"></stop>
+        <stop offset="38%" stop-color="currentColor" stop-opacity="0.28"></stop>
+        <stop offset="100%" stop-color="currentColor" stop-opacity="0"></stop>
+      </radialGradient>
+    </defs>
+
+    {/* 外圈：发丝环 + 24 个分度点。
+        圆点靠 dasharray + round linecap 得到 —— 24 个点只占一个节点。 */}
+    <circle
+      cx="100"
+      cy="100"
+      r="82"
+      stroke="url(#sigil-stroke)"
+      opacity="0.22"
+      stroke-width={hairlineWidth}></circle>
+    <circle
+      cx="100"
+      cy="100"
+      r="90"
+      stroke="url(#sigil-stroke)"
+      opacity="0.5"
+      stroke-width={dotWidth}
+      stroke-dasharray="0.1 23.46"></circle>
+
+    {/* 反向自转的两层 */}
+    <g class="hero-sigil__ticks" stroke="url(#sigil-stroke)">
+      <path d={tickRing} opacity="0.55"></path>
+    </g>
+
+    <g class="hero-sigil__runes" stroke="url(#sigil-stroke)">
+      <path d={runeArcs} opacity="0.6"></path>
+      {
+        RUNE_ANGLES.map((angle) => (
+          <path d={RUNE_MARK} opacity="0.85" transform={`rotate(${angle} 100 100)`} />
+        ))
+      }
+    </g>
+
+    {/* 封缄：两个错开 45° 的正方形叠成八芒星，里面再嵌一圈内封缄 */}
+    <g class="hero-sigil__seal" stroke="url(#sigil-stroke)">
+      <path d="M100 60 140 100 100 140 60 100Z" opacity="0.7"></path>
+      <path d="M100 60 140 100 100 140 60 100Z" opacity="0.34" transform="rotate(45 100 100)"
+      ></path>
+      <path d="M100 74 126 100 100 126 74 100Z" opacity="0.55"></path>
+    </g>
+
+    {/* 核心：会呼吸的余烬 */}
+    <g class="hero-sigil__core">
+      <circle cx="100" cy="100" r="28" fill="url(#sigil-core)" opacity="0.5"></circle>
+      <circle cx="100" cy="100" r="12" fill="url(#sigil-core)" opacity="0.9"></circle>
+      <path d="M100 91 109 100 100 109 91 100Z" fill="currentColor" stroke="none" opacity="0.9"
+      ></path>
+    </g>
+  </svg>
+</div>

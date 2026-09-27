@@ -13,7 +13,7 @@ function isCurrent(href: string): boolean {
 }
 ---
 
-<header class="sticky top-0 z-50 border-b border-hairline bg-canvas/85 backdrop-blur-md">
+<header class="site-header sticky top-0 z-50 border-b border-hairline bg-canvas/85 backdrop-blur-md">
   <div class="mx-auto flex max-w-5xl items-center gap-3 px-5 py-3">
     <a href="/" class="flex items-center gap-3 no-underline">
       <span class="text-primary">
@@ -31,7 +31,7 @@ function isCurrent(href: string): boolean {
           <a
             href={item.href}
             aria-current={isCurrent(item.href) ? 'page' : undefined}
-            class="rounded-full px-3 py-1.5 text-sm text-muted no-underline transition-colors hover:bg-card hover:text-ink aria-[current=page]:bg-card aria-[current=page]:text-ink"
+            class="nav-link rounded-full px-3 py-1.5 text-sm text-muted no-underline transition-colors hover:bg-card hover:text-ink aria-[current=page]:bg-card aria-[current=page]:text-ink"
           >
             {item.label}
           </a>

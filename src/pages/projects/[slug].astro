@@ -2,6 +2,7 @@
 import { getCollection, render } from 'astro:content';
 
 import Glyph from '../../components/Glyph.astro';
+import Toc from '../../components/Toc.astro';
 import { SITE } from '../../data/site';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { PLATE_SIZES } from '../../data/plates';
@@ -17,7 +18,7 @@ export async function getStaticPaths() {
 }
 
 const { entry } = Astro.props;
-const { Content } = await render(entry);
+const { Content, headings } = await render(entry);
 const data = entry.data;
 
 /** 前后条目：魔典该有的翻页 */
@@ -33,6 +34,21 @@ const plates = data.gallery.map((plate) => ({
   ...plate,
   size: PLATE_SIZES[plate.src.replace(/^\//, '')],
 }));
+
+/**
+ * 目录 = 模板里的三个分区 + 正文里的小标题（h2 / h3）。
+ * 后者来自 render() 返回的 headings —— 构建期就知道，所以纯静态 HTML
+ * 就能跳转，不需要 scrollspy，也就不需要任何客户端 JS。
+ * 三个分区标题的 id 写在下面的模板里，守卫会核对每个 #锚点都能落地。
+ */
+const tocItems = [
+  { id: 'highlights', text: '为什么值得一看', depth: 2 },
+  { id: 'stack', text: '技术栈', depth: 2 },
+  ...(plates.length > 0 ? [{ id: 'plates', text: '图版', depth: 2 }] : []),
+  ...headings
+    .filter((heading) => heading.depth >= 2 && heading.depth <= 3)
+    .map((heading) => ({ id: heading.slug, text: heading.text, depth: heading.depth })),
+];
 
 const jsonLd = {
   '@context': 'https://schema.org',
@@ -58,8 +74,14 @@ const jsonLd = {
   accent={data.accent}
   jsonLd={jsonLd}
 >
-  <header class="entry-header">
-    <div class="mx-auto max-w-3xl px-5 py-12">
+  <header class="entry-header relative overflow-hidden">
+    {/* 章节水印与角标都是装饰：整页的强调色来自 body 上的 accent-* 类 */}
+    <span class="entry-watermark" aria-hidden="true">{entryNumber(position)}</span>
+    <span class="rune-corner" aria-hidden="true">
+      <Glyph name="sigil" size={30} />
+    </span>
+
+    <div class="relative mx-auto max-w-3xl px-5 py-12">
       <a href="/#entries" class="label no-underline hover:text-primary-ink">← 回到条目</a>
 
       <div class="mt-5 flex items-start gap-4">
@@ -91,79 +113,97 @@ const jsonLd = {
     </div>
   </header>
 
-  <div class="mx-auto max-w-3xl px-5 py-12">
-    <p class="border-l-2 border-primary pl-4 text-lg text-ink">{data.summary}</p>
+  {/* 正文列保持与 entry-header 一样的 max-w-3xl 居中（左边缘严格对齐），
+      目录放到它右侧的页边空白里，xl 以上才出现 —— 不为了塞下目录把正文挤窄。
+      外壳绝对定位 + h-full 是为了给 .toc 的 sticky 留出可吸附的高度。 */}
+  <div class="relative mx-auto max-w-3xl px-5 py-12">
+    <div class="absolute top-12 left-full ml-6 hidden h-full w-[12.5rem] xl:block">
+      <Toc items={tocItems} />
+    </div>
 
-    <section class="mt-10">
-      <h2 class="text-xl">为什么值得一看</h2>
-      <ul class="mt-4 space-y-3">
+    <div>
+      <p class="border-l-2 border-primary pl-4 text-lg text-ink">{data.summary}</p>
+
+      <section id="highlights" class="mt-10">
+        <h2 class="text-xl">为什么值得一看</h2>
+        <ul class="mt-4 space-y-3">
+          {
+            data.highlights.map((highlight) => (
+              <li class="flex gap-3 text-body">
+                <span class="mt-[0.6em] h-px w-4 flex-none bg-primary" aria-hidden="true" />
+                <span>{highlight}</span>
+              </li>
+            ))
+          }
+        </ul>
+      </section>
+
+      <section id="stack" class="mt-10">
+        <h2 class="text-xl">技术栈</h2>
+        <div class="mt-4 flex flex-wrap gap-2">
+          {data.stack.map((item) => <span class="chip">{item}</span>)}
+        </div>
+      </section>
+
+      {
+        plates.length > 0 && (
+          <section id="plates" class="mt-12">
+            <h2 class="text-xl">图版</h2>
+            <div class="mt-5 space-y-8">
+              {plates.map((plate) => (
+                <figure class="plate-figure">
+                  <img
+                    class="plate"
+                    src={plate.src}
+                    alt={plate.alt}
+                    loading="lazy"
+                    decoding="async"
+                    width={plate.size?.width}
+                    height={plate.size?.height}
+                  />
+                  {plate.caption && (
+                    <figcaption class="mt-3 text-sm text-muted">{plate.caption}</figcaption>
+                  )}
+                </figure>
+              ))}
+            </div>
+          </section>
+        )
+      }
+
+      <article class="prose-grimoire mt-12">
+        <Content />
+      </article>
+
+      <nav
+        class="mt-16 grid gap-4 border-t border-hairline pt-8 sm:grid-cols-2"
+        aria-label="条目翻页"
+      >
         {
-          data.highlights.map((highlight) => (
-            <li class="flex gap-3 text-body">
-              <span class="mt-[0.6em] h-px w-4 flex-none bg-primary" aria-hidden="true" />
-              <span>{highlight}</span>
-            </li>
-          ))
+          previous ? (
+            <a
+              href={`/projects/${previous.id}/`}
+              class="rounded-card border border-hairline p-4 no-underline transition-colors hover:border-primary-ink"
+            >
+              <span class="label">上一条 · {entryNumber(position - 1)}</span>
+              <span class="mt-1 block font-display text-lg text-ink">{previous.data.title}</span>
+            </a>
+          ) : (
+            <span />
+          )
         }
-      </ul>
-    </section>
-
-    <section class="mt-10">
-      <h2 class="text-xl">技术栈</h2>
-      <div class="mt-4 flex flex-wrap gap-2">
-        {data.stack.map((item) => <span class="chip">{item}</span>)}
-      </div>
-    </section>
-
-    {
-      data.gallery.length > 0 && (
-        <section class="mt-12">
-          <h2 class="text-xl">图版</h2>
-          <div class="mt-5 space-y-8">
-            {plates.map((plate) => (
-              <figure>
-                <img
-                  class="plate"
-                  src={plate.src}
-                  alt={plate.alt}
-                  loading="lazy"
-                  decoding="async"
-                  width={plate.size?.width}
-                  height={plate.size?.height}
-                />
-                {plate.caption && (
-                  <figcaption class="mt-3 text-sm text-muted">{plate.caption}</figcaption>
-                )}
-              </figure>
-            ))}
-          </div>
-        </section>
-      )
-    }
-
-    <article class="prose-grimoire mt-12">
-      <Content />
-    </article>
-
-    <nav class="mt-16 grid gap-4 border-t border-hairline pt-8 sm:grid-cols-2" aria-label="条目翻页">
-      {
-        previous ? (
-          <a href={`/projects/${previous.id}/`} class="no-underline">
-            <span class="label">上一条 · {entryNumber(position - 1)}</span>
-            <span class="mt-1 block font-display text-lg text-ink">{previous.data.title}</span>
-          </a>
-        ) : (
-          <span />
-        )
-      }
-      {
-        next && (
-          <a href={`/projects/${next.id}/`} class="no-underline sm:text-right">
-            <span class="label">下一条 · {entryNumber(position + 1)}</span>
-            <span class="mt-1 block font-display text-lg text-ink">{next.data.title}</span>
-          </a>
-        )
-      }
-    </nav>
+        {
+          next && (
+            <a
+              href={`/projects/${next.id}/`}
+              class="rounded-card border border-hairline p-4 no-underline transition-colors hover:border-primary-ink sm:text-right"
+            >
+              <span class="label">下一条 · {entryNumber(position + 1)}</span>
+              <span class="mt-1 block font-display text-lg text-ink">{next.data.title}</span>
+            </a>
+          )
+        }
+      </nav>
+    </div>
   </div>
 </BaseLayout>

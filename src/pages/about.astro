@@ -26,7 +26,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       {
         SITE.principles.map((item) => (
           <li class="rounded-card border border-hairline bg-surface p-5">
-            <h2 class="text-base text-ink">{item.title}</h2>
+            <h3 class="text-base text-ink">{item.title}</h3>
             <p class="mt-2 text-sm text-muted">{item.body}</p>
           </li>
         ))
@@ -58,6 +58,31 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           跑 <code>pnpm verify</code>：类型检查、构建与守卫脚本全绿，再提交即可。
         </li>
       </ol>
+
+      <h2>怎么被验收</h2>
+      <p>
+        这个仓库的规矩是：能被检查的承诺才算承诺。所以对外说的每一句话基本都有一条检查盯着，
+        而检查刻意分成两层 —— 它们回答的是不同的问题。
+      </p>
+      <ul>
+        <li>
+          <code>scripts/check-site.mjs</code>（<code>pnpm guard</code>）只看构建产物 <code>dist/</code>：
+          页面与文件是否齐全、SEO 与 canonical、站内链接与图片是否真的存在、CSP 里有没有放行
+          页面上每一个内联脚本、有没有第三方请求、有没有行内 <code>style</code> 属性、图片有没有
+          <code>alt</code> 与宽高、两套主题的对比度比值，以及客户端 JS 与 CSS 的体积预算。
+          它很快、离线、每次提交都跑。
+        </li>
+        <li>
+          <code>scripts/verify-browser.mjs</code>（<code>pnpm verify:browser</code>）用无头 Chrome
+          把页面真跑一遍：主题引导脚本在 CSP 之下确实执行了、没有控制台报错、两套主题的计算样式
+          确实不同、滚动进场动画一定收敛到可见终态、1440px 与 390px 都没有横向滚动；并把每页的
+          浅色 / 深色 / 窄屏截图写到 <code>.assets-raw/verify/</code> 供人眼复核。
+        </li>
+      </ul>
+      <p>
+        分工是刻意的：前者挡回归，后者挡「看起来对了、但其实没生效」。加一个新条目、加一条动效，
+        都得先过这两层。
+      </p>
 
       <h2>关于隐私</h2>
       <p>

@@ -1,0 +1,45 @@
+---
+import { PLATE_SIZES } from '../data/plates';
+
+interface Props {
+  items: {
+    src: string;
+    alt: string;
+    caption?: string;
+    entryTitle: string;
+    entrySlug: string;
+  }[];
+}
+
+const { items } = Astro.props;
+---
+
+{
+  items.length > 0 && (
+    <div class="rail">
+      {items.map((item) => {
+        const size = PLATE_SIZES[item.src.replace(/^\//, '')];
+        return (
+          <figure class="rail-item">
+            <img
+              class="plate"
+              src={item.src}
+              alt={item.alt}
+              loading="lazy"
+              decoding="async"
+              width={size?.width}
+              height={size?.height}
+            />
+            <figcaption class="mt-3 text-sm text-muted">
+              {item.caption ?? item.alt}
+              <span aria-hidden="true"> · </span>
+              <a href={`/projects/${item.entrySlug}/`} class="hover:text-primary-ink">
+                {item.entryTitle}
+              </a>
+            </figcaption>
+          </figure>
+        );
+      })}
+    </div>
+  )
+}

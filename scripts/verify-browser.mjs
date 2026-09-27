@@ -8,6 +8,8 @@
  *   · 主题切换按钮点下去，data-theme 会翻转并写进 localStorage
  *   · 两套主题的 CSS 变量真的生效（读 computedStyle，不是看源码）
  *   · 窄屏（390px）不会出现横向滚动
+ *   · 滚动进场动画一定收敛到可见终态（不会「动到一半就永久停住」）
+ *   · prefers-reduced-motion: reduce 下动效整体让位，内容照样完整可读
  *
  * 所以这里用无头 Chrome + CDP 把页面真跑一遍。零 npm 依赖：Node 24 自带
  * WebSocket 与 fetch，CDP 就是一个 JSON-RPC over WebSocket。
@@ -15,6 +17,7 @@
  * 跑法：
  *   1) 另开一个终端：pnpm preview --port 4321
  *   2) node scripts/verify-browser.mjs [--base http://127.0.0.1:4321]
+ *      （不给 --base 时会自动在 127.0.0.1 与 localhost 之间挑一个连得上的）
  *
  * 截图输出到 .assets-raw/verify/（已被 .gitignore 忽略）——它们是给人看的，
  * 不是构建产物。
@@ -31,7 +34,30 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const SHOTS = path.join(ROOT, '.assets-raw', 'verify');
 
 const baseIndex = process.argv.indexOf('--base');
-const BASE = baseIndex !== -1 ? process.argv[baseIndex + 1] : 'http://127.0.0.1:4321';
+let BASE = baseIndex !== -1 ? process.argv[baseIndex + 1] : null;
+
+/**
+ * 没给 --base 时自动挑一个连得上的本地地址。
+ *
+ * 起因：Astro 的 preview 在有些机器上只监听 ::1，于是写死的 127.0.0.1
+ * 会被"目标计算机积极拒绝"，而文档承诺的是「起了 pnpm preview 就能跑
+ * pnpm verify:browser」。两个候选都试一遍，成本是一次 fetch。
+ */
+if (!BASE) {
+  const candidates = ['http://127.0.0.1:4321', 'http://localhost:4321'];
+  for (const candidate of candidates) {
+    try {
+      const response = await fetch(candidate, { signal: AbortSignal.timeout(2000) });
+      if (response.ok) {
+        BASE = candidate;
+        break;
+      }
+    } catch {
+      /* 连不上就试下一个 */
+    }
+  }
+  BASE ??= candidates[0];
+}
 
 const CHROME_CANDIDATES = [
   'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
@@ -252,6 +278,18 @@ for (const route of ROUTES) {
   // 先滚到底再测：图版是 loading="lazy" 的，不滚下去它们根本不会开始加载
   await cdp.evaluate(`window.scrollTo(0, document.body.scrollHeight)`);
   await sleep(600);
+
+  // 横向走廊里的图版同样是 lazy 的，但纵向滚动永远不会让它们进入视口 ——
+  // 不把它滚到底，右边的图根本不会开始加载，下面「图片都成功解码」就会误报。
+  // 顺手也验证了走廊真的能横向滚动。
+  await cdp.evaluate(`(async () => {
+    for (const rail of document.querySelectorAll('.rail')) {
+      rail.scrollLeft = rail.scrollWidth;
+      await new Promise((resolve) => requestAnimationFrame(() => setTimeout(resolve, 220)));
+      rail.scrollLeft = 0;
+    }
+  })()`);
+
   await cdp.evaluate(`window.scrollTo(0, 0)`);
   await sleep(150);
 
@@ -385,6 +423,80 @@ check(
   `刷新后仍是手动选择的主题（${persisted.theme}）`,
 );
 
+/* ------------------------- 动效契约：进场动画必须收敛到可见终态 */
+
+console.log('\u001b[1m动效契约（滚动进场）\u001b[0m');
+await cdp.send('Page.navigate', { url: `${BASE}/` });
+await waitForLoad(cdp);
+await sleep(300);
+
+const revealed = await cdp.evaluate(`(async () => {
+  const elements = [...document.querySelectorAll('.reveal')];
+  for (const element of elements) {
+    element.scrollIntoView({ block: 'center' });
+    await new Promise((resolve) => requestAnimationFrame(() => setTimeout(resolve, 80)));
+  }
+  await new Promise((resolve) => setTimeout(resolve, 250));
+  const stuck = [];
+  for (const element of elements) {
+    const style = getComputedStyle(element);
+    const moved = style.transform !== 'none' && style.transform !== 'matrix(1, 0, 0, 1, 0, 0)';
+    if (moved || Number.parseFloat(style.opacity) < 0.99) {
+      stuck.push(element.className + ' transform=' + style.transform + ' opacity=' + style.opacity);
+    }
+  }
+  return { count: elements.length, stuck };
+})()`);
+
+// 空集上的检查是假守卫（这份脚本的头部注释里就吐槽过这件事），所以先断言非空
+check(revealed.count >= 3, `首页有 ${revealed.count} 个 .reveal 元素（检查不能是空集）`);
+check(
+  revealed.stuck.length === 0,
+  '每个 .reveal 都收敛到可见终态（transform 归位、完全不透明）',
+  revealed.stuck.slice(0, 3).join('\n      '),
+);
+
+/* ------------------------- reduced motion：动效整体让位，内容照旧可读 */
+
+console.log('\u001b[1mprefers-reduced-motion: reduce\u001b[0m');
+await cdp.send('Emulation.setEmulatedMedia', {
+  media: '',
+  features: [{ name: 'prefers-reduced-motion', value: 'reduce' }],
+});
+
+for (const route of ROUTES) {
+  await cdp.send('Page.navigate', { url: `${BASE}${route.path}` });
+  await waitForLoad(cdp);
+  await sleep(250);
+
+  const state = await cdp.evaluate(`(() => {
+    const elements = [...document.querySelectorAll('.reveal')];
+    const moved = elements.filter((element) => {
+      const transform = getComputedStyle(element).transform;
+      return transform !== 'none' && transform !== 'matrix(1, 0, 0, 1, 0, 0)';
+    });
+    return {
+      count: elements.length,
+      moved: moved.length,
+      overflowX: document.documentElement.scrollWidth > window.innerWidth + 1,
+      h1: document.querySelector('h1')?.textContent?.trim() ?? null,
+    };
+  })()`);
+
+  check(state.moved === 0, `${route.path} reduce 下没有元素停在位移中间态`);
+  check(!state.overflowX, `${route.path} reduce 下无横向滚动`);
+  check(Boolean(state.h1), `${route.path} reduce 下内容照常渲染（h1 在）`);
+  if (route.path === '/') {
+    check(
+      state.count >= 3,
+      `reduce 下首页仍有 ${state.count} 个 .reveal 元素（说明检查不是空集）`,
+    );
+  }
+}
+
+// 收尾：撤掉媒体模拟
+await cdp.send('Emulation.setEmulatedMedia', { media: '', features: [] });
+
 await writeFile(
   path.join(SHOTS, 'report.json'),
   JSON.stringify({ base: BASE, routes: report }, null, 2),
@@ -393,6 +505,8 @@ await writeFile(
 
 cdp.close();
 child.kill();
+// 临时 profile 用完就删（失败也不影响验收结论）
+await rm(profile, { recursive: true, force: true }).catch(() => {});
 
 console.log(`\n截图与报告：${path.relative(ROOT, SHOTS)}`);
 

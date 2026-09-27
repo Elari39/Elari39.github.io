@@ -13,55 +13,66 @@ const { project, index } = Astro.props;
 const href = `/projects/${project.slug}/`;
 ---
 
-<article class={`entry-card accent-${project.accent} p-6`}>
-  <div class="flex items-start gap-4">
-    <span class="glyph">
-      <Glyph name={project.glyph} />
-    </span>
-    <div class="min-w-0 flex-1">
-      <p class="label">条目 {entryNumber(index)}</p>
-      <h3 class="mt-1 text-xl">
-        <a href={href} class="text-ink no-underline hover:text-primary-ink">{project.title}</a>
-      </h3>
+<article class={`entry-card accent-${project.accent} overflow-hidden`}>
+  {/* 程序化封面：accent 渐变 + 方格 + 章节水印。纯 CSS，不请求任何图片。
+      整块是装饰，所以 aria-hidden。 */}
+  <div class="cover" aria-hidden="true">
+    <span class="cover-numeral">{entryNumber(index)}</span>
+  </div>
+
+  <div class="relative flex flex-1 flex-col p-6">
+    <div class="flex items-start gap-4">
+      <span class="glyph">
+        <Glyph name={project.glyph} />
+      </span>
+      <div class="min-w-0 flex-1">
+        <p class="label">条目 {entryNumber(index)}</p>
+        <h3 class="mt-1 text-xl">
+          <a href={href} class="text-ink no-underline hover:text-primary-ink">{project.title}</a>
+        </h3>
+      </div>
+      <span class={`badge badge-${project.status}`}>{statusLabel(project.status)}</span>
     </div>
-    <span class={`badge badge-${project.status}`}>{statusLabel(project.status)}</span>
-  </div>
 
-  <p class="mt-4 text-[0.9375rem] text-body">{project.tagline}</p>
+    <p class="mt-4 text-[0.9375rem] text-body">{project.tagline}</p>
 
-  <ul class="mt-4 space-y-2 text-sm text-muted">
-    {
-      project.highlights.slice(0, 3).map((highlight) => (
-        <li class="flex gap-2">
-          <span class="text-primary" aria-hidden="true">
-            —
+    <ul class="mt-4 space-y-2 text-sm text-muted">
+      {
+        project.highlights.slice(0, 3).map((highlight) => (
+          <li class="flex gap-2">
+            <span class="text-primary" aria-hidden="true">
+              —
+            </span>
+            <span>{highlight}</span>
+          </li>
+        ))
+      }
+    </ul>
+
+    <div class="mt-5 flex flex-wrap gap-2">
+      {project.stack.slice(0, 5).map((item) => <span class="chip">{item}</span>)}
+      {
+        project.stack.length > 5 && (
+          <span class="chip" title={project.stack.join(' / ')}>
+            +{project.stack.length - 5}
           </span>
-          <span>{highlight}</span>
-        </li>
-      ))
-    }
-  </ul>
+        )
+      }
+    </div>
 
-  <div class="mt-5 flex flex-wrap gap-2">
-    {project.stack.slice(0, 5).map((item) => <span class="chip">{item}</span>)}
-    {
-      project.stack.length > 5 && (
-        <span class="chip" title={project.stack.join(' / ')}>
-          +{project.stack.length - 5}
-        </span>
-      )
-    }
+    <div class="mt-6 flex flex-wrap gap-2 border-t border-hairline pt-5">
+      <a class="btn btn-primary" href={href}>翻开这一条</a>
+      {
+        project.links.live && (
+          <a class="btn" href={project.links.live} rel="noopener noreferrer">
+            线上演示
+          </a>
+        )
+      }
+      <a class="btn" href={project.links.repo} rel="noopener noreferrer">源码</a>
+    </div>
   </div>
 
-  <div class="mt-6 flex flex-wrap gap-2 border-t border-hairline pt-5">
-    <a class="btn btn-primary" href={href}>翻开这一条</a>
-    {
-      project.links.live && (
-        <a class="btn" href={project.links.live} rel="noopener noreferrer">
-          线上演示
-        </a>
-      )
-    }
-    <a class="btn" href={project.links.repo} rel="noopener noreferrer">源码</a>
-  </div>
+  {/* hover 时掠过卡片的一道微光；只在真的能 hover 的设备上跑 */}
+  <span class="sheen" aria-hidden="true"></span>
 </article>

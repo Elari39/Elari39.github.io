@@ -1,0 +1,33 @@
+---
+/**
+ * 详情页目录。零客户端 JS：
+ * 条目来自 Astro 的 render() 返回的 headings（构建期就知道），
+ * 于是纯静态 HTML 就能跳转 —— 不需要 scrollspy，也就没有滚动监听。
+ *
+ * 吸附（position: sticky）由 global.css 的 .toc 在 lg 以上打开。
+ * 注意：这个组件的祖先链上不能有 .reveal —— 祖先上的 transform 会新建
+ * 包含块，把 sticky 直接废掉。
+ */
+interface Props {
+  items: { id: string; text: string; depth: number }[];
+}
+
+const { items } = Astro.props;
+---
+
+{
+  items.length > 0 && (
+    <nav class="toc" aria-label="本页目录">
+      <p class="label">本页目录</p>
+      <ul class="mt-3 space-y-1">
+        {items.map((item) => (
+          <li>
+            <a class="toc-link" data-depth={item.depth} href={`#${item.id}`}>
+              {item.text}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  )
+}

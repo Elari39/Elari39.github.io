@@ -1,12 +1,21 @@
 ---
+import SigilPlate from '../components/SigilPlate.astro';
 import { SITE } from '../data/site';
 import BaseLayout from '../layouts/BaseLayout.astro';
 ---
 
 <BaseLayout title="页面不存在" description="这一页不在魔典里。">
-  <div class="mx-auto flex max-w-2xl flex-col items-start px-5 py-24">
+  <div class="mx-auto max-w-2xl px-5 py-20">
     <p class="label">404</p>
-    <h1 class="mt-3 text-3xl sm:text-4xl">这一页不在魔典里</h1>
+
+    {/* 同一枚印记，尺寸收小当作装饰 —— 纯装饰所以整块 aria-hidden */}
+    <div class="mt-6 max-w-[9rem] text-muted" aria-hidden="true">
+      {/* 这里只有 9rem（144px），viewBox 会缩到 0.72 倍 —— 所以把线加粗，
+          否则 1 单位的线只剩 0.72px，24 等分刻度会被抗锯齿糊掉 */}
+      <SigilPlate weight={1.7} />
+    </div>
+
+    <h1 class="mt-6 text-3xl sm:text-4xl">这一页不在魔典里</h1>
     <p class="mt-4 text-body">
       要翻的那一页要么被撕掉了，要么从来不存在。可以回到序言，或者直接看条目。
     </p>

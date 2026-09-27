@@ -1,0 +1,31 @@
+---
+import { SITE } from '../data/site';
+
+interface Props {
+  /** 已发布条目数。构建期从内容集合求值 —— 面板上的数字不允许手写。 */
+  entries: number;
+}
+
+const { entries } = Astro.props;
+
+/**
+ * 第一格是构建期算出来的，其余三格来自 src/data/site.ts。
+ * 其中「≤ 4 KB」与「9 组」两个数字被 scripts/check-site.mjs 的反漂移检查
+ * 盯着：守卫改了预算或配色组数而这里没跟着改，pnpm guard 就会失败。
+ */
+const items = [
+  { value: String(entries), caption: '条已发布条目 · 全部通过 schema 校验' },
+  ...SITE.attestations,
+];
+---
+
+<ul class="attest" aria-label="本站可核对的事实">
+  {
+    items.map((item) => (
+      <li class="attest-item">
+        <span class="attest-value">{item.value}</span>
+        <span class="attest-caption">{item.caption}</span>
+      </li>
+    ))
+  }
+</ul>

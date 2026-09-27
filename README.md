@@ -25,6 +25,10 @@
 | II | **AshenCourier** | 匿名可用的短链服务（Go 1.27 标准库 + PostgreSQL 18 + Redis 8 + Vue 3） | <https://shorten.miku831.fun/> |
 | III | **CryptoWitch** | 本地文档保险箱（Go + Wails v3 + Argon2id / AES-256-GCM） | 仅仓库（无 Release） |
 
+首页是五段：**序言**（左文字右印记）、**数字条**（四条可核对的事实，其中条目数是
+构建期从内容集合算出来的）、**条目**（三张程序化封面的卡片）、**图版**（把各个条目的
+截图摊成一条横向走廊）与**三条自我约束**。
+
 站点本身就是个小工程：不引任何第三方运行时资源、默认零客户端 JS，并且带一套
 **构建产物守卫**与一套**浏览器级验收**。下面把这些都写清楚。
 
@@ -83,6 +87,7 @@
    ├─ data/plates.ts              # 图版尺寸（生成文件，勿手工编辑）
    ├─ layouts/BaseLayout.astro    # head / SEO / OG / JSON-LD / 主题引导
    ├─ components/                 # Header / Footer / ProjectCard / Glyph / ThemeToggle
+   │                              # + SigilPlate / Attestation / PlateRail / Toc
    ├─ pages/                      # index / about / 404 / projects/[slug]
    └─ styles/global.css           # 两套主题的 token 与组件样式
 ```
@@ -111,20 +116,30 @@ pnpm guard           # 只跑构建产物守卫（需要先 build）
 pnpm verify:browser  # 浏览器级验收（需要先起 pnpm preview）
 ```
 
-### `pnpm guard` —— 对 `dist/` 的十组核对
+### `pnpm guard` —— 对 `dist/` 的十七组核对
 
 | 组 | 检查什么 |
 | --- | --- |
 | 结构 | 该有的页面与文件一个不少（含 `404.html`、`robots.txt`、`sitemap-index.xml`、图标与 OG 图） |
 | SEO | 每页都有唯一的 `<title>`、description、canonical、`og:image`，且 canonical 必须等于本站地址 |
 | 链接 | 站内链接与本地资源在 `dist/` 里确实存在 —— 图版路径写错会当场暴露 |
+| 锚点 | 每个 `#锚点`（含 `/#entries` 这种跨页写法）都要在目标页里真的存在对应的 `id` —— 详情页目录完全靠它 |
+| 唯一 id | 同一页里 `id` 不得重复 —— 重复会让锚点跳到第一个，也会让印记里的 SVG 渐变引用错元素 |
 | 图版 | 每个 `<img class="plate">` 都能在 `plates.ts` 里查到尺寸（否则会跳版） |
 | CSP | 生产构建里有 CSP；**页面上每个内联脚本的哈希都在策略里**；没有 `unsafe-inline` |
 | 零外链 | `img` / `script` / `link` / `iframe` 里不得出现第三方地址 |
 | 内联样式 | 页面里不得有 `style="..."` 属性（`style-src` 没有 `unsafe-inline`） |
 | 可访问性 | 恰好一个 `<h1>`、`lang="zh-CN"`、有 skip link、图片都有 `alt` |
+| 图片尺寸 | 每个 `<img>` 都要声明 `width`/`height` —— 否则图版加载完成前占不住位置，会累计布局偏移 |
+| 跳转目标 | 每页都有 `id="main"`，skip link 指的确实是它 |
+| 装饰 SVG | 每个 `<svg>` 都要 `aria-hidden="true"` —— 装饰图形不该进可访问性树（需要语义的图形请用 `<img alt>`） |
 | 对比度 | 用 `global.css` 里的**真实 token** 算 WCAG 比值，两套主题各 9 对，正文与标记要求 ≥ 4.5:1 |
 | 体积 | 客户端 JS（gzip，含内联）≤ 4 KB；首页 HTML ≤ 60 KB |
+| CSS 预算 | 外链 CSS ≤ 48 KB —— 底纹、动效与装饰都在 `global.css` 里，体积代价得看得见 |
+| 反漂移 | 首页数字条上的两个数字必须与守卫里的常量一致（`4 KB`、`9 组`） |
+
+最后两条是给首页那块「数字条」上锁的：面板存在的全部意义就是**它说的和检查的是同一件事**，
+所以守卫会反过来核对首页 HTML 里的数字，改了一边没改另一边就会红。
 
 ### `pnpm verify:browser` —— 文件级检查证明不了的事
 
@@ -135,7 +150,14 @@ pnpm verify:browser  # 浏览器级验收（需要先起 pnpm preview）
 - 页面上**没有 CSP 违规、没有控制台报错、没有资源加载失败**；
 - 点击主题切换按钮后 `data-theme` 翻转、写入 `localStorage`、**刷新后仍然保持**；
 - 两套主题的 `getComputedStyle` 背景色确实不同（变量真的生效，而不是看着像生效）；
-- 1440px 与 390px 下都没有横向滚动。
+- 1440px 与 390px 下都没有横向滚动；
+- **滚动进场动画一定收敛到可见终态**：逐个把 `.reveal` 滚进视口，再断言它的 `transform`
+  归位、`opacity` 为 1 —— 挡住"动到一半就永久停住"这种只有真跑一遍才看得见的回归
+  （所以首屏以下的内容才敢用 `animation-timeline: view()`）；
+- **`prefers-reduced-motion: reduce` 下动效整体让位**：每页都没有元素停在位移中间态、
+  没有横向滚动、内容照常渲染。注意 base 层那条"把 animation-duration 压到 0.01ms"的
+  全局兜底对 scroll-driven 动画**无效**（那类动画不看 duration），所以每条动效都另外包在
+  `(prefers-reduced-motion: no-preference)` 里。
 
 它同时把每页的浅色 / 深色 / 窄屏截图写到 `.assets-raw/verify/`，供人眼复核。
 
@@ -235,6 +257,32 @@ DOM 里 <title> 就是这四个字，没有任何文章链接；
 - **主题引导脚本内联、且哈希手工登记。** 晚一步执行就会先画出错误的主题再改回来；
   而 Astro 只为它自己产出的脚本生成哈希，`set:html` 注入的不在其中
   （详见 `src/lib/csp.ts` 的注释）。
+
+### 底纹、动效与三个装饰 token
+
+背景是两层 `position: fixed` 的纯 CSS 图层（不请求任何图片）：三层 bloom（暖 / 冷 / 暖，
+最大的一层锚在视口下方 112% 处，保证滚到任何位置、视口下半部分都留着余温）+ 一层 32px
+的方格纸纹理（用 `mask-image` 朝下淡出）。
+
+> 这一版是被实测推着改的：对验收截图逐像素采样发现，旧版只有一个 68rem×34rem 的椭圆、
+> 62% 处即透明，于是页面只有顶部约 270px 有颜色，其余部分逐像素等于画布色。
+> 现在同一位置（右侧空白列）的通道偏离从 `0` 变成 `8–29`，且 32px 周期正好落在网格线上
+> —— 有客观指标，不必凭感觉说"更有质感了"。
+
+三个新 token（`--c-hairline-strong` / `--c-grid` / `--c-ember-soft`）**只用于描边、
+网格与封面渐变，从不承载文字**，所以不参与守卫的对比度计算；正文级颜色仍是原来那 9 对，
+一个都没改。动效的时间与缓动 token（`--ease-ember` / `--dur-*`）刻意放在 `:root` 而
+不放进 `@theme`：放进去会覆盖 Tailwind 内建的 `--ease-out`，改变已有工具类的语义。
+
+动效全部由 CSS 驱动（零客户端 JS），两条硬规矩写在 `global.css` 的 2.5 节里：
+
+- **`.reveal` 只动 `transform`，绝不动 `opacity`。** 文字在任何瞬间都完全可读；更要紧的是，
+  `opacity` 从 0 起跑时"滚动时间线不活跃"就等于"内容永久隐身"。
+- **`.reveal` 不得加在任何 `position: sticky` 元素的祖先上。** 祖先上的 `transform` 会新建
+  包含块，把 sticky 直接废掉（页头与详情页目录都靠它）。
+
+页头投影用 `animation-timeline: scroll(root)`、滚动进场用 `view()`，都包在 `@supports` 里
+渐进增强：不支持的浏览器看到的是静态终态，而不是"动不了"的中间态。
 
 ## 部署
 

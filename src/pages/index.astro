@@ -1,7 +1,10 @@
 ---
 import { getCollection } from 'astro:content';
 
+import Attestation from '../components/Attestation.astro';
+import PlateRail from '../components/PlateRail.astro';
 import ProjectCard from '../components/ProjectCard.astro';
+import SigilPlate from '../components/SigilPlate.astro';
 import { SITE } from '../data/site';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import type { GlyphName, ProjectStatus, ProjectView } from '../lib/entry';
@@ -27,6 +30,20 @@ const projects: ProjectView[] = entries.map((entry) => ({
   links: { ...entry.data.links },
   gallery: entry.data.gallery.map((plate) => ({ ...plate })),
 }));
+
+/**
+ * 图版走廊：把所有已发布条目的图版摊平成一条横向走廊。
+ * 数据驱动 —— 以后哪条条目补了截图，首页自动就有；全都没有时整段不渲染。
+ */
+const plates = entries.flatMap((entry) =>
+  entry.data.gallery.map((plate) => ({
+    src: plate.src,
+    alt: plate.alt,
+    caption: plate.caption,
+    entryTitle: entry.data.title,
+    entrySlug: entry.id,
+  })),
+);
 
 const jsonLd = [
   {
@@ -59,49 +76,94 @@ const jsonLd = [
 ---
 
 <BaseLayout jsonLd={jsonLd}>
-  <section class="border-b border-hairline">
-    <div class="mx-auto max-w-5xl px-5 pt-16 pb-14">
-      <p class="label">序言 · Prologue</p>
-      <h1 class="mt-4 text-4xl sm:text-6xl">{SITE.title}</h1>
-      <p class="mt-4 font-display text-xl text-primary-ink">{SITE.subtitle}</p>
-      <p class="mt-7 max-w-2xl text-lg text-body">
-        三个自己设计、实现并部署的项目，写成一本可以翻的魔典。每一条都是完整的工程记录：做了什么、
-        为什么这样做、以及在哪些地方刻意没有那样做。
-      </p>
-      <div class="mt-8 flex flex-wrap gap-2">
-        <a class="btn btn-primary" href="#entries">翻开条目</a>
-        <a class="btn" href="/about/">关于本站</a>
-        <a class="btn" href={SITE.author.github} rel="noopener noreferrer">GitHub</a>
+  {/* 序言：左文字右印记。overflow-hidden 是为了把印记外圈那层会缓慢漂移的
+      光晕关在里面 —— 它比印记本身大一圈，不能让它撑出横向滚动。 */}
+  <section class="relative overflow-hidden border-b border-hairline">
+    <div
+      class="relative mx-auto grid max-w-5xl items-center gap-10 px-5 pt-16 pb-14 md:grid-cols-[minmax(0,1fr)_18rem] md:gap-14"
+    >
+      <div>
+        <p class="label">序言 · Prologue</p>
+        <h1 class="mt-4 text-[clamp(2.25rem,7vw,4.25rem)] leading-[1.08]">{SITE.title}</h1>
+        <p class="mt-4 font-display text-xl text-primary-ink">{SITE.subtitle}</p>
+        <p class="mt-6 max-w-2xl text-lg text-body">
+          三个自己设计、实现并部署的项目，写成一本可以翻的魔典。每一条都是完整的工程记录：做了什么、
+          为什么这样做、以及在哪些地方刻意没有那样做。
+        </p>
+        <div class="mt-8 flex flex-wrap gap-2">
+          <a class="btn btn-primary" href="#entries">翻开条目</a>
+          <a class="btn" href="/about/">关于本站</a>
+          <a class="btn" href={SITE.author.github} rel="noopener noreferrer">GitHub</a>
+        </div>
       </div>
+
+      <SigilPlate />
     </div>
   </section>
 
-  <section class="mx-auto max-w-5xl px-5 py-12" aria-label="本站的自我约束">
-    <ul class="grid gap-4 sm:grid-cols-3">
+  {/* 数字条：全是守卫脚本真的在核对的事实 */}
+  <section class="mx-auto max-w-5xl px-5 pt-10" aria-label="本站可核对的事实">
+    <div class="reveal">
+      <Attestation entries={projects.length} />
+    </div>
+  </section>
+
+  <section id="entries" class="mx-auto max-w-4xl scroll-mt-24 px-5 pt-14 pb-8">
+    <div class="section-head">
+      <h2 class="text-2xl">条目</h2>
+      <p class="label">{projects.length} 条 · 按年份排序</p>
+    </div>
+
+    <div class="mt-8 space-y-5">
+      {
+        projects.map((project, index) => (
+          <div class="reveal">
+            <ProjectCard project={project} index={index} />
+          </div>
+        ))
+      }
+    </div>
+  </section>
+
+  {
+    plates.length > 0 && (
+      <section class="mx-auto max-w-5xl px-5 pt-12" aria-label="图版">
+        <div class="reveal">
+          <div class="section-head">
+            <h2 class="text-2xl">图版</h2>
+            <p class="label">{plates.length} 张 · 来自被收录的条目</p>
+          </div>
+          <p class="mt-4 max-w-2xl text-sm text-muted">
+            真实运行界面，不是效果图。横向滑动可以看全部。
+          </p>
+          <div class="mt-4">
+            <PlateRail items={plates} />
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  <section class="mx-auto max-w-4xl px-5 pt-14 pb-16">
+    <hr class="rule-ember" />
+
+    <div class="mt-10 section-head">
+      <h2 class="text-2xl">三条自我约束</h2>
+      <p class="label">每条都有守卫脚本盯着</p>
+    </div>
+
+    <ul class="mt-6 grid gap-4 sm:grid-cols-3">
       {
         SITE.principles.map((item) => (
           <li class="rounded-card border border-hairline bg-surface p-5">
-            <h2 class="font-display text-base text-ink">{item.title}</h2>
+            <h3 class="font-display text-base text-ink">{item.title}</h3>
             <p class="mt-2 text-sm text-muted">{item.body}</p>
           </li>
         ))
       }
     </ul>
-  </section>
 
-  <section id="entries" class="mx-auto max-w-4xl scroll-mt-24 px-5 pb-8">
-    <div class="flex items-baseline justify-between gap-4 border-b border-hairline pb-4">
-      <h2 class="text-2xl">条目</h2>
-      <p class="label">{projects.length} 条 · 按年份排序</p>
-    </div>
-
-    <div class="mt-8 space-y-6">
-      {projects.map((project, index) => <ProjectCard project={project} index={index} />)}
-    </div>
-  </section>
-
-  <section class="mx-auto max-w-4xl px-5 pb-16">
-    <div class="rounded-card border border-hairline bg-surface p-6">
+    <div class="mt-8 rounded-card border border-hairline bg-surface p-6">
       <h2 class="font-display text-lg text-ink">还有别的</h2>
       <p class="mt-2 text-sm text-muted">
         这里只收录当下最值得展开的三个项目。其余的小工具、实验与半成品都在 GitHub 上——包括原生微信小程序工具箱

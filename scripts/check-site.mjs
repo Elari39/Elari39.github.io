@@ -12,9 +12,11 @@
  *   CSP      —— 生产构建里有 CSP，且**每个内联脚本的哈希都在策略里**
  *   零外链   —— 运行时不请求任何第三方资源
  *   无内联样式 —— 因为 style-src 没有 'unsafe-inline'，行内 style 会被拦掉
- *   可访问性 —— 唯一的 h1、lang、skip link、img 都有 alt
+ *   可访问性 —— 唯一的 h1、lang、skip link、img 都有 alt 与宽高、装饰 SVG 都 aria-hidden
+ *   锚点     —— 每个 #锚点都要在目标页里真的存在对应的 id
  *   对比度   —— 用 global.css 里的真实 token 算 WCAG 比值，两套主题都算
- *   体积     —— 客户端 JS 总量（gzip）不超过预算
+ *   体积     —— 客户端 JS（gzip）与 CSS 都不超过预算
+ *   反漂移   —— 首页数字条上的两个数字必须与这里的预算常量一致
  *
  * 零依赖：只用 node: 内置模块。跑法：pnpm guard
  */
@@ -34,6 +36,9 @@ const OWNER = 'github.com/Elari39/';
 
 /** 客户端 JS 预算（gzip 后，全部 .js 之和）。首页只有一个主题切换脚本。 */
 const JS_BUDGET_BYTES = 4096;
+
+/** CSS 预算（未压缩字节）。装饰、底纹与动效全在 global.css 里，得给它一条上限。 */
+const CSS_BUDGET_BYTES = 48 * 1024;
 
 const failures = [];
 const notes = [];
@@ -91,6 +96,13 @@ function inlineScripts(html) {
     if (/\bsrc\s*=/i.test(attrs)) continue;
     found.push({ attrs, body: match[2] ?? '' });
   }
+  return found;
+}
+
+/** 页面里所有 id 值 —— 用来核对页内锚点能不能落地 */
+function idsOf(html) {
+  const found = new Set();
+  for (const match of html.matchAll(/\bid\s*=\s*"([^"]*)"/gi)) found.add(match[1]);
   return found;
 }
 
@@ -192,6 +204,16 @@ for (const entry of published) {
 section('页面：SEO / 链接 / 可访问性 / CSP');
 
 const routes = ['/', '/about/', ...published.map((entry) => `/projects/${entry.slug}/`)];
+
+/** 按需读取任一目标页的 id 集合，用于核对 #锚点 */
+const idCache = new Map();
+async function idsForRoute(route) {
+  if (!idCache.has(route)) {
+    const file = fileForRoute(route);
+    idCache.set(route, existsSync(file) ? idsOf(await readFile(file, 'utf8')) : new Set());
+  }
+  return idCache.get(route);
+}
 const siteLd = new Set();
 
 for (const route of routes) {
@@ -248,6 +270,27 @@ for (const route of routes) {
   }
   check(broken.length === 0, `${label} 站内链接全部可达`, broken.join(', '));
 
+  // --- 页内锚点：每个 #x 都要在目标页里真的存在 id="x"
+  // 详情页目录完全靠这个契约 —— 正文标题的 id 是构建期生成的，写错不会报错，
+  // 只会在浏览器里默默跳不动。
+  const brokenFragments = [];
+  for (const href of hrefs) {
+    const hashIndex = href.indexOf('#');
+    if (hashIndex === -1) continue;
+    const pathPart = href.slice(0, hashIndex);
+    const fragment = href.slice(hashIndex + 1);
+    if (!fragment) continue; // 光一个「#」没有目标可核对
+    const ids = await idsForRoute(pathPart === '' ? route : pathPart);
+    if (!ids.has(fragment)) brokenFragments.push(href);
+  }
+  check(brokenFragments.length === 0, `${label} 页内锚点都能落地`, brokenFragments.join(', '));
+
+  // --- 同页 id 不得重复：重复 id 会让锚点跳到第一个，也会让 SVG 的
+  // 渐变 / 滤镜引用错元素（印记里的 <linearGradient id> 就属于这一类）
+  const idList = [...html.matchAll(/\bid\s*=\s*"([^"]*)"/gi)].map((match) => match[1]);
+  const duplicateIds = [...new Set(idList.filter((id, index) => idList.indexOf(id) !== index))];
+  check(duplicateIds.length === 0, `${label} 页内 id 不重复`, duplicateIds.join(', '));
+
   const sources = [
     ...matchAll(html, /<img\b[^>]*>/gi).map((tag) => attributeOf(tag, 'src') ?? ''),
     ...matchAll(html, /<link\b[^>]*>/gi).map((tag) => attributeOf(tag, 'href') ?? ''),
@@ -280,6 +323,29 @@ for (const route of routes) {
     (tag) => !/\balt\s*=/.test(tag),
   );
   check(imagesWithoutAlt.length === 0, `${label} 图片都有 alt`, imagesWithoutAlt.join(' '));
+
+  // 图片一律要声明宽高：否则图片加载完成前占不住位置，会累计布局偏移
+  const imagesWithoutSize = matchAll(html, /<img\b[^>]*>/gi).filter(
+    (tag) => !/\bwidth\s*=/.test(tag) || !/\bheight\s*=/.test(tag),
+  );
+  check(
+    imagesWithoutSize.length === 0,
+    `${label} 图片都声明了 width/height`,
+    imagesWithoutSize.slice(0, 2).join(' '),
+  );
+
+  // 装饰性 SVG 不得进入可访问性树 —— 需要语义的图形请改用 <img alt="…">
+  const svgsWithoutHidden = matchAll(html, /<svg\b[^>]*>/gi).filter(
+    (tag) => !/\baria-hidden\s*=\s*"true"/i.test(tag),
+  );
+  check(
+    svgsWithoutHidden.length === 0,
+    `${label} 装饰 SVG 都标了 aria-hidden`,
+    svgsWithoutHidden.slice(0, 2).join(' '),
+  );
+
+  // skip-link 指向的 #main 此前从来没被检查过
+  check(/\bid\s*=\s*"main"/.test(html), `${label} 有 id="main" 作为跳到主内容的目标`);
 
   // --- 零第三方资源
   const thirdParty = [
@@ -463,6 +529,31 @@ check(
 
 const indexHtml = await readFile(path.join(DIST, 'index.html'), 'utf8');
 check(indexHtml.length <= 60 * 1024, `首页 HTML ${(indexHtml.length / 1024).toFixed(1)} KB ≤ 60 KB`);
+
+// CSS 也要有预算：底纹、动效与装饰都在 global.css 里，体积代价得可见
+let cssBytes = 0;
+if (existsSync(astroDir)) {
+  for (const name of await readdir(astroDir)) {
+    if (!name.endsWith('.css')) continue;
+    cssBytes += (await readFile(path.join(astroDir, name))).length;
+  }
+}
+check(
+  cssBytes <= CSS_BUDGET_BYTES,
+  `CSS ${(cssBytes / 1024).toFixed(1)} KB ≤ 预算 ${(CSS_BUDGET_BYTES / 1024).toFixed(0)} KB`,
+);
+
+// 反漂移：首页数字条上的两个数字必须与这里的常量一致。
+// 否则「面板写着 4 KB、守卫实际允许 8 KB」这种事会悄悄发生 ——
+// 而那个面板存在的全部意义就是"它说的和检查的是同一件事"。
+check(
+  indexHtml.includes(`${JS_BUDGET_BYTES / 1024} KB`),
+  `首页陈述的 JS 预算与守卫一致（${JS_BUDGET_BYTES / 1024} KB）`,
+);
+check(
+  indexHtml.includes(`${PAIRS.length} 组`),
+  `首页陈述的配色组数与守卫一致（${PAIRS.length} 组）`,
+);
 
 /* ------------------------------------------------------------------- 结果 */
 

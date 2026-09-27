@@ -45,6 +45,19 @@
   --c-amber: #8f5a10;
   --c-teal: #276b5e;
   --c-code: #efe9de;
+
+  /* 三个纯装饰 token：只出现在描边、网格与封面渐变上，从不承载文字，
+     所以它们不参与 check-site.mjs 的对比度计算（正文级颜色仍是上面那些）。 */
+  --c-hairline-strong: #d8cfc4;
+  --c-grid: #e9e2d6;
+  --c-ember-soft: #e7c9bb;
+
+  /* 动效的时间与缓动。刻意放在 :root 而**不**放进 @theme ——
+     放进去会覆盖 Tailwind 内建的 --ease-out，改变已有工具类的语义。 */
+  --ease-ember: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --dur-fast: 0.18s;
+  --dur-base: 0.32s;
+  --dur-slow: 0.7s;
 }
 
 /* 深色主题：灰烬 */
@@ -67,6 +80,10 @@
   --c-amber: #e8a55a;
   --c-teal: #5db8a6;
   --c-code: #1f1e1b;
+
+  --c-hairline-strong: #3a3833;
+  --c-grid: #262421;
+  --c-ember-soft: #4a2f26;
 }
 
 /* 没有 JS 时（data-theme 不存在）跟随系统 */
@@ -90,6 +107,10 @@
     --c-amber: #e8a55a;
     --c-teal: #5db8a6;
     --c-code: #1f1e1b;
+
+    --c-hairline-strong: #3a3833;
+    --c-grid: #262421;
+    --c-ember-soft: #4a2f26;
   }
 }
 
@@ -110,6 +131,9 @@
   --color-amber: var(--c-amber);
   --color-teal: var(--c-teal);
   --color-code: var(--c-code);
+  --color-hairline-strong: var(--c-hairline-strong);
+  --color-grid: var(--c-grid);
+  --color-ember-soft: var(--c-ember-soft);
 
   --font-display: 'Iowan Old Style', 'Palatino Linotype', Palatino, 'Book Antiqua',
     Georgia, 'Songti SC', 'Noto Serif CJK SC', 'Source Han Serif SC', serif;
@@ -119,6 +143,7 @@
     'Liberation Mono', Menlo, monospace;
 
   --radius-card: 0.875rem;
+  --radius-card-lg: 1.25rem;
 }
 
 /* -----------------------------------------------------------------------------
@@ -144,7 +169,11 @@
     text-rendering: optimizeLegibility;
   }
 
-  /* 页面底纹：顶部一抹余烬与一缕冷色，纯 CSS，不请求任何图片 */
+  /* 页面底纹：三层 bloom，纯 CSS，不请求任何图片。
+     实测（对 .assets-raw/verify 的截图逐像素采样）发现旧版只有
+     68rem×34rem 的单个椭圆、62% 处即透明，于是页面只有顶部约 270px
+     有颜色，其余部分逐像素等于画布色 —— 整页看起来是平的。
+     所以这里把半径放大并补了第三层，让首屏以下也留一点微光。 */
   body::before {
     content: '';
     position: fixed;
@@ -153,15 +182,56 @@
     pointer-events: none;
     background:
       radial-gradient(
-        68rem 34rem at 12% -12%,
-        color-mix(in oklab, var(--c-primary) 22%, transparent),
-        transparent 62%
+        120rem 70rem at 10% -10%,
+        color-mix(in oklab, var(--c-primary) 20%, transparent),
+        transparent 72%
       ),
       radial-gradient(
-        46rem 28rem at 100% 2%,
+        90rem 60rem at 100% 6%,
         color-mix(in oklab, var(--c-teal) 14%, transparent),
-        transparent 58%
+        transparent 66%
+      ),
+      /* 第三层是给「首屏以下」的：底纹是 position: fixed，锚在视口上，
+         所以无论滚到哪里，视口下半部分都留着一点余温 —— 正是旧版缺的那块。 */
+      radial-gradient(
+        110rem 70rem at 50% 112%,
+        color-mix(in oklab, var(--c-primary) 12%, transparent),
+        transparent 68%
       );
+  }
+
+  /* 方格纸纹理：给「工程记录」这个身份一层底子。
+     网格色与画布的差只有几级，靠 32px 的间距而不是对比度被看见；
+     再用 mask 朝首屏以下淡出，避免整屏都是格子。 */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background-image:
+      repeating-linear-gradient(
+        to right,
+        var(--c-grid) 0,
+        var(--c-grid) 1px,
+        transparent 1px,
+        transparent 32px
+      ),
+      repeating-linear-gradient(
+        to bottom,
+        var(--c-grid) 0,
+        var(--c-grid) 1px,
+        transparent 1px,
+        transparent 32px
+      );
+    opacity: 0.55;
+    mask-image: linear-gradient(180deg, #000 0%, rgb(0 0 0 / 45%) 70%, transparent 100%);
+    -webkit-mask-image: linear-gradient(
+      180deg,
+      #000 0%,
+      rgb(0 0 0 / 45%) 70%,
+      transparent 100%
+    );
   }
 
   h1,
@@ -221,6 +291,82 @@
       animation-iteration-count: 1 !important;
       transition-duration: 0.01ms !important;
     }
+  }
+}
+
+/* -----------------------------------------------------------------------------
+   2.5 动效原语
+   -----------------------------------------------------------------------------
+   全站零客户端 JS，所以滚动进场与页头投影都用 CSS 的 scroll-driven
+   animation-timeline 实现，并在 @supports 里做渐进增强：不支持的浏览器
+   （Firefox / Safari）直接看到静态终态，而不是停在动不了的中间态。
+
+   两条硬规矩（写在这里，因为踩过一次就很难查）：
+     1. .reveal 只动 transform，**绝不动 opacity**。文字在任何瞬间都必须完全
+        可读：半透明正文既过不了对比度，也会被验收截图拍下来；更重要的是，
+        一旦 opacity 从 0 起跑，"timeline 没活跃"就等于"内容永久隐身"。
+     2. .reveal 不得加在任何 position: sticky 元素的祖先上 —— 祖先上的
+        transform 会新建包含块，把 sticky 直接废掉（页头与详情页目录都靠它）。
+
+   注意：base 层里那条全局的 prefers-reduced-motion 兜底（把 animation-duration
+   压到 0.01ms）对 scroll-driven 动画**无效** —— 那类动画的进度由滚动位置驱动，
+   不看 duration。所以下面每条动效都另外包在 (prefers-reduced-motion: no-preference)
+   里，而不是指望那条兜底。
+   -------------------------------------------------------------------------- */
+
+@keyframes rise-in {
+  from {
+    transform: translateY(12px);
+  }
+  to {
+    transform: none;
+  }
+}
+
+@keyframes sigil-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* 核心的呼吸：只动 opacity 与 scale，且幅度很小 ——
+   它是"这颗心还在烧"的提示，不是呼吸灯。 */
+@keyframes core-breathe {
+  0%,
+  100% {
+    opacity: 0.78;
+    transform: scale(0.96);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+}
+
+@keyframes hero-drift {
+  from {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  to {
+    transform: translate3d(3%, -2%, 0) scale(1.06);
+  }
+}
+
+@keyframes sheen-sweep {
+  from {
+    transform: translateX(-130%);
+  }
+  to {
+    transform: translateX(130%);
+  }
+}
+
+@keyframes header-elevate {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
   }
 }
 
@@ -592,5 +738,383 @@
     background: var(--c-card);
     color: var(--c-ink);
     font-weight: 500;
+  }
+
+  /* ---- 分区标题：左侧一道余烬线（.rule-ember 从这里开始被真正用上） ---- */
+
+  .section-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    padding-bottom: 0.9rem;
+    border-bottom: 1px solid var(--c-hairline);
+  }
+
+  /* ---- 入场与滚动：全部渐进增强，遵守 2.5 节的两条硬规矩 ---- */
+
+  @media (prefers-reduced-motion: no-preference) {
+    @supports (animation-timeline: view()) {
+      .reveal {
+        animation: rise-in linear both;
+        animation-timeline: view();
+        /* 在 entry 阶段的前 30% 就收敛到终态：元素刚探进视口一点就已到位，
+           不会出现"能读到一半、另一半还在位移"的中间态。 */
+        animation-range: entry 0% entry 30%;
+      }
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    /* 上面那条规则在 reduce 下压根不匹配，这里只是把话说明白：
+       reduce 下的 .reveal 就是完全静态的普通块。 */
+    .reveal {
+      transform: none;
+    }
+  }
+
+  /* 页头投影：滚过 56px 之后长出一道柔和的阴影，纯 CSS 的 scroll() timeline，
+     零 JS、零滚动监听。reduce 下永远是 opacity: 0（页头仍有 border-b 兜底）。 */
+  .site-header::after {
+    content: '';
+    position: absolute;
+    inset: auto 0 -14px 0;
+    height: 14px;
+    opacity: 0;
+    pointer-events: none;
+    background: radial-gradient(
+      60% 100% at 50% 0%,
+      color-mix(in oklab, var(--c-ink) 14%, transparent),
+      transparent
+    );
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    @supports (animation-timeline: scroll()) {
+      .site-header::after {
+        animation: header-elevate linear both;
+        animation-timeline: scroll(root);
+        animation-range: 0 56px;
+      }
+    }
+  }
+
+  /* 导航当前页：药丸底之外再加一道余烬下划线 */
+  .nav-link {
+    position: relative;
+  }
+
+  .nav-link::after {
+    content: '';
+    position: absolute;
+    right: 0.85rem;
+    bottom: 0.2rem;
+    left: 0.85rem;
+    height: 1px;
+    background: var(--c-primary);
+    transform: scaleX(0);
+    transform-origin: left center;
+    transition: transform var(--dur-base) var(--ease-ember);
+  }
+
+  .nav-link[aria-current='page']::after {
+    transform: scaleX(1);
+  }
+
+  /* ---- 序言区的印记：一枚仪表化的符文阵 ----
+     五个同心带（核心余烬 → 八芒星封缄 → 24 等分刻度环 → 四段符文弧
+     → 外圈发丝环与分度点环）由 SigilPlate.astro 算出来，
+     这里只管光与动。 */
+
+  /* 从印记中心发出的光。它替换掉了原来那块盖住整个序言区的软光斑 ——
+     光要来自阵本身，而不是旁边一坨亮。 */
+  .hero-sigil__aura {
+    position: absolute;
+    inset: -26%;
+    border-radius: 50%;
+    background: radial-gradient(
+      50% 50% at 50% 50%,
+      color-mix(in oklab, var(--c-primary) 22%, transparent),
+      transparent 70%
+    );
+    opacity: 0.85;
+    pointer-events: none;
+    transition: opacity var(--dur-slow) var(--ease-ember);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    @media (min-width: 48rem) {
+      .hero-sigil__aura {
+        animation: hero-drift 44s ease-in-out infinite alternate;
+      }
+    }
+  }
+
+  .hero-sigil {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 100%;
+    max-width: 20rem;
+    margin-inline: auto;
+    aspect-ratio: 1;
+    color: var(--c-primary);
+  }
+
+  .hero-sigil svg {
+    position: relative;
+    width: 100%;
+    height: auto;
+  }
+
+  /* 旋转层与核心都要绕 viewBox 的中心转，而不是各自的 bbox 中心 */
+  .hero-sigil__ticks,
+  .hero-sigil__runes,
+  .hero-sigil__core {
+    transform-box: view-box;
+    transform-origin: 100px 100px;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    /* 两个刻度层反向自转：转速差（140s / 96s）制造"行星齿轮"的感觉 */
+    .hero-sigil__ticks {
+      animation: sigil-spin 140s linear infinite reverse;
+    }
+
+    .hero-sigil__runes {
+      animation: sigil-spin 96s linear infinite;
+    }
+
+    .hero-sigil__core {
+      animation: core-breathe 6s ease-in-out infinite;
+    }
+  }
+
+  /* hover 只把光晕提亮一档，而不是给整棵子树加 filter：
+     子树里有持续运行的动画，加 filter 等于每帧都要重绘一遍滤镜。 */
+  @media (hover: hover) and (pointer: fine) {
+    .hero-sigil:hover .hero-sigil__aura {
+      opacity: 1;
+    }
+  }
+
+  /* ---- 数字条：把「可核对的事实」放到首屏能读到的地方 ---- */
+
+  .attest {
+    display: grid;
+    grid-template-columns: 1fr;
+    overflow: hidden;
+    border: 1px solid var(--c-hairline-strong);
+    border-radius: var(--radius-card);
+    background: color-mix(in oklab, var(--c-surface) 72%, transparent);
+  }
+
+  .attest-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    padding: 1.05rem 1.25rem;
+  }
+
+  .attest-item + .attest-item {
+    border-top: 1px solid var(--c-hairline);
+  }
+
+  @media (min-width: 48rem) {
+    .attest {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .attest-item + .attest-item {
+      border-top: 0;
+      border-left: 1px solid var(--c-hairline);
+    }
+  }
+
+  .attest-value {
+    font-family: var(--font-display);
+    font-size: clamp(1.75rem, 4vw, 2.5rem);
+    line-height: 1.1;
+    color: var(--c-ink);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .attest-caption {
+    font-size: 0.8125rem;
+    line-height: 1.55;
+    color: var(--c-muted);
+    text-wrap: pretty;
+  }
+
+  /* ---- 条目卡封面：程序化生成的「书页」，三张卡共用一套构图 ---- */
+
+  .cover {
+    position: relative;
+    height: 6.5rem;
+    overflow: hidden;
+    border-bottom: 1px solid var(--c-hairline);
+    background: linear-gradient(
+      150deg,
+      color-mix(in oklab, var(--entry-accent, var(--c-primary)) 26%, var(--c-surface)),
+      var(--c-surface) 78%
+    );
+  }
+
+  .cover::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: repeating-linear-gradient(
+      to right,
+      color-mix(in oklab, var(--c-ink) 7%, transparent) 0,
+      color-mix(in oklab, var(--c-ink) 7%, transparent) 1px,
+      transparent 1px,
+      transparent 24px
+    );
+    mask-image: linear-gradient(90deg, #000, transparent 72%);
+    -webkit-mask-image: linear-gradient(90deg, #000, transparent 72%);
+  }
+
+  /* 封面上的罗马数字水印：与详情页头部的水印是同一套"章节"语言 */
+  .cover-numeral {
+    position: absolute;
+    right: 0.9rem;
+    bottom: -1.7rem;
+    font-family: var(--font-display);
+    font-size: 6.5rem;
+    line-height: 1;
+    color: color-mix(in oklab, var(--entry-accent, var(--c-primary)) 30%, transparent);
+    pointer-events: none;
+    user-select: none;
+  }
+
+  /* hover 时掠过卡片的一道微光。只在真的能 hover 的设备上跑 */
+  .sheen {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    border-radius: inherit;
+    pointer-events: none;
+  }
+
+  .sheen::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    transform: translateX(-130%);
+    background: linear-gradient(
+      100deg,
+      transparent 20%,
+      color-mix(in oklab, var(--c-ink) 7%, transparent) 50%,
+      transparent 80%
+    );
+  }
+
+  @media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+    .entry-card:hover .sheen::before {
+      animation: sheen-sweep var(--dur-slow) var(--ease-ember);
+    }
+  }
+
+  /* ---- 图版走廊：只用内层滚动，绝不撑宽页面 ---- */
+
+  .rail {
+    display: flex;
+    gap: 1.25rem;
+    overflow-x: auto;
+    padding: 0.5rem 0.25rem 1.5rem;
+    scroll-snap-type: x mandatory;
+    overscroll-behavior-x: contain;
+    scrollbar-width: thin;
+  }
+
+  .rail-item {
+    flex: none;
+    width: min(78vw, 30rem);
+    scroll-snap-align: start;
+  }
+
+  /* 走廊是「预览」而不是图版本身：条目的图版从 1400×634 到 1400×3030 不等，
+     不裁的话最高那张会把整条走廊撑到 1100px 高。所以固定高度、取顶部，
+     完整截图留在详情页。 */
+  .rail-item .plate {
+    height: 20rem;
+    object-fit: cover;
+    object-position: top center;
+  }
+
+  /* ---- 详情页目录：lg 以上吸附在右栏 ---- */
+
+  /* 目录由 [slug].astro 用一个绝对定位的外壳放进正文右侧的空白里（xl 以上才出现），
+     .toc 自己只负责吸附。之所以不用两栏 grid：那会把正文列挤窄，
+     于是正文与 entry-header 的左边缘对不齐 —— 差 108px，一眼能看出来。 */
+  @media (min-width: 80rem) {
+    .toc {
+      position: sticky;
+      top: 6rem;
+      max-height: calc(100vh - 8rem);
+      overflow-y: auto;
+    }
+  }
+
+  .toc-link {
+    display: block;
+    padding: 0.2rem 0;
+    font-size: 0.875rem;
+    line-height: 1.6;
+    color: var(--c-muted);
+    text-decoration: none;
+    transition: color var(--dur-fast) var(--ease-ember);
+  }
+
+  .toc-link:hover {
+    color: var(--c-ink);
+  }
+
+  .toc-link[data-depth='3'] {
+    padding-left: 0.9rem;
+    font-size: 0.8125rem;
+  }
+
+  /* ---- 详情页头部的水印与角标 ---- */
+
+  .entry-watermark {
+    position: absolute;
+    right: 0.25rem;
+    bottom: -2rem;
+    font-family: var(--font-display);
+    font-size: clamp(6rem, 16vw, 11rem);
+    line-height: 1;
+    color: color-mix(in oklab, var(--entry-accent, var(--c-primary)) 14%, transparent);
+    pointer-events: none;
+    user-select: none;
+  }
+
+  .rune-corner {
+    position: absolute;
+    top: 1.25rem;
+    right: 1.25rem;
+    color: color-mix(in oklab, var(--entry-accent, var(--c-primary)) 45%, transparent);
+    pointer-events: none;
+  }
+
+  /* ---- 图版：一张贴在书页上的图，悬停时描边走强调色 ---- */
+
+  .plate-figure {
+    display: block;
+  }
+
+  .plate-figure .plate {
+    transition:
+      border-color var(--dur-base) var(--ease-ember),
+      box-shadow var(--dur-base) var(--ease-ember);
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .plate-figure:hover .plate {
+      border-color: color-mix(in oklab, var(--entry-accent, var(--c-primary)) 55%, var(--c-hairline));
+      box-shadow: 0 18px 40px -28px
+        color-mix(in oklab, var(--entry-accent, var(--c-primary)) 60%, transparent);
+    }
   }
 }

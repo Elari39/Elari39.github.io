@@ -15,6 +15,7 @@
       }
 
       body {
+        position: relative;
         width: 1200px;
         height: 630px;
         display: flex;
@@ -22,12 +23,29 @@
         justify-content: center;
         padding: 0 84px;
         background-color: #121110;
+        /* 与站点底纹同一套语言：暖 bloom + 冷 bloom + 视口下方的一层余温 */
         background-image:
-          radial-gradient(760px 380px at 14% -14%, rgba(224, 141, 109, 0.34), transparent 62%),
-          radial-gradient(520px 300px at 100% 4%, rgba(93, 184, 166, 0.18), transparent 58%);
+          radial-gradient(1180px 700px at 12% -12%, rgba(224, 141, 109, 0.32), transparent 70%),
+          radial-gradient(880px 580px at 100% 4%, rgba(93, 184, 166, 0.2), transparent 66%),
+          radial-gradient(1100px 700px at 50% 116%, rgba(224, 141, 109, 0.16), transparent 68%);
         color: #faf9f5;
         font-family: 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia,
           'Microsoft YaHei', 'PingFang SC', sans-serif;
+      }
+
+      /* 与站点同一枚印记。放在 h1 上方那条空白里，不与文字重叠 */
+      .sigil {
+        position: absolute;
+        top: 34px;
+        right: 84px;
+        width: 110px;
+        height: 110px;
+        color: #e08d6d;
+      }
+
+      .sigil svg {
+        width: 100%;
+        height: 100%;
       }
 
       .rule {
@@ -78,6 +96,17 @@
     </style>
   </head>
   <body>
+    <div class="sigil" aria-hidden="true">
+      <svg viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="2.5">
+        <circle cx="100" cy="100" r="80" stroke-dasharray="4 20" opacity="0.55"></circle>
+        <path d="M100 6v11M100 183v11M6 100h11M183 100h11" opacity="0.7"></path>
+        <circle cx="100" cy="100" r="92" opacity="0.22"></circle>
+        <path d="M100 50 150 100 100 150 50 100Z" opacity="0.45"></path>
+        <path d="M100 74 126 100 100 126 74 100Z" opacity="0.85"></path>
+        <path d="M100 92 108 100 100 108 92 100Z" fill="currentColor" stroke="none" opacity="0.9"></path>
+      </svg>
+    </div>
+
     <div class="rule"></div>
     <h1>Ashen Witch's Grimoire</h1>
     <p class="cn">灰烬女巫的魔典</p>
