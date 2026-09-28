@@ -1,16 +1,19 @@
 /* =============================================================================
    Ashen Witch's Grimoire — 设计系统
    -----------------------------------------------------------------------------
-   色板取自 AshenCourier/DESIGN.md（暖奶油画布 + 珊瑚主色 + 深色面板），
-   再补一套「深色灰烬」变体，让本站与三个被展示的项目保持同一套视觉语汇。
+   默认主题是「新粗野主义」（写在 :root，也就是基础层）；羊皮纸（浅色）与
+   灰烬（深色）是它之上的覆盖，只能手动选到。色板取自 AshenCourier/DESIGN.md
+   （暖奶油画布 + 珊瑚主色 + 深色面板），让本站与三个被展示的项目保持同一套视觉语汇。
 
-   两套主题都只是 CSS 变量：Tailwind 通过 `@theme inline` 直接引用这些变量，
+   三套主题都只是 CSS 变量：Tailwind 通过 `@theme inline` 直接引用这些变量，
    所以 `bg-canvas` / `text-ink` 这类工具类会在运行时而跟着 data-theme 变色，
    而不需要为每个主题各写一份工具类。
 
    主题的解析顺序：
-     1. <html data-theme="dark|light"> —— 由 <head> 里的内联引导脚本写入
-     2. 引导脚本没跑（JS 被禁用）时，下面的 prefers-color-scheme 查询兜底
+     1. <html data-theme="…"> —— 服务端直接渲染成默认主题（brutal）
+     2. <head> 里的内联引导脚本按 localStorage 覆盖它（sync，早于首屏绘制，不闪）
+   注意这里**没有** prefers-color-scheme 兜底：默认主题不是猜出来的，
+   而是写在 HTML 上的，所以 JS 被禁用时看到的仍然是新粗野主义。
    ========================================================================== */
 
 @import 'tailwindcss';
@@ -22,10 +25,73 @@
    1. 主题变量
    -------------------------------------------------------------------------- */
 
-/* 明亮主题：羊皮纸 */
+/* 默认主题（基础层）：新粗野主义（neo-brutalism）
+   -----------------------------------------------------------------------------
+   它是**基础层**，不只是「第三套」：<html> 上由服务端直接渲染
+   data-theme="brutal"，引导脚本只在用户手动选过之后才改它。所以这套 token 写在
+   :root 上，另两套（羊皮纸 / 灰烬）是它之上的覆盖 —— 默认值只有一个来源，
+   无 JS、脚本被 CSP 拦掉、属性被谁删掉，都会退化成粗野主义，
+   而不是某个没人描述过的第四种样子。
+
+   纸白画布 + 纯黑描边 + 硬阴影（box-shadow 的模糊半径为 0）+ 全方角 + 无渐变。
+   色板只用一套 --c-* 变量，所以 bg-canvas / text-ink 这类工具类照旧跟着变色；
+   形状与显示字体另见文件末尾的覆盖块 —— 那部分**不能**只靠 token，
+   原因写在那一块的注释里。
+
+   两条硬约束：
+   1. 这里的值必须写成十六进制字面量。scripts/check-site.mjs 的 tokensFromBlock()
+      只认 `--c-x: #hex;`，写 color-mix()/oklch() 会让对比度检查组报「找不到 token」。
+   2. 现在没有任何一套主题跟随 prefers-color-scheme：默认就是这套，浅 / 深要手动选。
+      所以这个文件里不再有 prefers-color-scheme 兜底块。
+
+   对比度（守卫逐对核对，9 对全部 ≥ 阈值，最紧的一对是强调色 3.55:1 对 3.0 的门槛）：
+     正文 17.08 / 标题 19.43 / 次要文字 8.70 / 页脚小字 7.09 / 链接 6.26
+     teal 7.04 / amber 6.27 / 主按钮文字 5.47 / 强调色 3.55
+   注意 teal 用的是压暗过的青（#0a6169）：新粗野主义常见的亮青对白底只有 3:1 左右，
+   过不了 4.5 的门槛 —— 这是被守卫挡回来过一次的地方。 */
 :root {
   color-scheme: light;
 
+  --c-canvas: #fffdf4;
+  --c-surface: #ffffff;
+  --c-card: #ffffff;
+  --c-card-strong: #f1ebd8;
+  --c-hairline: #101010;
+  --c-hairline-soft: #101010;
+  --c-ink: #0a0a0a;
+  --c-body: #1a1a1a;
+  --c-muted: #4a4a4a;
+  --c-muted-soft: #575757;
+  --c-primary: #f04e14;
+  --c-primary-ink: #b32d00;
+  /* 纯黑压在橙上，而不是白字：白字对 #f04e14 只有 3.6:1，过不了 AA ——
+     与羊皮纸那条「珊瑚底上用近黑」是同一个理由。 */
+  --c-on-primary: #0a0a0a;
+  --c-amber: #8a5200;
+  --c-teal: #0a6169;
+  --c-code: #f1ebd8;
+
+  /* 纯装饰 token：只出现在描边、网格、封面渐变与硬阴影上，从不承载文字，
+     所以它们不参与 check-site.mjs 的对比度计算（正文级颜色仍是上面那些）。 */
+  --c-hairline-strong: #101010;
+  --c-grid: #eae4d0;
+  --c-ember-soft: #ffd6c4;
+  --brutal-shadow: 5px 5px 0 var(--c-hairline);
+  --brutal-shadow-sm: 3px 3px 0 var(--c-hairline);
+
+  /* 动效的时间与缓动。刻意放在 :root 而**不**放进 @theme ——
+     放进去会覆盖 Tailwind 内建的 --ease-out，改变已有工具类的语义。 */
+  --ease-ember: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --dur-fast: 0.18s;
+  --dur-base: 0.32s;
+  --dur-slow: 0.7s;
+}
+
+/* 手动选择的浅色：羊皮纸
+   -----------------------------------------------------------------------------
+   它必须排在 :root **之后**：两个选择器特异度相同（都作用于 <html>），
+   源序在后的那个赢。 */
+[data-theme='light'] {
   --c-canvas: #faf9f5;
   --c-surface: #f5f0e8;
   --c-card: #efe9de;
@@ -46,18 +112,23 @@
   --c-teal: #276b5e;
   --c-code: #efe9de;
 
-  /* 三个纯装饰 token：只出现在描边、网格与封面渐变上，从不承载文字，
-     所以它们不参与 check-site.mjs 的对比度计算（正文级颜色仍是上面那些）。 */
   --c-hairline-strong: #d8cfc4;
   --c-grid: #e9e2d6;
   --c-ember-soft: #e7c9bb;
+}
 
-  /* 动效的时间与缓动。刻意放在 :root 而**不**放进 @theme ——
-     放进去会覆盖 Tailwind 内建的 --ease-out，改变已有工具类的语义。 */
-  --ease-ember: cubic-bezier(0.22, 0.61, 0.36, 1);
-  --dur-fast: 0.18s;
-  --dur-base: 0.32s;
-  --dur-slow: 0.7s;
+/* 默认主题的显示字体
+   -----------------------------------------------------------------------------
+   只有这一条 key 在 [data-theme='brutal'] 上，而不是并进 :root 的 token 里：
+   衬线栈的唯一来源是 @theme inline 的 --font-display（它同时生成 .font-display
+   工具类），所以浅色 / 深色什么都不用写就仍是衬线，粗野主义只需在这里改一次。
+   并进 :root 的话，就得把衬线栈复制到另外两套里，迟早漂移。
+
+   零 WebFont 这条不变量不能破，所以只从系统字体里挑；中文没有真正的 Black
+   字面量，靠 font-weight: 800 让系统挑最粗的那一档。 */
+[data-theme='brutal'] {
+  --font-display: 'Arial Black', 'Segoe UI', system-ui, 'PingFang SC', 'Microsoft YaHei',
+    sans-serif;
 }
 
 /* 深色主题：灰烬 */
@@ -84,34 +155,6 @@
   --c-hairline-strong: #3a3833;
   --c-grid: #262421;
   --c-ember-soft: #4a2f26;
-}
-
-/* 没有 JS 时（data-theme 不存在）跟随系统 */
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme]) {
-    color-scheme: dark;
-
-    --c-canvas: #121110;
-    --c-surface: #181715;
-    --c-card: #1f1e1b;
-    --c-card-strong: #252320;
-    --c-hairline: #2e2c28;
-    --c-hairline-soft: #262421;
-    --c-ink: #faf9f5;
-    --c-body: #d8d4cb;
-    --c-muted: #a09d96;
-    --c-muted-soft: #8e8b82;
-    --c-primary: #e08d6d;
-    --c-primary-ink: #e9a389;
-    --c-on-primary: #1a1512;
-    --c-amber: #e8a55a;
-    --c-teal: #5db8a6;
-    --c-code: #1f1e1b;
-
-    --c-hairline-strong: #3a3833;
-    --c-grid: #262421;
-    --c-ember-soft: #4a2f26;
-  }
 }
 
 @theme inline {
@@ -517,28 +560,26 @@
     --entry-accent: var(--c-amber);
   }
 
-  /* 主题图标：两个 SVG 都在 DOM 里，由这里决定显示哪一个 ——
-     这样连「没有 JS、跟随系统」的情况也能显示正确的图标 */
-  .theme-icon-moon {
+  /* 主题图标：三个 SVG 全在 DOM 里，由这里决定显示哪一个 ——
+     图标不靠 JS 切，所以连「脚本没跑」时显示的也是正确的那一枚。
+     写法与主题变量同构：**基础层是粗野主义**，另两套在它之上覆盖。
+     原来是负向隐藏（.theme-icon-moon { display: none }），那会随主题数平方增长。 */
+  .theme-icon {
     display: none;
   }
 
-  [data-theme='dark'] .theme-icon-sun {
-    display: none;
-  }
-
-  [data-theme='dark'] .theme-icon-moon {
+  .theme-icon-brutal {
     display: block;
   }
 
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme]) .theme-icon-sun {
-      display: none;
-    }
+  [data-theme='light'] .theme-icon-brutal,
+  [data-theme='dark'] .theme-icon-brutal {
+    display: none;
+  }
 
-    :root:not([data-theme]) .theme-icon-moon {
-      display: block;
-    }
+  [data-theme='light'] .theme-icon-sun,
+  [data-theme='dark'] .theme-icon-moon {
+    display: block;
   }
 
   /* 「条目」卡片：书页的质感 —— 发丝描边 + 悬停抬起 + 顶部一道强调色 */
@@ -1117,4 +1158,316 @@
         color-mix(in oklab, var(--entry-accent, var(--c-primary)) 60%, transparent);
     }
   }
+}
+
+/* -----------------------------------------------------------------------------
+   4. 默认主题（新粗野主义）的形状与质感
+   -----------------------------------------------------------------------------
+   这一整块**必须写在所有 @layer 之外**（就是这里，文件末尾、无层级）。
+   原因有两条，都很容易踩：
+
+   1. 无层级声明优先于任何层。Tailwind 把工具类放在 @layer utilities 里，
+      所以只有无层级规则才能盖住它们。写进 @layer components 会直接失效。
+   2. `@theme inline` 会把 token 的**值**内联进工具类：产物里是
+      `.rounded-card{border-radius:.875rem}`、`.rounded-full{border-radius:2147483647px}`、
+      `.font-display{font-family:<衬线栈>}` —— 都不是 var()。所以圆角与显示字体
+      **不能**靠覆盖 --radius-card / --font-display 解决，只能像下面这样显式选。
+      （只有 .font-display 工具类需要手动重指；h1–h4 与 .attest-value 用的是
+      var(--font-display)，已经在那条 [data-theme='brutal'] 字体规则里跟着换了。）
+
+   体积上刻意只用平涂色、不用 color-mix()：产物会为 color-mix 生成一份 @supports
+   孪生规则，等于每条规则写两遍，而 CSS 预算是 48 KB（现状 34.7 KB）。
+   -------------------------------------------------------------------------- */
+
+/* ---- 底纹：新粗野主义没有柔光，只有硬网格 ---- */
+
+[data-theme='brutal'] body::before {
+  /* 三层 bloom（暖 / 冷 / 暖的径向柔光）整体让位 */
+  display: none;
+}
+
+[data-theme='brutal'] body::after {
+  /* 方格纸保留，但换成更粗、更方、不淡出的直角网格 */
+  background-image:
+    repeating-linear-gradient(
+      to right,
+      var(--c-hairline) 0,
+      var(--c-hairline) 1px,
+      transparent 1px,
+      transparent 24px
+    ),
+    repeating-linear-gradient(
+      to bottom,
+      var(--c-hairline) 0,
+      var(--c-hairline) 1px,
+      transparent 1px,
+      transparent 24px
+    );
+  opacity: 0.12;
+  mask-image: none;
+  -webkit-mask-image: none;
+}
+
+/* ---- 字体：显示字体变粗黑，字面收紧；正文仍是无衬线 ---- */
+
+[data-theme='brutal'] h1,
+[data-theme='brutal'] h2,
+[data-theme='brutal'] h3,
+[data-theme='brutal'] h4 {
+  /* base 层把标题定在 font-weight: 400（衬线细体的读法），粗野主义要 800 */
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+[data-theme='brutal'] .font-display {
+  /* 这个工具类把衬线栈写成了字面量，得手动拉回 var() */
+  font-family: var(--font-display);
+}
+
+[data-theme='brutal'] .attest-value {
+  font-weight: 800;
+}
+
+[data-theme='brutal'] ::selection {
+  background: var(--c-primary);
+  color: var(--c-on-primary);
+}
+
+[data-theme='brutal'] :focus-visible {
+  outline-width: 3px;
+  outline-offset: 2px;
+  border-radius: 0;
+}
+
+/* ---- 页头：去掉毛玻璃，换成一道硬边 ---- */
+
+[data-theme='brutal'] .site-header {
+  /* .bg-canvas/85 是半透明 + backdrop-blur-md：粗野主义不模糊，直接实底 */
+  background-color: var(--c-canvas);
+  backdrop-filter: none;
+  border-bottom-width: 3px;
+}
+
+[data-theme='brutal'] .site-header::after {
+  /* 原来是一道 14px 高的柔和投影，改成 3px 的实心黑边（动画本身保留） */
+  background: var(--c-hairline);
+  height: 3px;
+  inset: auto 0 -3px 0;
+}
+
+[data-theme='brutal'] .nav-link {
+  /* .rounded-full 是内联的字面量，工具类盖不住 */
+  border-radius: 0;
+}
+
+[data-theme='brutal'] .nav-link::after {
+  height: 3px;
+}
+
+[data-theme='brutal'] .skip-link {
+  border-radius: 0;
+  border: 2px solid var(--c-hairline);
+}
+
+/* ---- 按钮与标记：方角 + 粗描边 + 硬阴影，按下时"压平" ---- */
+
+[data-theme='brutal'] .btn {
+  border-radius: 0;
+  border-width: 2px;
+  background: var(--c-card);
+  box-shadow: var(--brutal-shadow-sm);
+}
+
+[data-theme='brutal'] .btn:hover {
+  /* 抬起 1px、阴影长到 4px：分量感来自位移差，不是模糊 */
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 var(--c-hairline);
+  background: var(--c-card-strong);
+}
+
+[data-theme='brutal'] .btn:active {
+  /* 按下去就等于把阴影踩平 —— 粗野主义的标准交互 */
+  transform: translate(3px, 3px);
+  box-shadow: none;
+}
+
+[data-theme='brutal'] .btn-primary,
+[data-theme='brutal'] .btn-primary:hover {
+  background: var(--c-primary);
+  color: var(--c-on-primary);
+}
+
+[data-theme='brutal'] .chip {
+  border-radius: 0;
+  border-width: 2px;
+  background: var(--c-card);
+}
+
+[data-theme='brutal'] .badge {
+  /* .badge-live / -wip / -archived 的柔和 tint 在无层级规则面前一律让位 */
+  border-radius: 0;
+  border: 2px solid var(--c-hairline);
+  background: var(--c-card);
+}
+
+[data-theme='brutal'] .badge::before {
+  /* 状态点从圆点变方块 */
+  border-radius: 0;
+}
+
+[data-theme='brutal'] .rule-ember {
+  /* 渐变余烬线换成一道纯黑粗杠 */
+  height: 3px;
+  background: var(--c-hairline);
+}
+
+[data-theme='brutal'] #theme-toggle {
+  border-radius: 0;
+  border-width: 2px;
+  box-shadow: var(--brutal-shadow-sm);
+}
+
+/* ---- 卡片与图版：整圈黑框 + 硬阴影 ---- */
+
+[data-theme='brutal'] .entry-card {
+  border-radius: 0;
+  border-width: 3px;
+  background: var(--c-card);
+  box-shadow: var(--brutal-shadow);
+}
+
+[data-theme='brutal'] .entry-card:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 8px 8px 0 var(--entry-accent, var(--c-primary));
+  border-color: var(--c-hairline);
+}
+
+[data-theme='brutal'] .entry-card::before {
+  /* 顶部那道 3px 渐变条让位给整圈黑框，避免"框上又贴一条" */
+  display: none;
+}
+
+[data-theme='brutal'] .glyph {
+  border-radius: 0;
+  border-width: 2px;
+  background: var(--c-card-strong);
+}
+
+[data-theme='brutal'] .plate {
+  border-radius: 0;
+  border-width: 2px;
+  box-shadow: var(--brutal-shadow-sm);
+}
+
+[data-theme='brutal'] .plate-figure:hover .plate {
+  border-color: var(--c-hairline);
+  box-shadow: var(--brutal-shadow);
+}
+
+[data-theme='brutal'] .rounded-card {
+  border-radius: 0;
+  border-width: 3px;
+  box-shadow: var(--brutal-shadow-sm);
+}
+
+[data-theme='brutal'] .attest {
+  border-radius: 0;
+  border-width: 3px;
+  background: var(--c-card);
+  box-shadow: var(--brutal-shadow);
+}
+
+[data-theme='brutal'] .section-head {
+  border-bottom-width: 3px;
+}
+
+/* ---- 封面与详情页头部：平涂色块，不要渐变 ---- */
+
+[data-theme='brutal'] .cover {
+  background: var(--entry-accent, var(--c-primary));
+  border-bottom-width: 3px;
+}
+
+[data-theme='brutal'] .cover::before {
+  /* 原来是从左向右淡出的细网格，换成不淡出的粗条纹 */
+  background-image: repeating-linear-gradient(
+    to right,
+    var(--c-hairline) 0,
+    var(--c-hairline) 2px,
+    transparent 2px,
+    transparent 16px
+  );
+  opacity: 0.35;
+  mask-image: none;
+  -webkit-mask-image: none;
+}
+
+[data-theme='brutal'] .cover-numeral {
+  color: var(--c-hairline);
+}
+
+[data-theme='brutal'] .entry-header {
+  background: var(--c-card-strong);
+  border-bottom-width: 3px;
+}
+
+[data-theme='brutal'] .entry-watermark {
+  color: var(--c-ink);
+  opacity: 0.08;
+}
+
+[data-theme='brutal'] .rune-corner {
+  color: var(--c-ink);
+}
+
+/* ---- 序言区的印记：去掉柔光，保留线稿 ---- */
+
+[data-theme='brutal'] .hero-sigil__aura {
+  /* 从印记中心发出的柔光属于上一套语言 */
+  display: none;
+}
+
+[data-theme='brutal'] .hero-sigil {
+  /* 印记全部用 currentColor 画的，所以整块变成纯黑线稿 */
+  color: var(--c-hairline);
+}
+
+[data-theme='brutal'] .sheen {
+  /* 掠过卡片的柔光让位；hover 反馈改由硬阴影位移承担 */
+  display: none;
+}
+
+/* ---- 正文排版 ---- */
+
+[data-theme='brutal'] .prose-grimoire h2 {
+  border-bottom-width: 3px;
+}
+
+[data-theme='brutal'] .prose-grimoire code {
+  border-radius: 0;
+  border-width: 2px;
+}
+
+[data-theme='brutal'] .prose-grimoire pre {
+  border-radius: 0;
+  border-width: 3px;
+  box-shadow: var(--brutal-shadow-sm);
+}
+
+[data-theme='brutal'] .prose-grimoire blockquote {
+  border-left-width: 6px;
+  color: var(--c-body);
+}
+
+/* 逗号列表里每一项都要带前缀 —— 漏一个就会作用到全站的 th / td */
+[data-theme='brutal'] .prose-grimoire th,
+[data-theme='brutal'] .prose-grimoire td {
+  border-color: var(--c-hairline);
+}
+
+/* ---- 目录：hover 用色块而不是变色 ---- */
+
+[data-theme='brutal'] .toc-link:hover {
+  background: var(--c-card-strong);
+  color: var(--c-ink);
 }

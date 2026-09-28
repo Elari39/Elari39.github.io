@@ -14,7 +14,7 @@
  *   无内联样式 —— 因为 style-src 没有 'unsafe-inline'，行内 style 会被拦掉
  *   可访问性 —— 唯一的 h1、lang、skip link、img 都有 alt 与宽高、装饰 SVG 都 aria-hidden
  *   锚点     —— 每个 #锚点都要在目标页里真的存在对应的 id
- *   对比度   —— 用 global.css 里的真实 token 算 WCAG 比值，两套主题都算
+ *   对比度   —— 用 global.css 里的真实 token 算 WCAG 比值，三套主题都算
  *   体积     —— 客户端 JS（gzip）与 CSS 都不超过预算
  *   反漂移   —— 首页数字条上的两个数字必须与这里的预算常量一致
  *
@@ -453,8 +453,12 @@ check(
 section('对比度（WCAG）');
 
 const css = await readFile(path.join(ROOT, 'src', 'styles', 'global.css'), 'utf8');
+// 默认主题（新粗野主义）是基础层，token 写在 :root 上；羊皮纸与灰烬是它之上的
+// 覆盖，只能手动选到 —— 但三套一样要过对比度：主题是用户自己选的，
+// 可读性不是可选项。
 const themes = {
-  羊皮纸: tokensFromBlock(css, ':root {'),
+  新粗野主义: tokensFromBlock(css, ':root {'),
+  羊皮纸: tokensFromBlock(css, "[data-theme='light'] {"),
   灰烬: tokensFromBlock(css, "[data-theme='dark'] {"),
 };
 
@@ -487,6 +491,14 @@ for (const [themeName, tokens] of Object.entries(themes)) {
     );
   }
 }
+
+// 三套主题不能是"照抄一份、看不出区别"。这一步同时证明了三个 token 块都真的
+// 被读到了 —— 选择器名写错（比如默认主题换了地方）会在这里露出来。
+const canvases = Object.values(themes).map((tokens) => tokens.canvas);
+check(
+  canvases.every(Boolean) && new Set(canvases).size === canvases.length,
+  `三套主题的画布色互不相同（${canvases.join(' / ')}）`,
+);
 
 /* --- 7. 体积预算 --- */
 section('体积预算');
@@ -553,6 +565,13 @@ check(
 check(
   indexHtml.includes(`${PAIRS.length} 组`),
   `首页陈述的配色组数与守卫一致（${PAIRS.length} 组）`,
+);
+// 主题数同理：面板写"× 3 主题"，而守卫确实在算三套主题的对比度。
+// 加一套主题却忘了改面板（或反过来）都会在这里红。
+const themeCount = Object.keys(themes).length;
+check(
+  indexHtml.includes(`× ${themeCount} 主题`),
+  `首页陈述的主题数与守卫一致（× ${themeCount} 主题）`,
 );
 
 /* ------------------------------------------------------------------- 结果 */

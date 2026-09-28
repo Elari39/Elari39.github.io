@@ -52,7 +52,7 @@
 | --- | --- | --- |
 | 站点框架 | **Astro 7**（`output: static`） | 纯静态输出与 GitHub Pages 的托管模型天然对齐：不需要 SPA 的 404 回退技巧、没有客户端路由、首屏与 SEO 都更好 |
 | 内容 | **内容集合 + zod schema** | 每个项目是一份 Markdown；字段不全、亮点少于三条、仓库地址写错都会**构建失败**，而不是上线后才发现 |
-| 样式 | **Tailwind CSS 4**（`@theme inline`） | 设计 token 是运行时 CSS 变量，所以两套主题不需要两份工具类 |
+| 样式 | **Tailwind CSS 4**（`@theme inline`） | 设计 token 是运行时 CSS 变量，所以三套主题不需要三份工具类 |
 | 客户端 JS | 一段主题引导脚本 + 一段切换按钮脚本 | 内联后 gzip **0.42 KB**；守卫脚本盯着这个预算 |
 | 安全 | Astro 原生 `security.csp` + 一份手工登记的哈希 | GitHub Pages 不能自定义响应头，只能用 `<meta>` 形式的 CSP |
 | 部署 | GitHub Actions + `actions/deploy-pages` | 产物以 artifact 上传，不落 `gh-pages` 分支 |
@@ -89,7 +89,7 @@
    ├─ components/                 # Header / Footer / ProjectCard / Glyph / ThemeToggle
    │                              # + SigilPlate / Attestation / PlateRail / Toc
    ├─ pages/                      # index / about / 404 / projects/[slug]
-   └─ styles/global.css           # 两套主题的 token 与组件样式
+   └─ styles/global.css           # 三套主题的 token 与组件样式
 ```
 
 ## 本地开发
@@ -133,7 +133,7 @@ pnpm verify:browser  # 浏览器级验收（需要先起 pnpm preview）
 | 图片尺寸 | 每个 `<img>` 都要声明 `width`/`height` —— 否则图版加载完成前占不住位置，会累计布局偏移 |
 | 跳转目标 | 每页都有 `id="main"`，skip link 指的确实是它 |
 | 装饰 SVG | 每个 `<svg>` 都要 `aria-hidden="true"` —— 装饰图形不该进可访问性树（需要语义的图形请用 `<img alt>`） |
-| 对比度 | 用 `global.css` 里的**真实 token** 算 WCAG 比值，两套主题各 9 对，正文与标记要求 ≥ 4.5:1 |
+| 对比度 | 用 `global.css` 里的**真实 token** 算 WCAG 比值，三套主题各 9 对，正文与标记要求 ≥ 4.5:1；另外核对三套的画布色互不相同 |
 | 体积 | 客户端 JS（gzip，含内联）≤ 4 KB；首页 HTML ≤ 60 KB |
 | CSS 预算 | 外链 CSS ≤ 48 KB —— 底纹、动效与装饰都在 `global.css` 里，体积代价得看得见 |
 | 反漂移 | 首页数字条上的两个数字必须与守卫里的常量一致（`4 KB`、`9 组`） |
@@ -146,11 +146,28 @@ pnpm verify:browser  # 浏览器级验收（需要先起 pnpm preview）
 无头 Chrome + CDP 把页面真跑一遍（零 npm 依赖：Node 自带 `WebSocket` 与 `fetch`）。
 它回答的是守卫脚本回答不了的问题：
 
-- 内联主题引导脚本在 CSP 之下**确实被执行**了（`data-theme` 真的被写上了）；
+- 内联主题引导脚本在 CSP 之下**确实被执行**了。判据是 `data-themeSource` ——
+  它只由那段脚本写、服务端 HTML 里没有：默认主题现在是直接渲染在 `<html>` 上的，
+  脚本就算被拦掉属性也照样在，只看 `data-theme` 会变成假守卫；
+- **没选过主题时落到默认主题**：脚本清掉 `localStorage` 再刷新，断言
+  `data-theme="brutal"` 且来源是 `default`；
+- **把脚本整个禁用**（`Emulation.setScriptExecutionDisabled`）后重新加载：`<html>` 上
+  仍是服务端渲染的 `data-theme="brutal"`（`data-themeSource` 为空 —— 正好反证了
+  它不是脚本写的），画布与**形状**都是粗野主义。这一条才是"默认值写在 HTML 上、
+  而不是用 CSS 猜"的真正理由：只把 token 放进 `:root` 的话，无 JS 时会得到
+  "粗野主义的颜色 + 上一套的圆角与柔光"这种没人设计过的半成品；
 - 页面上**没有 CSP 违规、没有控制台报错、没有资源加载失败**；
-- 点击主题切换按钮后 `data-theme` 翻转、写入 `localStorage`、**刷新后仍然保持**；
-- 两套主题的 `getComputedStyle` 背景色确实不同（变量真的生效，而不是看着像生效）；
-- 1440px 与 390px 下都没有横向滚动；
+- 点击主题切换按钮后按 **新粗野主义 → 羊皮纸 → 灰烬 → 新粗野主义** 循环，
+  每一步都翻转 `data-theme`、写入 `localStorage`，**刷新后仍然保持**
+  （刷新点停在中间那一套上，回来时再确认循环是闭合的）；
+- 三套主题的 `getComputedStyle` 背景色确实互不相同，**且浅色下 `h1` 回到衬线栈**
+  —— 后者挡住了"把 `--font-display` 写进 `:root`、结果三套主题都变粗黑"那类改法；
+- **新粗野主义里「token 覆盖不到」的那一半也真的生效**：条目卡与切换按钮的
+  `border-radius` 为 0、阴影的模糊半径为 0、`h1` 走粗黑无衬线而不是衬线、页头不再毛玻璃。
+  这一条挡的是"只改了变量、忘了形状"这种半生效的改动 —— 也正是它需要在
+  `global.css` 末尾那样一个无层级覆盖块的原因；
+- 1440px 与 390px 下都没有横向滚动，**且 390px 那一次是在新粗野主义下量的**：
+  硬阴影向右下探出，是这套主题唯一真实的溢出风险，只在默认主题下量是量不到它的；
 - **滚动进场动画一定收敛到可见终态**：逐个把 `.reveal` 滚进视口，再断言它的 `transform`
   归位、`opacity` 为 1 —— 挡住"动到一半就永久停住"这种只有真跑一遍才看得见的回归
   （所以首屏以下的内容才敢用 `animation-timeline: view()`）；
@@ -159,7 +176,8 @@ pnpm verify:browser  # 浏览器级验收（需要先起 pnpm preview）
   全局兜底对 scroll-driven 动画**无效**（那类动画不看 duration），所以每条动效都另外包在
   `(prefers-reduced-motion: no-preference)` 里。
 
-它同时把每页的浅色 / 深色 / 窄屏截图写到 `.assets-raw/verify/`，供人眼复核。
+它同时把每页的浅色 / 深色 / 新粗野主义 / 窄屏截图写到 `.assets-raw/verify/`，
+外加首页在新粗野主义下四个滚动位置、390px 与「禁用脚本」的一张预览图，供人眼复核。
 
 > 两个脚本的分工值得说明：`guard` 是**快速、离线、每次提交都跑**的契约测试；
 > `verify:browser` 是**慢一些、需要浏览器**的行为验收。
@@ -233,20 +251,59 @@ DOM 里 <title> 就是这四个字，没有任何文章链接；
 
 ## 设计系统
 
-两套主题，token 只有一处来源：`src/styles/global.css` 的 `--c-*` 变量，
+三套主题，token 只有一处来源：`src/styles/global.css` 的 `--c-*` 变量，
 再通过 `@theme inline` 暴露成 `bg-canvas` / `text-ink` 这类工具类。
 
-| 语义 | 羊皮纸（浅色） | 灰烬（深色） |
-| --- | --- | --- |
-| 画布 | `#faf9f5` | `#121110` |
-| 卡片 | `#efe9de` | `#1f1e1b` |
-| 正文 | `#3d3d3a` | `#d8d4cb` |
-| 标题 | `#141413` | `#faf9f5` |
-| 主色（余烬珊瑚） | `#cc785c` | `#e08d6d` |
-| teal / amber 标记 | `#276b5e` / `#8f5a10` | `#5db8a6` / `#e8a55a` |
+**默认是新粗野主义**（写在 `:root` 这个基础层上，并由服务端直接渲染到
+`<html data-theme="brutal">`）；**羊皮纸（浅色）与灰烬（深色）是它之上的覆盖，
+只能手动选到**。切换按钮按 **新粗野主义 → 羊皮纸 → 灰烬** 循环，选择存在
+`localStorage`。主题清单只有一处定义（`src/lib/theme.ts` 的 `THEME_IDS`，
+**第 0 项就是默认主题**），默认值、引导脚本接受的合法值与按钮的循环顺序都从它生成。
 
-色板继承自 AshenCourier 的 `DESIGN.md`（暖奶油画布 + 珊瑚主色 + 深色面板），
+> 默认主题没有用 `prefers-color-scheme` 去猜。它写在 HTML 上，引导脚本只在
+> 访客手动选过之后才覆盖它（sync，早于首屏绘制）——所以脚本没跑、被 CSP 拦掉
+> 或属性被谁删掉，看到的都是新粗野主义，而不是某个没人描述过的第四种样子。
+
+| 语义 | 羊皮纸（浅色） | 灰烬（深色） | 新粗野主义 |
+| --- | --- | --- | --- |
+| 画布 | `#faf9f5` | `#121110` | `#fffdf4` |
+| 卡片 | `#efe9de` | `#1f1e1b` | `#ffffff` |
+| 描边 | `#e6dfd8` | `#2e2c28` | `#101010` |
+| 正文 | `#3d3d3a` | `#d8d4cb` | `#1a1a1a` |
+| 标题 | `#141413` | `#faf9f5` | `#0a0a0a` |
+| 主色 | `#cc785c` | `#e08d6d` | `#f04e14` |
+| teal / amber 标记 | `#276b5e` / `#8f5a10` | `#5db8a6` / `#e8a55a` | `#0a6169` / `#8a5200` |
+
+前两套色板继承自 AshenCourier 的 `DESIGN.md`（暖奶油画布 + 珊瑚主色 + 深色面板），
 所以这个站点与它展示的项目看起来像同一个作者做的。
+
+### 默认主题：新粗野主义（neo-brutalism）
+
+它换的不只是颜色，还有形状语言：纸白画布、纯黑描边、模糊半径为 0 的硬阴影、全方角、
+没有渐变也没有柔光（连页头的毛玻璃都去掉），标题字体从衬线换成粗黑系统栈。
+
+四件值得写下来的事：
+
+- **形状与显示字体不能靠 token 覆盖。** `@theme inline` 会把 token 的值**内联**进工具类
+  —— 产物里是 `.rounded-card{border-radius:.875rem}`、
+  `.rounded-full{border-radius:2147483647px}`、`.font-display{font-family:<衬线栈>}`，
+  没有一个 `var()`。所以这一套的方角、硬阴影与字重写在 `global.css` 末尾一个
+  **无层级**（不在任何 `@layer` 里）的覆盖块中：无层级声明优先于所有层，
+  而写进 `@layer components` 会被 `@layer utilities` 盖掉。
+- **亮青过不了对比度。** 新粗野主义常见的亮青对白底只有约 3:1，够不到 4.5 的门槛，
+  所以这里的 teal 是压暗过的 `#0a6169`；同理按钮上是黑字压橙底而不是白字。
+  这两处都是守卫的对比度检查挡回来的。
+- **默认值只有一个来源。** 这套 token 写在 `:root`（基础层），
+  另两套是 `[data-theme='light']` / `[data-theme='dark']` 上的覆盖 ——
+  包括显示字体：衬线栈的唯一来源是 `@theme inline` 的 `--font-display`，
+  所以浅 / 深什么都不用写就仍是衬线，粗野主义只在一条 `[data-theme='brutal']`
+  规则里换成粗黑栈。要是把字体并进 `:root`，就得把衬线栈复制到另外两套里去。
+- **整个站点都不再跟随系统偏好。** `prefers-color-scheme` 只剩「浏览器地址栏配色」
+  那一条 `<meta>` 还在用；两套浅 / 深是用户自己选的，默认也不是猜出来的。
+
+`--brutal-shadow` / `--brutal-shadow-sm` 与 `--c-hairline-strong` / `--c-grid` /
+`--c-ember-soft` 同属**纯装饰 token**：只用于阴影、描边与网格，从不承载文字，
+所以不参与守卫的对比度计算。
 
 **几个刻意的取舍：**
 
@@ -258,7 +315,7 @@ DOM 里 <title> 就是这四个字，没有任何文章链接；
   而 Astro 只为它自己产出的脚本生成哈希，`set:html` 注入的不在其中
   （详见 `src/lib/csp.ts` 的注释）。
 
-### 底纹、动效与三个装饰 token
+### 底纹、动效与装饰 token
 
 背景是两层 `position: fixed` 的纯 CSS 图层（不请求任何图片）：三层 bloom（暖 / 冷 / 暖，
 最大的一层锚在视口下方 112% 处，保证滚到任何位置、视口下半部分都留着余温）+ 一层 32px
@@ -271,7 +328,7 @@ DOM 里 <title> 就是这四个字，没有任何文章链接；
 
 三个新 token（`--c-hairline-strong` / `--c-grid` / `--c-ember-soft`）**只用于描边、
 网格与封面渐变，从不承载文字**，所以不参与守卫的对比度计算；正文级颜色仍是原来那 9 对，
-一个都没改。动效的时间与缓动 token（`--ease-ember` / `--dur-*`）刻意放在 `:root` 而
+一个都没改 —— 新粗野主义也是这 9 对，只是换了一组值（外加同类的两个硬阴影 token）。动效的时间与缓动 token（`--ease-ember` / `--dur-*`）刻意放在 `:root` 而
 不放进 `@theme`：放进去会覆盖 Tailwind 内建的 `--ease-out`，改变已有工具类的语义。
 
 动效全部由 CSS 驱动（零客户端 JS），两条硬规矩写在 `global.css` 的 2.5 节里：
@@ -317,6 +374,12 @@ gh api -X POST repos/Elari39/Elari39.github.io/pages -f build_type=workflow
   与「零客户端 JS」这两条承诺；i18n 会让正文翻倍。将来要加，也该先想清楚
   它值不值得放弃某条承诺。
 - **图版靠人眼。** 自动化只能判断「是不是空白页」，判断不了「好不好看」。
+- **默认主题不跟随系统偏好。** 深色系统的访客第一眼看到的也是纸白的新粗野主义 ——
+  这是刻意的：默认值写在 HTML 上，不是用 `prefers-color-scheme` 猜的。要跟随系统，
+  就得放弃"默认值只有一个来源"这条，或者接受无 JS 时落到另一套外观上。
+- **`theme-color` 只跟默认主题。** 浏览器地址栏配色是一条写死的 `<meta>`
+  （默认主题的画布色 `#fffdf4`），手动切到浅 / 深时不会跟着走。
+  要让它跟着走就得多一段改 meta 的脚本，还得处理"改完会不会闪"——不值得。
 - **CryptoWitch 没有 Release**，所以条目只链仓库，没有下载按钮。
 
 ## 许可

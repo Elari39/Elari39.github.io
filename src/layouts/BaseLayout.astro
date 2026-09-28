@@ -4,7 +4,7 @@ import '../styles/global.css';
 import Footer from '../components/Footer.astro';
 import Header from '../components/Header.astro';
 import { SITE } from '../data/site';
-import { THEME_BOOT_SCRIPT } from '../lib/theme';
+import { DEFAULT_THEME, THEME_BOOT_SCRIPT } from '../lib/theme';
 
 interface Props {
   /** 页面标题（不含站点名）；不传则用「站名 · 副题」 */
@@ -25,7 +25,12 @@ const jsonLdBlocks = jsonLd ? (Array.isArray(jsonLd) ? jsonLd : [jsonLd]) : [];
 ---
 
 <!doctype html>
-<html lang={SITE.lang}>
+{/*
+  默认主题直接渲染在 <html> 上，而不是靠 CSS 的 prefers-color-scheme 猜：
+  这样 JS 被禁用、或引导脚本被 CSP 拦掉时，看到的仍然是新粗野主义，
+  而不是"跟随系统的某个样子"。引导脚本只在用户手动选过之后才覆盖它。
+*/}
+<html lang={SITE.lang} data-theme={DEFAULT_THEME}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -47,15 +52,19 @@ const jsonLdBlocks = jsonLd ? (Array.isArray(jsonLd) ? jsonLd : [jsonLd]) : [];
     <meta property="og:image:alt" content={`${SITE.title} —— ${SITE.subtitle}`} />
     <meta name="twitter:card" content="summary_large_image" />
 
-    <meta name="theme-color" content="#faf9f5" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#121110" media="(prefers-color-scheme: dark)" />
+    {/* 地址栏配色跟随**默认主题**的画布色（新粗野主义的 --c-canvas）。
+        手动切到浅 / 深时它不会跟着走：那要多一段改 meta 的脚本，不值得 ——
+        README 的「已知限制」里有记。 */}
+    <meta name="theme-color" content="#fffdf4" />
 
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 
     {/*
-      主题引导：必须同步执行、且在样式生效之前。
-      这也是整站唯一的内联脚本 —— 由 Astro 的 security.csp 生成哈希放行。
+      主题引导：必须同步执行、且在样式生效之前 —— 它把上面那个服务端渲染的
+      默认主题按 localStorage 覆盖掉，所以切换过的访客不会先闪一下粗野主义。
+      这是唯一由我们手工登记哈希的内联脚本（见 src/lib/csp.ts）：通过 set:html
+      注入的脚本，Astro 不会替它生成哈希。
     */}
     <script is:inline set:html={THEME_BOOT_SCRIPT}></script>
 

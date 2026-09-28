@@ -5,9 +5,14 @@
  * 守卫脚本（check-site.mjs）看的是**文件**，它证明不了这些东西真的能跑：
  *   · 内联主题引导脚本在 CSP 之下**确实被执行**了（否则又会闪一下错误的主题）
  *   · 页面没有任何 CSP 违规或 JS 报错
- *   · 主题切换按钮点下去，data-theme 会翻转并写进 localStorage
- *   · 两套主题的 CSS 变量真的生效（读 computedStyle，不是看源码）
- *   · 窄屏（390px）不会出现横向滚动
+ *   · 没选过主题时落到默认主题（新粗野主义），data-themeSource 是脚本写上去的 ——
+ *     这条同时证明引导脚本真的在 CSP 之下执行了
+ *   · 主题切换按钮点下去，data-theme 会按 新粗野主义 → 羊皮纸 → 灰烬 循环并写进
+ *     localStorage
+ *   · 三套主题的 CSS 变量真的生效（读 computedStyle，不是看源码）
+ *   · 新粗野主义那一半"token 覆盖不到"的改动也真的生效：方角、硬阴影、字重、
+ *     以及页头不再毛玻璃 —— 这些 @theme inline 编译成了字面量，只改变量是没用的
+ *   · 窄屏（390px）不会出现横向滚动（含硬阴影最容易撑破的那一档）
  *   · 滚动进场动画一定收敛到可见终态（不会「动到一半就永久停住」）
  *   · prefers-reduced-motion: reduce 下动效整体让位，内容照样完整可读
  *
@@ -65,6 +70,12 @@ const CHROME_CANDIDATES = [
   'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
 ];
 
+/** 三套主题的 id；与 src/lib/theme.ts 的 THEME_IDS 一致 */
+const THEMES = ['brutal', 'light', 'dark'];
+
+/** 默认主题（src/lib/theme.ts 的 DEFAULT_THEME，也就是 THEME_IDS[0]） */
+const DEFAULT_THEME = 'brutal';
+
 const ROUTES = [
   { path: '/', name: 'home' },
   { path: '/about/', name: 'about' },
@@ -92,6 +103,26 @@ function check(condition, message, detail) {
 }
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/**
+ * 判断一个 computed box-shadow 是不是"硬阴影"：有阴影、模糊半径为 0，
+ * 且两个方向都至少偏了 3px。
+ *
+ * 只要"有阴影"是不够的 —— 浅色主题的卡片本来就有一条 `0 1px 0` 的极淡投影，
+ * 模糊半径同样是 0。所以这里还要求偏移量够大，才是新粗野主义那种"错开的实心块"。
+ * computed 形式形如 `rgb(16, 16, 16) 5px 5px 0px 0px`。
+ */
+function isHardShadow(value) {
+  if (!value || value === 'none') return false;
+  const parts = value
+    .replace(/^[a-z]+\([^)]*\)\s*/i, '')
+    .trim()
+    .split(/\s+/)
+    .map((part) => Number.parseFloat(part));
+  if (parts.length < 3) return false;
+  const [offsetX, offsetY, blur] = parts;
+  return blur === 0 && Math.abs(offsetX) >= 3 && Math.abs(offsetY) >= 3;
+}
 
 /* ----------------------------------------------------------------- CDP 客户端 */
 
@@ -299,6 +330,7 @@ for (const route of ROUTES) {
     bodyBg: getComputedStyle(document.body).backgroundColor,
     bodyColor: getComputedStyle(document.body).color,
     h1Font: getComputedStyle(document.querySelector('h1')).fontFamily,
+    h1Weight: Number(getComputedStyle(document.querySelector('h1')).fontWeight) || 0,
     overflowX: document.documentElement.scrollWidth > window.innerWidth + 1,
     toggle: Boolean(document.getElementById('theme-toggle')),
     h1: document.querySelector('h1')?.textContent?.trim() ?? null,
@@ -309,17 +341,28 @@ for (const route of ROUTES) {
     plates: document.querySelectorAll('img.plate').length,
   }))()`);
 
-  // 主题引导脚本是否真的在 CSP 下跑起来了 —— 这是文件级检查证明不了的一条
+  // 主题引导脚本是否真的在 CSP 下跑起来了 —— 这是文件级检查证明不了的一条。
+  // 判据是 data-themeSource：它只由那段脚本写，服务端渲染的 HTML 里没有。
+  // （只看 data-theme 已经不够了：默认主题现在是直接写在 <html> 上的，
+  //   脚本就算被 CSP 拦掉，属性也照样在那儿 —— 那就成了假守卫。）
   check(
-    state.theme === 'light' || state.theme === 'dark',
+    THEMES.includes(state.theme) && ['default', 'manual'].includes(state.source),
     `${route.path} 主题引导脚本已执行（data-theme=${state.theme}，来源 ${state.source}）`,
+  );
+  // 首次访问（这个临时 profile 里 localStorage 是空的）必须落到默认主题
+  check(
+    state.theme === DEFAULT_THEME && state.source === 'default',
+    `${route.path} 首次访问默认就是新粗野主义（${state.theme} / ${state.source}）`,
   );
   check(state.toggle, `${route.path} 主题切换按钮存在`);
   check(!state.overflowX, `${route.path} 桌面宽度无横向滚动`);
   check(Boolean(state.h1), `${route.path} 有 h1：「${state.h1}」`);
+  // 默认主题下标题走粗黑无衬线。这里刻意**不**写 /serif/i —— 'sans-serif' 里也含
+  // 'serif'，那种断言对任何无衬线栈都会假通过。衬线那条留给下面的浅色主题。
   check(
-    /serif/i.test(state.h1Font),
-    `${route.path} h1 走的是衬线显示字体`,
+    !/Iowan|Georgia|Palatino/i.test(state.h1Font) && state.h1Weight >= 700,
+    `${route.path} 默认主题下 h1 是粗黑无衬线（weight=${state.h1Weight}）`,
+    state.h1Font,
   );
 
   const cspViolations = pageIssues.filter((issue) => /Content Security Policy|CSP/i.test(issue));
@@ -346,25 +389,92 @@ for (const route of ROUTES) {
     brokenImages.map((image) => image.src).join(', '),
   );
 
-  // 浅色截图
+  // 浅色截图：显式设主题，不再依赖"默认是什么"（默认已经不是浅色了）。
+  // 等 300ms：卡片那条 240ms 的 box-shadow 过渡走完再量 / 再拍。
   await cdp.evaluate(`document.documentElement.dataset.theme='light'`);
-  await sleep(120);
+  await sleep(300);
+  const light = await cdp.evaluate(`(() => {
+    const h1 = document.querySelector('h1');
+    return {
+      bg: getComputedStyle(document.body).backgroundColor,
+      color: getComputedStyle(document.body).color,
+      h1Font: h1 ? getComputedStyle(h1).fontFamily : '',
+    };
+  })()`);
   await cdp.screenshot(path.join(SHOTS, `${route.name}-light.png`));
+
+  // 显示字体换的是不是只有粗野主义那一套：浅色必须回到衬线栈。
+  // 这条同时挡住了"把 --font-display 写进 :root、结果三套主题都变粗黑"那类改法。
+  check(
+    /Iowan|Georgia|Palatino/i.test(light.h1Font),
+    `${route.path} 浅色主题下 h1 回到衬线显示字体`,
+    light.h1Font,
+  );
 
   // 深色截图：直接改 data-theme，等价于用户点过一次切换
   await cdp.evaluate(`document.documentElement.dataset.theme='dark'`);
-  await sleep(120);
+  await sleep(300);
   const dark = await cdp.evaluate(`(() => ({
     bg: getComputedStyle(document.body).backgroundColor,
     color: getComputedStyle(document.body).color,
   }))()`);
   await cdp.screenshot(path.join(SHOTS, `${route.name}-dark.png`));
 
-  // 变量真的生效了么？浅色与深色的 body 背景必须不同
+  // 第三套主题：新粗野主义。它有一半的改动是 token 覆盖不了的（方角、硬阴影、
+  // 字重、去掉毛玻璃），所以这里不满足于"背景色变了"，而是直接读那些计算值。
+  await cdp.evaluate(`document.documentElement.dataset.theme='brutal'`);
+  // 等够 .entry-card 那条 240ms 的 box-shadow 过渡再量。等太短就会读到
+  // "从浅色的柔阴影过渡到粗野主义硬阴影"的中间帧 —— 实测量到过
+  // 3px/3.4px、颜色还带着 alpha 的值，看起来像断言太严，其实是量早了。
+  await sleep(400);
+  const brutal = await cdp.evaluate(`(() => {
+    const card = document.querySelector('.entry-card');
+    const button = document.querySelector('.btn');
+    const toggle = document.getElementById('theme-toggle');
+    const h1 = document.querySelector('h1');
+    const header = document.querySelector('.site-header');
+    const style = (element) => (element ? getComputedStyle(element) : null);
+    return {
+      bg: getComputedStyle(document.body).backgroundColor,
+      h1Font: style(h1).fontFamily,
+      h1Weight: Number(style(h1).fontWeight) || 0,
+      toggleRadius: style(toggle).borderRadius,
+      toggleShadow: style(toggle).boxShadow,
+      headerBlur: style(header).backdropFilter,
+      cardCount: document.querySelectorAll('.entry-card').length,
+      cardRadius: card ? style(card).borderRadius : null,
+      cardShadow: card ? style(card).boxShadow : null,
+      buttonShadow: button ? style(button).boxShadow : null,
+    };
+  })()`);
+  await cdp.screenshot(path.join(SHOTS, `${route.name}-brutal.png`));
+
   check(
-    dark.bg !== state.bodyBg,
-    `${route.path} 深浅主题的背景色确实不同（${state.bodyBg} → ${dark.bg}）`,
+    new Set([light.bg, dark.bg, brutal.bg]).size === 3,
+    `${route.path} 三套主题的背景色互不相同（${light.bg} / ${dark.bg} / ${brutal.bg}）`,
   );
+  // 页头在粗野主义下必须是实底：不读这一条，backdrop-blur-md 会被悄悄留着
+  check(brutal.headerBlur === 'none', `${route.path} 粗野主义下页头没有毛玻璃（${brutal.headerBlur}）`);
+  // h1 的字体与字重：这里刻意不用 /serif/i —— 'sans-serif' 里也含 'serif'，
+  // 那种断言对无衬线栈会假通过。改为盯住衬线字体名与字重下限。
+  check(
+    !/Iowan|Georgia|Palatino/i.test(brutal.h1Font) && brutal.h1Weight >= 700,
+    `${route.path} 粗野主义下 h1 是粗黑无衬线（weight=${brutal.h1Weight}）`,
+    brutal.h1Font,
+  );
+  // #theme-toggle 每页都有，所以这两条不会是空集上的假守卫
+  check(brutal.toggleRadius === '0px', `${route.path} 粗野主义下按钮是方角（${brutal.toggleRadius}）`);
+  check(
+    isHardShadow(brutal.toggleShadow),
+    `${route.path} 粗野主义下按钮是硬阴影（${brutal.toggleShadow}）`,
+  );
+  // 卡片只在首页出现，所以先断言它真的存在，再断言形状 —— 空集不算通过
+  if (route.path === '/') {
+    check(brutal.cardCount > 0, `首页确实有 ${brutal.cardCount} 张条目卡`);
+    check(brutal.cardRadius === '0px', `首页条目卡是方角（${brutal.cardRadius}）`);
+    check(isHardShadow(brutal.cardShadow), `首页条目卡是硬阴影（${brutal.cardShadow}）`);
+    check(isHardShadow(brutal.buttonShadow), `首页按钮是硬阴影（${brutal.buttonShadow}）`);
+  }
 
   // 窄屏
   await cdp.send('Emulation.setDeviceMetricsOverride', {
@@ -374,6 +484,18 @@ for (const route of ROUTES) {
     mobile: true,
   });
   await sleep(250);
+
+  // 先在粗野主义下量一次横向滚动：硬阴影向右下探出，是这套主题唯一真实的
+  // 溢出风险，而只在默认主题下量是量不到它的。
+  const brutalMobile = await cdp.evaluate(
+    `document.documentElement.scrollWidth > window.innerWidth + 1`,
+  );
+  check(!brutalMobile, `${route.path} 390px 窄屏 · 粗野主义下无横向滚动`);
+  await cdp.screenshot(path.join(SHOTS, `${route.name}-brutal-mobile.png`));
+
+  // 再把主题设回深色，让既有的 -mobile.png 保持原来的语义
+  await cdp.evaluate(`document.documentElement.dataset.theme='dark'`);
+  await sleep(150);
   const mobile = await cdp.evaluate(
     `document.documentElement.scrollWidth > window.innerWidth + 1`,
   );
@@ -387,28 +509,58 @@ for (const route of ROUTES) {
     mobile: false,
   });
 
-  report.push({ route: route.path, ...state, darkBackground: dark.bg });
+  report.push({
+    route: route.path,
+    ...state,
+    lightBackground: light.bg,
+    darkBackground: dark.bg,
+    brutalBackground: brutal.bg,
+  });
 }
 
-/* --------------------------------------------------- 切换按钮：真的点一下 */
+/* ------------------------------------------- 切换按钮：三态循环 + 刷新后保持 */
 
-console.log('\u001b[1m主题切换按钮\u001b[0m');
+console.log('\u001b[1m主题切换按钮（新粗野主义 → 羊皮纸 → 灰烬 → 新粗野主义）\u001b[0m');
+
+// 先验证「没选过 = 默认主题」这条路：清掉存储再刷新，引导脚本该落到 brutal。
+// 这是这次改动的核心承诺，所以从最干净的状态开始测，而不是从一个手写的值开始。
 await cdp.send('Page.navigate', { url: `${BASE}/` });
 await waitForLoad(cdp);
 await sleep(300);
-
-const before = await cdp.evaluate(`document.documentElement.dataset.theme`);
-await cdp.evaluate(`document.getElementById('theme-toggle').click()`);
-await sleep(200);
-const after = await cdp.evaluate(`(() => ({
+await cdp.evaluate(`localStorage.removeItem('grimoire-theme')`);
+await cdp.send('Page.navigate', { url: `${BASE}/` });
+await waitForLoad(cdp);
+await sleep(300);
+const fresh = await cdp.evaluate(`(() => ({
   theme: document.documentElement.dataset.theme,
   source: document.documentElement.dataset.themeSource,
-  stored: (() => { try { return localStorage.getItem('grimoire-theme'); } catch { return null; } })(),
 }))()`);
+check(
+  fresh.theme === DEFAULT_THEME && fresh.source === 'default',
+  `没选过时落到默认主题（${fresh.theme} / ${fresh.source}）`,
+);
 
-check(after.theme !== before, `点击后主题翻转（${before} → ${after.theme}）`);
-check(after.source === 'manual', `点击后标记为手动选择（source=${after.source}）`);
-check(after.stored === after.theme, `选择已写入 localStorage（${after.stored}）`);
+/** 点一下切换按钮，返回点完之后的完整状态 */
+async function clickToggle() {
+  await cdp.evaluate(`document.getElementById('theme-toggle').click()`);
+  await sleep(180);
+  return cdp.evaluate(`(() => ({
+    theme: document.documentElement.dataset.theme,
+    source: document.documentElement.dataset.themeSource,
+    stored: (() => { try { return localStorage.getItem('grimoire-theme'); } catch { return null; } })(),
+  }))()`);
+}
+
+const first = await clickToggle();
+check(first.theme === 'light', `第一次点击 → 羊皮纸（实际 ${first.theme}）`);
+check(first.source === 'manual', `第一次点击后标记为手动选择（source=${first.source}）`);
+check(first.stored === 'light', `第一次点击已写入 localStorage（${first.stored}）`);
+
+// 第二次点击进入深色。这一步顺带证明「引导脚本与 THEME_IDS 是同步的」：
+// 只要两边不一致，下面那次刷新就会掉回默认主题。
+const second = await clickToggle();
+check(second.theme === 'dark', `第二次点击 → 灰烬（实际 ${second.theme}）`);
+check(second.stored === 'dark', `第二次点击已写入 localStorage（${second.stored}）`);
 
 // 刷新一次，验证选择被记住（这才是"刷新后保持"）
 await cdp.send('Page.navigate', { url: `${BASE}/` });
@@ -419,8 +571,17 @@ const persisted = await cdp.evaluate(`(() => ({
   source: document.documentElement.dataset.themeSource,
 }))()`);
 check(
-  persisted.theme === after.theme && persisted.source === 'manual',
-  `刷新后仍是手动选择的主题（${persisted.theme}）`,
+  persisted.theme === 'dark' && persisted.source === 'manual',
+  `刷新后仍是手动选择的灰烬（${persisted.theme} / ${persisted.source}）`,
+);
+
+// 第三次点击回到默认：循环是闭合的，而不是"点着点着卡在某一套上"
+const third = await clickToggle();
+check(third.theme === DEFAULT_THEME, `第三次点击回到新粗野主义（实际 ${third.theme}）`);
+
+// 收尾复位：清掉存储 = 回到默认主题，后面的动效与 reduce 阶段不受这次实验影响
+await cdp.evaluate(
+  `localStorage.removeItem('grimoire-theme'); document.documentElement.dataset.theme='brutal';`,
 );
 
 /* ------------------------- 动效契约：进场动画必须收敛到可见终态 */
@@ -496,6 +657,111 @@ for (const route of ROUTES) {
 
 // 收尾：撤掉媒体模拟
 await cdp.send('Emulation.setEmulatedMedia', { media: '', features: [] });
+
+/* ---------------------- 新粗野主义：给人复核的预览截图 ---------------------- */
+
+// 这一节不做断言，只产出人眼复核用的图。放在最后是因为它要先把所有 .reveal
+// 滚进视口让进场动画收敛，再逐段截图 —— 否则截到的是动到一半的卡片，
+// 拿去做设计复核会误导。做法与上面的「动效契约」一致。
+console.log('\u001b[1m新粗野主义主题：预览截图\u001b[0m');
+
+await cdp.send('Page.navigate', { url: `${BASE}/` });
+await waitForLoad(cdp);
+await sleep(300);
+await cdp.evaluate(`document.documentElement.dataset.theme='brutal'`);
+await cdp.evaluate(`(async () => {
+  for (const element of document.querySelectorAll('.reveal')) {
+    element.scrollIntoView({ block: 'center' });
+    await new Promise((resolve) => requestAnimationFrame(() => setTimeout(resolve, 80)));
+  }
+})()`);
+await sleep(300);
+
+/** 滚到指定位置、等一拍，再截图（这一步是给人看的，稳定比快重要） */
+async function captureAt(file, scrollExpression) {
+  await cdp.evaluate(scrollExpression);
+  await sleep(450);
+  await cdp.screenshot(path.join(SHOTS, file));
+}
+
+const previews = [
+  ['home-brutal-1.png', `window.scrollTo(0, 0)`],
+  [
+    'home-brutal-2.png',
+    `(() => { const el = document.getElementById('entries'); window.scrollTo(0, el.getBoundingClientRect().top + window.scrollY - 90); })()`,
+  ],
+  [
+    'home-brutal-3.png',
+    `(() => { const el = document.querySelector('[aria-label="图版"]'); window.scrollTo(0, el.getBoundingClientRect().top + window.scrollY - 90); })()`,
+  ],
+  ['home-brutal-4.png', `window.scrollTo(0, document.body.scrollHeight)`],
+];
+for (const [file, expression] of previews) await captureAt(file, expression);
+
+// 窄屏再来一张：硬阴影在 390px 下的表现是这次改动最需要人眼确认的地方
+await cdp.send('Emulation.setDeviceMetricsOverride', {
+  width: 390,
+  height: 844,
+  deviceScaleFactor: 2,
+  mobile: true,
+});
+await sleep(250);
+await captureAt('home-brutal-mobile.png', `window.scrollTo(0, 0)`);
+await cdp.send('Emulation.setDeviceMetricsOverride', {
+  width: 1440,
+  height: 900,
+  deviceScaleFactor: 1,
+  mobile: false,
+});
+
+// 另外两个页型各一张：条目页有详情头部与水印，关于页有卡片网格与正文排版
+for (const route of [
+  { path: '/about/', name: 'about' },
+  { path: '/projects/notes-of-ashen/', name: 'notes-of-ashen' },
+]) {
+  await cdp.send('Page.navigate', { url: `${BASE}${route.path}` });
+  await waitForLoad(cdp);
+  await sleep(300);
+  await cdp.evaluate(`document.documentElement.dataset.theme='brutal'`);
+  await captureAt(`${route.name}-brutal-preview.png`, `window.scrollTo(0, 0)`);
+}
+
+/* ------------- 禁用脚本时：默认主题照样成立（这正是把默认写在 HTML 上的理由） ------------- */
+
+console.log('\u001b[1m禁用脚本时的默认主题\u001b[0m');
+await cdp.send('Emulation.setScriptExecutionDisabled', { value: true });
+await cdp.send('Page.navigate', { url: `${BASE}/` });
+await waitForLoad(cdp);
+await sleep(500);
+
+const noJs = await cdp.evaluate(`(() => {
+  const toggle = document.getElementById('theme-toggle');
+  const card = document.querySelector('.entry-card');
+  return {
+    theme: document.documentElement.dataset.theme ?? null,
+    source: document.documentElement.dataset.themeSource ?? null,
+    bg: getComputedStyle(document.body).backgroundColor,
+    toggleRadius: toggle ? getComputedStyle(toggle).borderRadius : null,
+    cardShadow: card ? getComputedStyle(card).boxShadow : null,
+  };
+})()`);
+await cdp.screenshot(path.join(SHOTS, 'home-nojs.png'));
+
+// source 必须是 null：那说明 data-theme 是服务端渲染的，不是脚本写的
+check(
+  noJs.theme === DEFAULT_THEME && noJs.source === null,
+  `禁用脚本时 <html> 上仍是服务端渲染的默认主题（data-theme=${noJs.theme}，来源 ${noJs.source}）`,
+);
+check(noJs.bg === 'rgb(255, 253, 244)', `禁用脚本时画布是粗野主义的纸白（${noJs.bg}）`);
+// 这一条才是把默认写进 HTML 的真正理由：形状覆盖是按 [data-theme='brutal'] 选的，
+// 所以属性必须在 HTML 里 —— 只把 token 放进 :root 的话，无 JS 时会得到
+// "粗野主义的颜色 + 上一套的圆角与柔光" 这种没人设计过的半成品。
+check(
+  noJs.toggleRadius === '0px' && isHardShadow(noJs.cardShadow),
+  `禁用脚本时形状也是粗野主义（圆角 ${noJs.toggleRadius}，卡片阴影 ${noJs.cardShadow}）`,
+);
+
+await cdp.send('Emulation.setScriptExecutionDisabled', { value: false });
 
 await writeFile(
   path.join(SHOTS, 'report.json'),

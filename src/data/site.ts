@@ -62,14 +62,14 @@ export const SITE = {
    * 首页「序言 · 已验证」里的三个数字（第四个是条目数，构建期算出来）。
    *
    * 规矩：这里只写**守卫脚本真的在核对**的事实，而且数值必须与
-   * scripts/check-site.mjs 里的预算常量一致 —— 那两条一致性由守卫的反漂移
-   * 检查盯着：改了 JS 预算或配色组数而没改这里，pnpm guard 就会失败。
+   * scripts/check-site.mjs 里的预算常量一致 —— 那三条一致性由守卫的反漂移
+   * 检查盯着：改了 JS 预算、配色组数或主题数而没改这里，pnpm guard 就会失败。
    * 所以面板上永远不会出现"说说而已"的数字。
    */
   attestations: [
     { value: '0', caption: '次第三方请求 · 字体与图标都是自己的' },
     { value: '≤ 4 KB', caption: '客户端 JS（gzip）· 守卫盯着上限' },
-    { value: '9 组', caption: '配色 × 2 主题 ≥ 4.5:1' },
+    { value: '9 组', caption: '配色 × 3 主题 ≥ 4.5:1' },
   ],
 } as const;
 

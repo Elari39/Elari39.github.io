@@ -2,12 +2,15 @@
 /**
  * 主题切换按钮。
  *
- * 图标不靠 JS 切换：两个 SVG 都在 DOM 里，由 global.css 里的
- * .theme-icon-sun / .theme-icon-moon 规则决定显示哪一个 —— 这样连
- * 「没 JS 时跟随系统」那种情况也能显示正确的图标。
+ * 图标不靠 JS 切换：三个 SVG 都在 DOM 里，由 global.css 里的
+ * `.theme-icon` / `[data-theme='…'] .theme-icon-*` 规则决定显示哪一个 —— 这样连
+ * 「脚本没跑」那种情况也能显示正确的那一枚。
  *
- * 这个 <script> 会被 Astro 打包成外链模块脚本（默认 defer），
- * 只注册点击事件，所以不需要同步执行，也不影响 CSP。
+ * 循环顺序（新粗野主义 → 羊皮纸 → 灰烬）来自 src/lib/theme.ts 的 THEME_IDS，
+ * 与默认值和引导脚本共用同一份清单，所以加了主题也不会漏掉任何一边。
+ *
+ * 这个 <script> 会被 Astro 打包成模块脚本（体积很小时内联），只注册点击事件，
+ * 所以不需要同步执行，也不影响 CSP。
  */
 ---
 
@@ -15,11 +18,11 @@
   id="theme-toggle"
   type="button"
   class="ml-1 grid h-9 w-9 place-items-center rounded-full border border-hairline bg-card text-muted transition-colors hover:border-primary hover:text-ink"
-  aria-label="切换深色 / 浅色主题"
-  title="切换深色 / 浅色主题"
+  aria-label="切换界面主题"
+  title="切换界面主题"
 >
   <svg
-    class="theme-icon-sun"
+    class="theme-icon theme-icon-sun"
     viewBox="0 0 24 24"
     width="18"
     height="18"
@@ -34,7 +37,7 @@
     <path d="M12 2.6v2.2M12 19.2v2.2M4.4 4.4l1.6 1.6M18 18l1.6 1.6M2.6 12h2.2M19.2 12h2.2M4.4 19.6 6 18M18 6l1.6-1.6"></path>
   </svg>
   <svg
-    class="theme-icon-moon"
+    class="theme-icon theme-icon-moon"
     viewBox="0 0 24 24"
     width="18"
     height="18"
@@ -48,23 +51,58 @@
   >
     <path d="M20.2 14.6A8.6 8.6 0 0 1 9.4 3.8a8.6 8.6 0 1 0 10.8 10.8Z"></path>
   </svg>
+  {/* 新粗野主义的标记：一道折角闪电。描边比另外两个粗，转角也不用圆角 ——
+      「硬」是这套主题的表达方式，图标先表个态。 */}
+  <svg
+    class="theme-icon theme-icon-brutal"
+    viewBox="0 0 24 24"
+    width="18"
+    height="18"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="2"
+    stroke-linejoin="miter"
+    aria-hidden="true"
+    focusable="false"
+  >
+    <path d="M13 2 3 14h9l-1 8 10-12h-9l1-8Z"></path>
+  </svg>
 </button>
 
+{/* 三态是循环按钮，不是开关，所以用 aria-live 把结果念出来而不是 aria-pressed */}
+<span id="theme-live" class="sr-only" aria-live="polite"></span>
+
 <script>
-  const STORAGE_KEY = 'grimoire-theme';
+  import { THEME_STORAGE_KEY, nextTheme, themeLabel } from '../lib/theme';
+
   const button = document.getElementById('theme-toggle');
+  const live = document.getElementById('theme-live');
+
+  /** 同步提示语与播报：按钮始终告诉用户「再点会变成什么」 */
+  function sync() {
+    const current = document.documentElement.dataset.theme;
+    const next = nextTheme(current);
+
+    button?.setAttribute('aria-label', `切换界面主题（当前：${themeLabel(current)}）`);
+    button?.setAttribute('title', `切换到：${themeLabel(next)}`);
+    if (live) live.textContent = `当前主题：${themeLabel(current)}`;
+  }
 
   button?.addEventListener('click', () => {
     const root = document.documentElement;
-    const next = root.dataset.theme === 'dark' ? 'light' : 'dark';
+    const next = nextTheme(root.dataset.theme);
 
     root.dataset.theme = next;
     root.dataset.themeSource = 'manual';
 
     try {
-      localStorage.setItem(STORAGE_KEY, next);
+      localStorage.setItem(THEME_STORAGE_KEY, next);
     } catch {
       /* 存不下（隐私模式 / 被策略禁用）就只影响本次会话，不弹错 */
     }
+
+    sync();
   });
+
+  sync();
 </script>
