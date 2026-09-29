@@ -4,7 +4,7 @@
 
 **灰烬女巫的魔典** —— 把做过的项目，写成一本可以翻的魔典。
 
-三个自建项目的条目库，部署在 <https://elari39.github.io/>。
+四个自建项目的条目库，部署在 <https://elari39.github.io/>。
 
 [![Astro](https://img.shields.io/badge/Astro-7-BC52EE?logo=astro&logoColor=white)](https://astro.build)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-06B6D4?logo=tailwindcss&logoColor=white)
@@ -17,16 +17,17 @@
 ## 这个站点是什么
 
 一本静态的「项目魔典」：每个项目是一条**条目**，结构化字段写在 frontmatter，
-长文叙述写在正文，构建期渲染成纯静态 HTML。目前收录三条：
+长文叙述写在正文，构建期渲染成纯静态 HTML。目前收录四条：
 
 | 条目 | 项目 | 形态 | 线上 |
 | --- | --- | --- | --- |
 | I | **Notes of Ashen** | 前后端分离的个人博客系统（Go + go-zero + MySQL / Redis + React 18） | <https://blog.miku831.fun/> |
 | II | **AshenCourier** | 匿名可用的短链服务（Go 1.27 标准库 + PostgreSQL 18 + Redis 8 + Vue 3） | <https://shorten.miku831.fun/> |
 | III | **CryptoWitch** | 本地文档保险箱（Go + Wails v3 + Argon2id / AES-256-GCM） | 仅仓库（无 Release） |
+| IV | **Ruiqiang Website** | 重庆锐强建筑劳务有限公司官网：纯静态、零后端的 Next.js 企业官网（Next 16 + React 19 + Tailwind 4，167 条断言守合规） | <https://ruiqiang-jianzhu.netlify.app/> |
 
 首页是五段：**序言**（左文字右印记）、**数字条**（四条可核对的事实，其中条目数是
-构建期从内容集合算出来的）、**条目**（三张程序化封面的卡片）、**图版**（把各个条目的
+构建期从内容集合算出来的）、**条目**（四张程序化封面的卡片）、**图版**（把各个条目的
 截图摊成一条横向走廊）与**三条自我约束**。
 
 站点本身就是个小工程：不引任何第三方运行时资源、默认零客户端 JS，并且带一套
@@ -77,12 +78,12 @@
 │  ├─ prepare-assets.py           # 素材流水线（Pillow + 无头 Chrome）
 │  └─ og-template.html            # OG 卡片模板（渲染成 public/og.png）
 ├─ public/
-│  ├─ shots/ashen-courier/*.webp  # 条目图版（复用项目仓库里的真实截图）
+│  ├─ shots/<slug>/*.webp         # 条目图版（复用各项目仓库里已公开发布的截图）
 │  ├─ favicon.svg / favicon.ico / apple-touch-icon.png / og.png
 │  └─ robots.txt
 └─ src/
    ├─ content.config.ts           # 条目 schema（zod）
-   ├─ content/projects/*.md       # 三个条目
+   ├─ content/projects/*.md       # 四个条目
    ├─ data/site.ts                # 站点常量（站名、导航、自我约束）
    ├─ data/plates.ts              # 图版尺寸（生成文件，勿手工编辑）
    ├─ layouts/BaseLayout.astro    # head / SEO / OG / JSON-LD / 主题引导
@@ -196,8 +197,12 @@ pnpm assets:inspect   # 图片体检
 
 `prepare-assets.py` 做四件事：
 
-1. **图版**：把 `../AshenCourier/docs/screenshots/` 里的真实截图缩到 1400px 宽
+1. **图版**：把项目仓库里已公开发布的截图缩到 1400px 宽
    （**只缩不放**，放大只会变糊），输出 WebP，并写下 `src/data/plates.ts`。
+   目前有两个来源：`../AshenCourier/docs/screenshots/` 与
+   `../ruiqiang-website/docs/screenshots/`（后者只取它 README 实拍的那三张 ——
+   该仓库 `img/` 下的营业执照原图永不发布，本站也不复制）。
+   加一个来源只需在 `scripts/prepare-assets.py` 的 `PLATE_SOURCES` 里加一行。
 2. **图标**：用 Pillow 画站点印记（深色底 + 余烬菱形 + 琥珀内芯），
    生成 180×180 的 `apple-touch-icon.png` 与多尺寸 `favicon.ico`。
 3. **OG 卡片**：用无头 Chrome 渲染 `scripts/og-template.html` → `public/og.png`（1200×630）。
@@ -222,9 +227,11 @@ DOM 里 <title> 就是这四个字，没有任何文章链接；
 
 ### 不要带进仓库的东西
 
-三个项目目录里有敏感文件，**一律不复制进本站仓库**：
+四个项目目录里有敏感文件，**一律不复制进本站仓库**：
 `.env`、`CryptoWitch/access.yaml`、`notes_of_ashen_backup.sql`、
-`CryptoWitch/content/plain/**`（明文资料）、`security-audit/evidence/**`。
+`CryptoWitch/content/plain/**`（明文资料）、`security-audit/evidence/**`，
+以及 `ruiqiang-website` 的 `.env.local`、`img/` 下的营业执照原图与工商登记摘要源文件
+（那个仓库的构建闸门按设计拒绝它们）、`_shot/` 与 `_shot2/` 本地抓图草稿。
 本站只取了几张截图与图标。
 
 ## 内容：怎么加一个条目
@@ -381,7 +388,15 @@ gh api -X POST repos/Elari39/Elari39.github.io/pages -f build_type=workflow
   （默认主题的画布色 `#fffdf4`），手动切到浅 / 深时不会跟着走。
   要让它跟着走就得多一段改 meta 的脚本，还得处理"改完会不会闪"——不值得。
 - **CryptoWitch 没有 Release**，所以条目只链仓库，没有下载按钮。
+- **Ruiqiang Website 的图版里含该公司自己公开的信息**（联系电话、工商登记摘要）。
+  本站只收录它 README 已公开发布的那三张实拍，绝不碰 `img/` 下的营业执照原图；
+  图上的浏览器窗口外框是那个项目的脚本合成的，右下角的 `Powered by Netlify`
+  角标则是真实存在的。
+- **那条手机端图版只有 418px 宽。** 流水线「只缩不放」，而详情页的 `.plate`
+  是 `width: 100%`，所以它会被 CSS 放大到正文列宽度，看着偏软 ——
+  这是取图时的取舍，不是流水线坏了。
 
 ## 许可
 
-MIT。三个被展示的项目各有自己的许可（AshenCourier 与 shiki-toolbox 均为 MIT）。
+MIT。本站自身是 MIT；被展示的四个项目各自另有许可 —— `AshenCourier` 与
+`ruiqiang-website` 为 MIT，`CryptoWitch` 与 `Notes of Ashen` 未声明许可。

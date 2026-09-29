@@ -82,6 +82,7 @@ const ROUTES = [
   { path: '/projects/notes-of-ashen/', name: 'notes-of-ashen' },
   { path: '/projects/ashen-courier/', name: 'ashen-courier' },
   { path: '/projects/cryptowitch/', name: 'cryptowitch' },
+  { path: '/projects/ruiqiang-website/', name: 'ruiqiang-website' },
   { path: '/definitely-not-a-page/', name: '404', expectNotFound: true },
 ];
 

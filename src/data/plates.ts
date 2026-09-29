@@ -11,4 +11,7 @@ export const PLATE_SIZES: Record<string, { width: number; height: number }> = {
   "shots/ashen-courier/dashboard.webp": { width: 1400, height: 1551 },
   "shots/ashen-courier/landing.webp": { width: 1400, height: 1923 },
   "shots/ashen-courier/link-detail.webp": { width: 1400, height: 3030 },
+  "shots/ruiqiang-website/desktop-home.webp": { width: 1400, height: 929 },
+  "shots/ruiqiang-website/mobile-home.webp": { width: 418, height: 908 },
+  "shots/ruiqiang-website/pages-grid.webp": { width: 1400, height: 952 },
 };

@@ -12,7 +12,7 @@ export const SITE = {
   subtitle: '灰烬女巫的魔典',
   /** 一句站点定位，用于首页 hero 与 meta description */
   description:
-    '灰烬女巫的魔典：三个自建项目的条目库——个人博客系统 Notes of Ashen、短链服务 AshenCourier，以及本地文档保险箱 CryptoWitch。',
+    '灰烬女巫的魔典：四个自建项目的条目库——个人博客系统 Notes of Ashen、短链服务 AshenCourier、本地文档保险箱 CryptoWitch，以及重庆锐强建筑劳务有限公司官网 Ruiqiang Website。',
   /** 默认 OG/描述用语的简短版本 */
   tagline: '把做过的项目，写成一本可以翻的魔典。',
 

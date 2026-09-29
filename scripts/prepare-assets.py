@@ -5,8 +5,8 @@
 
   * 这些素材**只在素材变了的时候**才需要重跑。CI 只做 `astro build`，
     不碰无头浏览器 —— 构建过程因此保持确定、可复现。
-  * 三个被展示的项目在站点仓库之外（`../AshenCourier` 等）。这里只**读**它们，
-    复制出来加工，绝不修改源目录。
+  * 四个被展示的项目在站点仓库之外（`../AshenCourier`、`../ruiqiang-website` 等）。
+    这里只**读**它们，复制出来加工，绝不修改源目录。
   * 刻意不引 sharp / astro:assets：那个原生依赖换机器时最容易装不上，
     而 Pillow 已在本机可用，WebP 输出也够用。
 
@@ -26,7 +26,8 @@
 体检：`pnpm assets --inspect`
 
 产出：
-  public/shots/ashen-courier/*.webp   —— 复用 AshenCourier 仓库里那批真实截图
+  public/shots/ashen-courier/*.webp    —— 复用 AshenCourier 仓库里那批真实截图
+  public/shots/ruiqiang-website/*.webp —— 复用 ruiqiang-website 已公开发布的那三张实拍
   public/apple-touch-icon.png         —— Pillow 画出来的印记
   public/favicon.ico                  —— 由同一枚印记生成多尺寸
   public/og.png                       —— 用无头 Chrome 渲染 scripts/og-template.html
@@ -50,6 +51,7 @@ RAW = ROOT / ".assets-raw"
 DATA = ROOT / "src" / "data"
 
 COURIER_SHOTS = WORKSPACE / "AshenCourier" / "docs" / "screenshots"
+RUIQIANG_SHOTS = WORKSPACE / "ruiqiang-website" / "docs" / "screenshots"
 
 # 详情页正文列是 max-w-3xl（768px），1400px 足够 2x 清晰度又不会太肥
 PLATE_WIDTH = 1400
@@ -73,6 +75,21 @@ COURIER_PLATES = {
     "link-detail": "link-detail.png",
     "create-result": "create-result.png",
 }
+
+# ruiqiang-website 的 README 实拍：由该项目自己的 `npm run shots:readme` 抓线上地址得到，
+# 三张都是它已经公开发布的图。**只取这三张** —— 该仓库 img/ 下的营业执照原图
+# 永不发布（它的 PLACEHOLDERS.md §7 有明确纪律），本站也不复制。
+RUIQIANG_PLATES = {
+    "desktop-home": "desktop-home.png",
+    "pages-grid": "pages-grid.png",
+    "mobile-home": "mobile-home.png",
+}
+
+# (输出目录名, 源目录, {输出名: 源文件名}) —— 加一个项目就在这里加一行
+PLATE_SOURCES = [
+    ("ashen-courier", COURIER_SHOTS, COURIER_PLATES),
+    ("ruiqiang-website", RUIQIANG_SHOTS, RUIQIANG_PLATES),
+]
 
 manifest: dict[str, dict[str, int]] = {}
 
@@ -216,12 +233,13 @@ def build_icons() -> None:
 
 def build_plates() -> None:
     log("\n条目图版")
-    for name, filename in COURIER_PLATES.items():
-        source = COURIER_SHOTS / filename
-        if not source.exists():
-            log(f"  跳过 {name}：找不到 {source}")
-            continue
-        save_plate(source, PUBLIC / "shots" / "ashen-courier" / f"{name}.webp")
+    for slug, shots_dir, plates in PLATE_SOURCES:
+        for name, filename in plates.items():
+            source = shots_dir / filename
+            if not source.exists():
+                log(f"  跳过 {slug}/{name}：找不到 {source}")
+                continue
+            save_plate(source, PUBLIC / "shots" / slug / f"{name}.webp")
 
 
 def write_plate_sizes() -> None:
@@ -244,6 +262,9 @@ def write_plate_sizes() -> None:
         f"{rows}\n"
         "};\n",
         encoding="utf-8",
+        # 仓库统一 LF（见 .gitattributes）：别让平台默认的换行符把这份生成文件
+        # 变成一堆「已修改」的假差异
+        newline="\n",
     )
     log(f"\n图版尺寸：{target.relative_to(ROOT)}（{len(manifest)} 条）")
 

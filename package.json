@@ -3,7 +3,7 @@
   "type": "module",
   "version": "1.0.0",
   "private": true,
-  "description": "Ashen Witch's Grimoire —— 灰烬女巫的魔典：三个自建项目的条目库",
+  "description": "Ashen Witch's Grimoire —— 灰烬女巫的魔典：四个自建项目的条目库",
   "packageManager": "pnpm@12.5.1",
   "engines": {
     "node": ">=22.12.0"
