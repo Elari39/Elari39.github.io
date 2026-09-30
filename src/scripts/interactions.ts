@@ -62,7 +62,11 @@ const menu = document.getElementById('theme-menu');
 
 /** 收起主题面板。<details> 原生不支持 Esc 与"点外面关闭"，都得自己补 */
 function closeMenu(): void {
-  if (menu instanceof HTMLDetailsElement) menu.open = false;
+  if (menu instanceof HTMLDetailsElement && menu.open) {
+    const inside = menu.contains(document.activeElement);
+    menu.open = false;
+    if (inside) document.getElementById('theme-toggle')?.focus({ preventScroll: true });
+  }
 }
 
 /** 把"当前是哪套主题"同步到按钮提示、选项的 aria-pressed 与朗读区 */
@@ -133,6 +137,9 @@ document.addEventListener('click', (event) => {
   const target = event.target as Element | null;
   if (!target) return;
 
+  // 外部控件也可能走下面的提前返回分支，先收起菜单；不改变点击目标的焦点。
+  if (menu instanceof HTMLDetailsElement && menu.open && !menu.contains(target)) menu.open = false;
+
   const option = target.closest('[data-theme-opt]');
   if (option) {
     const id = option.getAttribute('data-theme-opt');
@@ -185,8 +192,6 @@ document.addEventListener('click', (event) => {
     return;
   }
 
-  // 点面板外部：只有面板开着时才关（避免每次点击都写一次 open）
-  if (menu instanceof HTMLDetailsElement && menu.open && !menu.contains(target)) menu.open = false;
 });
 
 document.addEventListener('keydown', (event) => {
@@ -197,6 +202,10 @@ document.addEventListener('keydown', (event) => {
 
 // 模块脚本默认是 defer 的，执行时 DOM 已经解析完，这里可以安全地直接取元素。
 syncTheme();
+
+// 只有交互处理已就绪才启用依赖 JS 的入口；主题引导成功不代表交互脚本也成功。
+menu?.removeAttribute('hidden');
+for (const opener of document.querySelectorAll('[data-preview]')) opener.removeAttribute('hidden');
 
 if (tagbar) {
   tagbar.toggleAttribute('hidden', false);

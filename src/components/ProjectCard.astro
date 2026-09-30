@@ -75,7 +75,7 @@ const previewId = `preview-${project.slug}`;
       {/* 就地预览：不离开首页、也不丢阅读位置。
           aria-haspopup 告诉辅助技术"这会打开一个对话框"，
           真正打开用的是原生 <dialog>.showModal()（见 src/scripts/interactions.ts）。 */}
-      <button type="button" class="btn" data-preview={previewId} aria-haspopup="dialog">
+      <button type="button" class="btn" data-preview={previewId} aria-haspopup="dialog" hidden>
         快速预览
       </button>
     </div>

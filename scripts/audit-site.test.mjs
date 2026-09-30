@@ -21,6 +21,18 @@ test("真实构建基线通过", async () =>
   assert.deepEqual(await audit(root, path.join(root, "dist")), []));
 const cases = [
   [
+    "主题选择器缺少无 JS 降级",
+    "about/index.html",
+    (s) => s.replace(/(<details\b[^>]*id="theme-menu"[^>]*) hidden(?=[\s>])/, "$1"),
+    "主题选择器在服务端渲染时应带 hidden",
+  ],
+  [
+    "预览按钮缺少无 JS 降级",
+    "index.html",
+    (s) => s.replace(/(<button\b[^>]*data-preview="[^"]+"[^>]*) hidden(?=[\s>])/, "$1"),
+    "预览按钮在服务端渲染时应带 hidden",
+  ],
+  [
     "srcset 第三方资源",
     "index.html",
     (s) =>

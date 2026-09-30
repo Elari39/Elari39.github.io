@@ -32,7 +32,7 @@ export const THEME_STORAGE_KEY = 'grimoire-theme';
  * 新粗野主义 / 羊皮纸 / 灰烬 / 赛博终端 / 瑞士极简 / 水墨宣纸 / 午夜档案馆 /
  * 霓虹落日 / 孔版印刷。
  *
- * 顺序上把三套"原有"的排在前面：面板里第一屏就是它们，新加的两套跟在后面，
+ * 顺序上把三套"原有"的排在前面，其余主题依次跟在后面，
  * 而默认值仍然是 brutal（第 0 项）。
  */
 export const THEME_IDS: readonly string[] = [

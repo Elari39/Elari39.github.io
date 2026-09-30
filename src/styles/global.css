@@ -950,6 +950,10 @@
     right: 0;
     z-index: 60;
     min-width: 11.5rem;
+    /* 给双行页头与面板间距留空，横屏时由面板自身滚动。 */
+    max-height: calc(100dvh - 8.5rem);
+    overflow-y: auto;
+    overscroll-behavior: contain;
     padding: 0.6rem;
     border: var(--bw) solid var(--c-hairline);
     border-radius: var(--r-card);

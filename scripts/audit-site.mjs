@@ -2,11 +2,11 @@ import { readFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import path from "node:path";
 import { createHash } from "node:crypto";
-import { gzipSync } from "node:zlib";
 import postcss from "postcss";
 import valueParser from "postcss-value-parser";
 import { imageSize } from "image-size";
-import { readThemeIds } from "./budget.mjs";
+import { readThemeIds, measureScriptBodies, measureJs, measureCss, measureHomeHtml,
+  JS_BUDGET_BYTES, CSS_BUDGET_BYTES, HOME_HTML_BUDGET_BYTES, INLINE_SCRIPT_RAW_LIMIT, PAIRS } from "./budget.mjs";
 import {
   SITE,
   files,
@@ -284,8 +284,8 @@ export async function audit(root, dist) {
     check(executable.length === 2, `${route} 仅允许两段主题脚本`);
     scripts.set(route, executable);
     check(
-      executable.reduce((sum, s) => sum + gzipSync(s).length, 0) <= 4096,
-      `${route} JS 超出 4 KB`,
+      measureScriptBodies(executable).gzip <= JS_BUDGET_BYTES,
+      `${route} JS 超出 ${JS_BUDGET_BYTES / 1024} KB`,
     );
     if (route === "/404.html")
       check(
@@ -300,29 +300,16 @@ export async function audit(root, dist) {
       JSON.stringify(bodies) === JSON.stringify(scripts.get("/")),
       `${route} 非主题脚本/脚本不一致`,
     );
-  let externalSize = 0;
-  for (const file of inventory.filter((f) => /\.(?:js|mjs|cjs)$/.test(f))) {
-    externalSize += gzipSync(await readFile(file)).length;
+  const js = await measureJs(dist);
+  for (const file of js.externalFiles) {
     check(referencedScripts.has(file), `未许可脚本文件 ${file}`);
   }
-  // External files are counted once, plus the largest page's inline payload.
-  const inlineSize = Math.max(
-    ...[...pages.values()].map((p) =>
-      p.nodes
-        .filter(
-          (n) =>
-            n.tagName === "script" &&
-            !attr(n, "src") &&
-            attr(n, "type") !== "application/ld+json",
-        )
-        .reduce((n, s) => n + gzipSync(text(s)).length, 0),
-    ),
-  );
-  check(externalSize + inlineSize <= 4096, "全部 JS 超出 4 KB");
-  let cssBytes = 0;
-  for (const file of inventory.filter((f) => f.endsWith(".css"))) {
+  check(js.totalGzip <= JS_BUDGET_BYTES, `全部 JS 超出 ${JS_BUDGET_BYTES / 1024} KB`);
+  check(js.externalFiles.length === 0, "不允许外链 JS 文件");
+  check(js.inlineMaxRaw < INLINE_SCRIPT_RAW_LIMIT, "单段内联脚本超出内联阈值");
+  const cssMeasurement = await measureCss(dist);
+  for (const file of cssMeasurement.files) {
     const css = await readFile(file, "utf8");
-    cssBytes += Buffer.byteLength(css);
     const urls = [],
       parsed = postcss.parse(css);
     parsed.walkDecls((d) =>
@@ -344,10 +331,10 @@ export async function audit(root, dist) {
         file,
       );
   }
-  check(cssBytes <= 48 * 1024, "CSS 超出 48 KB");
+  check(cssMeasurement.bytes <= CSS_BUDGET_BYTES, `CSS 超出 ${CSS_BUDGET_BYTES / 1024} KB`);
   check(
-    Buffer.byteLength(home.html) <= 60 * 1024,
-    "首页 HTML UTF-8 超出 60 KB",
+    await measureHomeHtml(dist) <= HOME_HTML_BUDGET_BYTES,
+    `首页 HTML UTF-8 超出 ${HOME_HTML_BUDGET_BYTES / 1024} KB`,
   );
   const cards = home.nodes.filter((n) => hasClass(n, "entry-card"));
   check(cards.length === published.length, "首页条目数不符");
@@ -368,11 +355,11 @@ export async function audit(root, dist) {
   const captions = [
     `${published.length} 条已发布条目 · 全部通过 schema 校验`,
     "0 次第三方请求 · 字体与图标都是自己的",
-    "≤ 4 KB 客户端 JS（gzip）· 守卫盯着上限",
+    `≤ ${JS_BUDGET_BYTES / 1024} KB 客户端 JS（gzip）· 守卫盯着上限`,
     /* 主题数**从 THEME_IDS 现算**，不手抄一个字面量：这条检查要挡的是
        「加了主题但没同步首页数字条」，抄一份数字反而会让「加主题」这件事
        悄悄变成「改守卫」—— 而且改错了守卫自己就永远绿。 */
-    `9 组 配色 × ${themeIds.length} 主题 · 文字 ≥ 4.5:1，装饰 ≥ 3:1`,
+    `${PAIRS.length} 组 配色 × ${themeIds.length} 主题 · 文字 ≥ 4.5:1，装饰 ≥ 3:1`,
   ];
   check(
     attest.length === 4 && attest.every((v, i) => v === captions[i]),
@@ -385,6 +372,8 @@ export async function audit(root, dist) {
      所以这里不只看"值合法"，还看"清单里每一套都真的有预览"。 */
   check(themeIds.length >= 2, "主题清单读取失败");
   for (const [route, page] of pages) {
+    const menu = page.nodes.find((node) => attr(node, 'id') === 'theme-menu');
+    check(Boolean(menu) && attr(menu, 'hidden') !== undefined, `${route} 主题选择器在服务端渲染时应带 hidden`);
     for (const node of page.nodes) {
       const value = attr(node, "data-theme");
       check(
@@ -488,6 +477,7 @@ export async function audit(root, dist) {
   check(new Set(previewIds).size === previewIds.length, "预览抽屉的 id 重复");
 
   const openers = home.nodes.filter((node) => attr(node, "data-preview") !== undefined);
+  check(openers.every((node) => attr(node, 'hidden') !== undefined), '预览按钮在服务端渲染时应带 hidden');
   check(openers.length === published.length, "预览按钮数与已发布条目数不符");
   for (const opener of openers) {
     check(

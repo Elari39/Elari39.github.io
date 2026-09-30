@@ -8,14 +8,15 @@
  * 数字互相矛盾的局面 —— 而这两条检查存在的全部意义就是「它说的和实际检查的是
  * 同一件事」。所以测量只有这一份，check-site.mjs 与 assert-budgets.mjs 都从这里取。
  *
- * 零 npm 依赖：只用 node: 内置模块，保证任何环境（含 CI）都能直接跑。
+ * HTML 复用站点守卫已有的解析器，不新增依赖，避免注释或属性被当成脚本。
  */
 
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { gzipSync } from 'node:zlib';
+import { document as parseDocument, attr, text, routeFor } from './site-model.mjs';
 
-/** 客户端 JS 预算（gzip 后：全部外链 .js 之和 + 首页内联脚本之和） */
+/** 客户端 JS 预算（gzip 后：全部外链脚本之和 + 最大页面内联脚本之和） */
 export const JS_BUDGET_BYTES = 4096;
 
 /** CSS 预算（未压缩字节：dist 下所有 .css 之和） */
@@ -274,33 +275,52 @@ export function executableScripts(html) {
   return inlineScripts(html).filter((script) => !/application\/ld\+json/i.test(script.attrs));
 }
 
+/** 单段分别 gzip 后求和；共享给使用 HTML 解析器的逐页结构守卫。 */
+export function measureScriptBodies(bodies) {
+  let raw = 0, gzip = 0, maxRaw = 0;
+  for (const body of bodies) {
+    const bytes = Buffer.from(body, 'utf8');
+    raw += bytes.length;
+    gzip += gzipSync(bytes).length;
+    maxRaw = Math.max(maxRaw, bytes.length);
+  }
+  return { raw, gzip, maxRaw };
+}
+
 /**
- * 客户端 JS 的量法：
- *   dist 下所有 .js/.mjs/.cjs 的 gzip 之和（外链）
- * + 首页 HTML 里内联脚本的 gzip 之和（Astro 会把小 bundle 内联进 HTML，
- *   只统计 _astro/*.js 会写成一个「永远为 0、永远通过」的假守卫）
+ * 全部外链脚本只计一次，加所有 HTML 中最大的页面内联 gzip。
+ * inlineRaw 与 inlineGzip 来自同一最大 gzip 页面；inlineMaxRaw 独立取所有页最大单段。
+ * perPage 保留逐页数据，不能让首页的小脚本掩盖详情页或 404 的超限。
  */
 export async function measureJs(dist) {
+  const inventory = await walk(dist);
+  if (!inventory.includes(path.join(dist, 'index.html'))) throw new Error('缺少 index.html');
   let externalRaw = 0;
   let externalGzip = 0;
   const externalFiles = [];
-  for (const file of (await walk(dist)).filter((file) => /\.(?:js|mjs|cjs)$/.test(file))) {
+  for (const file of inventory.filter((file) => /\.(?:js|mjs|cjs)$/.test(file))) {
     const content = await readFile(file);
     externalFiles.push(file);
     externalRaw += content.length;
     externalGzip += gzipSync(content).length;
   }
 
-  const indexHtml = await readFile(path.join(dist, 'index.html'), 'utf8');
-  let inlineRaw = 0;
-  let inlineGzip = 0;
-  let inlineMaxRaw = 0;
-  for (const script of executableScripts(indexHtml)) {
-    const bytes = Buffer.from(script.body, 'utf8');
-    inlineRaw += bytes.length;
-    inlineGzip += gzipSync(bytes).length;
-    inlineMaxRaw = Math.max(inlineMaxRaw, bytes.length);
+  const perPage = [];
+  for (const file of inventory.filter((file) => file.endsWith('.html'))) {
+    const html = await readFile(file, 'utf8');
+    const measured = measureScriptBodies(parseDocument(html)
+      .filter((node) => node.tagName === 'script' && attr(node, 'src') === undefined && attr(node, 'type') !== 'application/ld+json')
+      .map(text));
+    perPage.push({
+      route: routeFor(file, dist),
+      inlineRaw: measured.raw,
+      inlineGzip: measured.gzip,
+      inlineMaxRaw: measured.maxRaw,
+    });
   }
+  const largest = perPage.reduce((a, b) => b.inlineGzip > a.inlineGzip ? b : a);
+  const { inlineRaw, inlineGzip } = largest;
+  const inlineMaxRaw = Math.max(...perPage.map((page) => page.inlineMaxRaw));
 
   return {
     externalRaw,
@@ -309,6 +329,7 @@ export async function measureJs(dist) {
     inlineRaw,
     inlineGzip,
     inlineMaxRaw,
+    perPage,
     totalGzip: externalGzip + inlineGzip,
   };
 }

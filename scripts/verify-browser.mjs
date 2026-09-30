@@ -7,7 +7,7 @@
  *   · 页面没有任何 CSP 违规或 JS 报错
  *   · 没选过主题时落到默认主题（新粗野主义），data-themeSource 是脚本写上去的 ——
  *     这条同时证明引导脚本真的在 CSP 之下执行了
- *   · 主题面板：原生 <details> 真的能开能合、5 个选项各自生效并写进 localStorage、
+ *   · 主题面板：原生 <details> 真的能开能合、所有选项各自生效并写进 localStorage、
  *     选中态唯一、键盘可达（Enter 展开 / Tab 落到选项 / Enter 选中）、
  *     Esc 与点外部能收起（这两处原生不支持，是脚本补的）
  *   · 视图过渡真的被调用过（而不只是 API 存在），且把 API 删掉后切换照样生效
@@ -40,6 +40,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { componentContrast } from "./browser-contracts.mjs";
+import { verifyInteractionContracts } from "./interaction-contracts.mjs";
 import { readThemeIds, readThemeSource } from "./budget.mjs";
 import { files, entries, routeFor } from "./site-model.mjs";
 
@@ -1005,6 +1006,8 @@ try {
     (await cdp.evaluate(`document.getElementById('theme-menu').open`)) === false,
     "点面板外部会收起面板",
   );
+
+  await verifyInteractionContracts({ cdp, check, navigate, base: BASE, themes: THEMES, routes: ROUTES, shots: SHOTS });
 
   /* ------------------------------------------- 主题切换的视图过渡（含降级） */
 

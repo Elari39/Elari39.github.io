@@ -494,7 +494,7 @@ check(
 /* --- 7. 体积预算 --- */
 section('体积预算');
 
-// 口径在 scripts/budget.mjs：外链 .js 的 gzip 之和 + 首页内联脚本的 gzip 之和。
+// 口径在 scripts/budget.mjs：全部外链 gzip 之和 + 最大页面内联 gzip。
 // 只统计 dist/_astro/*.js 会漏掉被 Astro 内联进 HTML 的那段，写成一个
 // "永远为 0、永远通过"的假守卫。
 const js = await measureJs(DIST);
@@ -546,7 +546,7 @@ check(
   indexHtml.includes(`${PAIRS.length} 组`),
   `首页陈述的配色组数与守卫一致（${PAIRS.length} 组）`,
 );
-// 主题数同理：面板写"× 5 主题"，而守卫确实在算五套主题的对比度。
+// 主题数同理：面板陈述的主题数必须与守卫实际检查的数量一致。
 // 加一套主题却忘了改面板（或反过来）都会在这里红。
 const themeCount = themes.size;
 check(
