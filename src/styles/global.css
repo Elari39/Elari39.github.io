@@ -38,11 +38,39 @@
    形状与显示字体另见文件末尾的覆盖块 —— 那部分**不能**只靠 token，
    原因写在那一块的注释里。
 
-   两条硬约束：
+   三条硬约束：
    1. 这里的值必须写成十六进制字面量。scripts/check-site.mjs 的 tokensFromBlock()
       只认 `--c-x: #hex;`，写 color-mix()/oklch() 会让对比度检查组报「找不到 token」。
    2. 现在没有任何一套主题跟随 prefers-color-scheme：默认就是这套，浅 / 深要手动选。
       所以这个文件里不再有 prefers-color-scheme 兜底块。
+   3. 用到 color-mix() 的规则必须**自己**包在
+      `@supports (color: color-mix(in lab, red, red)) { … }` 里 —— 见下面那段说明。
+
+   -----------------------------------------------------------------------------
+   为什么 color-mix() 一定要自己包一层 @supports（体积契约，别删）
+   -----------------------------------------------------------------------------
+   Tailwind 4 的 Vite 管线内部跑 Lightning CSS，并**硬编码**了一组浏览器目标
+   （@tailwindcss/node 里写死 safari 16.4 / ios_saf 16.4 / firefox 128 / chrome 111）。
+   这组目标不支持 `color-mix()` 的 lab/oklab 插值，于是 Lightning CSS 会给**每一条**
+   含 color-mix 的声明再补一份回退，产物里因此出现成对的
+   `@supports (color: color-mix(in lab, red, red)) { … }` 孪生块：实测 28 块、
+   合计 4,910 字节，占外链 CSS 的 10% —— 而 CSS 预算是硬的 48 KB。
+
+   这组目标**没有公开的配置入口**（实测 vite.build.target 让产物反而大了 953 字节、
+   孪生块一个没少；vite.css.lightningcss.targets 完全无效）。
+
+   好在它对每个节点只在「还不处于一个含 color-mix 的 @supports 之内」时才补回退。
+   所以我们自己先包一层，它就会原样放过：既不生成孪生块，也不再塞那份把 oklab 改写成
+   srgb 的粗糙回退。这一步实测腾出 2,523 字节。
+
+   代价与取舍：不支持 color-mix() 的浏览器（Chrome < 111 / Safari < 16.2 /
+   Firefox < 113）会失去这层**装饰** —— 页底 bloom、选中底色、封面渐变、卡片柔光之类。
+   这些浏览器本来也没有 `animation-timeline` / `::view-transition-*`，源码对它们一向
+   是 @supports 渐进增强，所以这与站点既有取舍一致。
+   铁律：移进 @supports 的只能是装饰性声明。正文 / 标题 / 链接 / 标记这类承载文字的
+   颜色一律留在外面（那 9 对对比度全部不受影响）。
+   形状与结构（width / position / content / mask）也一律留在外面 —— 少了底色的卡片
+   仍然是一张有描边的卡片，但少了 content 的伪元素会整个消失。
 
    对比度（守卫逐对核对，9 对全部 ≥ 阈值，最紧的一对是强调色 3.55:1 对 3.0 的门槛）：
      正文 17.08 / 标题 19.43 / 次要文字 8.70 / 页脚小字 7.09 / 链接 6.26
@@ -342,30 +370,32 @@
      68rem×34rem 的单个椭圆、62% 处即透明，于是页面只有顶部约 270px
      有颜色，其余部分逐像素等于画布色 —— 整页看起来是平的。
      所以这里把半径放大并补了第三层，让首屏以下也留一点微光。 */
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    z-index: -1;
-    pointer-events: none;
-    background:
-      radial-gradient(
-        120rem 70rem at 10% -10%,
-        color-mix(in oklab, var(--c-primary) 20%, transparent),
-        transparent 72%
-      ),
-      radial-gradient(
-        90rem 60rem at 100% 6%,
-        color-mix(in oklab, var(--c-teal) 14%, transparent),
-        transparent 66%
-      ),
-      /* 第三层是给「首屏以下」的：底纹是 position: fixed，锚在视口上，
-         所以无论滚到哪里，视口下半部分都留着一点余温 —— 正是旧版缺的那块。 */
-      radial-gradient(
-        110rem 70rem at 50% 112%,
-        color-mix(in oklab, var(--c-primary) 12%, transparent),
-        transparent 68%
-      );
+  @supports (color: color-mix(in lab, red, red)) {
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      pointer-events: none;
+      background:
+        radial-gradient(
+          120rem 70rem at 10% -10%,
+          color-mix(in oklab, var(--c-primary) 20%, transparent),
+          transparent 72%
+        ),
+        radial-gradient(
+          90rem 60rem at 100% 6%,
+          color-mix(in oklab, var(--c-teal) 14%, transparent),
+          transparent 66%
+        ),
+        /* 第三层是给「首屏以下」的：底纹是 position: fixed，锚在视口上，
+           所以无论滚到哪里，视口下半部分都留着一点余温 —— 正是旧版缺的那块。 */
+        radial-gradient(
+          110rem 70rem at 50% 112%,
+          color-mix(in oklab, var(--c-primary) 12%, transparent),
+          transparent 68%
+        );
+    }
   }
 
   /* 方格纸纹理：给「工程记录」这个身份一层底子。
@@ -416,8 +446,13 @@
 
   a {
     color: inherit;
-    text-decoration-color: color-mix(in oklab, var(--c-primary) 60%, transparent);
     text-underline-offset: 0.2em;
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    a {
+      text-decoration-color: color-mix(in oklab, var(--c-primary) 60%, transparent);
+    }
   }
 
   a:hover {
@@ -430,9 +465,11 @@
     border-radius: 0.25rem;
   }
 
-  ::selection {
-    background: color-mix(in oklab, var(--c-primary) 32%, transparent);
-    color: var(--c-ink);
+  @supports (color: color-mix(in lab, red, red)) {
+    ::selection {
+      background: color-mix(in oklab, var(--c-primary) 32%, transparent);
+      color: var(--c-ink);
+    }
   }
 
   code,
@@ -600,15 +637,17 @@
   }
 
   /* 余烬分隔线 */
-  .rule-ember {
-    height: 1px;
-    border: 0;
-    background: linear-gradient(
-      90deg,
-      var(--c-primary),
-      color-mix(in oklab, var(--c-primary) 25%, transparent) 42%,
-      transparent
-    );
+  @supports (color: color-mix(in lab, red, red)) {
+    .rule-ember {
+      height: 1px;
+      border: 0;
+      background: linear-gradient(
+        90deg,
+        var(--c-primary),
+        color-mix(in oklab, var(--c-primary) 25%, transparent) 42%,
+        transparent
+      );
+    }
   }
 
   .chip {
@@ -618,12 +657,17 @@
     padding: 0.22rem 0.6rem;
     border: 1px solid var(--c-hairline);
     border-radius: 999px;
-    background: color-mix(in oklab, var(--c-card) 70%, transparent);
     color: var(--c-muted);
     font-family: var(--font-mono);
     font-size: 0.75rem;
     line-height: 1.5;
     white-space: nowrap;
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .chip {
+      background: color-mix(in oklab, var(--c-card) 70%, transparent);
+    }
   }
 
   .btn {
@@ -646,7 +690,6 @@
   }
 
   .btn:hover {
-    border-color: color-mix(in oklab, var(--c-primary) 55%, var(--c-hairline));
     transform: translateY(-1px);
   }
 
@@ -657,8 +700,14 @@
     font-weight: 500;
   }
 
-  .btn-primary:hover {
-    background: color-mix(in oklab, var(--c-primary) 88%, var(--c-ink));
+  @supports (color: color-mix(in lab, red, red)) {
+    .btn:hover {
+      border-color: color-mix(in oklab, var(--c-primary) 55%, var(--c-hairline));
+    }
+
+    .btn-primary:hover {
+      background: color-mix(in oklab, var(--c-primary) 88%, var(--c-ink));
+    }
   }
 
   /* 状态标记：.badge 给骨架，.badge-* 只换颜色 */
@@ -966,12 +1015,8 @@
     flex-direction: column;
     border: 1px solid var(--c-hairline);
     border-radius: var(--radius-card);
-    background: linear-gradient(
-      170deg,
-      color-mix(in oklab, var(--c-card) 92%, transparent),
-      var(--c-surface)
-    );
-    box-shadow: 0 1px 0 color-mix(in oklab, var(--c-ink) 4%, transparent);
+    /* 回退：不支持 color-mix() 时就是一张平涂的卡片，形状与描边照旧 */
+    background: var(--c-card);
     transition:
       transform 0.24s ease,
       border-color 0.24s ease,
@@ -980,11 +1025,6 @@
 
   .entry-card:hover {
     transform: translateY(-3px);
-    border-color: color-mix(in oklab, var(--entry-accent, var(--c-primary)) 60%, var(--c-hairline));
-    box-shadow:
-      0 18px 40px -24px
-        color-mix(in oklab, var(--entry-accent, var(--c-primary)) 55%, transparent),
-      0 1px 0 color-mix(in oklab, var(--c-ink) 5%, transparent);
   }
 
   .entry-card::before {
@@ -993,11 +1033,37 @@
     inset: 0 0 auto 0;
     height: 3px;
     border-radius: var(--radius-card) var(--radius-card) 0 0;
-    background: linear-gradient(
-      90deg,
-      var(--entry-accent, var(--c-primary)),
-      color-mix(in oklab, var(--entry-accent, var(--c-primary)) 20%, transparent)
-    );
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .entry-card {
+      background: linear-gradient(
+        170deg,
+        color-mix(in oklab, var(--c-card) 92%, transparent),
+        var(--c-surface)
+      );
+      box-shadow: 0 1px 0 color-mix(in oklab, var(--c-ink) 4%, transparent);
+    }
+
+    .entry-card:hover {
+      border-color: color-mix(
+        in oklab,
+        var(--entry-accent, var(--c-primary)) 60%,
+        var(--c-hairline)
+      );
+      box-shadow:
+        0 18px 40px -24px
+          color-mix(in oklab, var(--entry-accent, var(--c-primary)) 55%, transparent),
+        0 1px 0 color-mix(in oklab, var(--c-ink) 5%, transparent);
+    }
+
+    .entry-card::before {
+      background: linear-gradient(
+        90deg,
+        var(--entry-accent, var(--c-primary)),
+        color-mix(in oklab, var(--entry-accent, var(--c-primary)) 20%, transparent)
+      );
+    }
   }
 
   /* 项目字形标记：圆角方块里放一枚内联 SVG */
@@ -1021,11 +1087,16 @@
   /* 详情页的标题区 */
   .entry-header {
     border-bottom: 1px solid var(--c-hairline);
-    background: linear-gradient(
-      180deg,
-      color-mix(in oklab, var(--entry-accent, var(--c-primary)) 12%, transparent),
-      transparent
-    );
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .entry-header {
+      background: linear-gradient(
+        180deg,
+        color-mix(in oklab, var(--entry-accent, var(--c-primary)) 12%, transparent),
+        transparent
+      );
+    }
   }
 
   /* 截图：像贴在书页上的图版 */
@@ -1094,8 +1165,10 @@
     margin-top: 0.4em;
   }
 
-  .prose-grimoire li::marker {
-    color: color-mix(in oklab, var(--c-primary) 80%, var(--c-muted));
+  @supports (color: color-mix(in lab, red, red)) {
+    .prose-grimoire li::marker {
+      color: color-mix(in oklab, var(--c-primary) 80%, var(--c-muted));
+    }
   }
 
   .prose-grimoire code {
@@ -1126,8 +1199,15 @@
 
   .prose-grimoire blockquote {
     padding: 0.2rem 0 0.2rem 1.1rem;
-    border-left: 3px solid color-mix(in oklab, var(--c-primary) 70%, transparent);
+    /* 回退：不支持 color-mix() 时用纯强调色，引用的分栏线照旧 */
+    border-left: 3px solid var(--c-primary);
     color: var(--c-muted);
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .prose-grimoire blockquote {
+      border-left-color: color-mix(in oklab, var(--c-primary) 70%, transparent);
+    }
   }
 
   .prose-grimoire hr {
@@ -1200,11 +1280,16 @@
     height: 14px;
     opacity: 0;
     pointer-events: none;
-    background: radial-gradient(
-      60% 100% at 50% 0%,
-      color-mix(in oklab, var(--c-ink) 14%, transparent),
-      transparent
-    );
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .site-header::after {
+      background: radial-gradient(
+        60% 100% at 50% 0%,
+        color-mix(in oklab, var(--c-ink) 14%, transparent),
+        transparent
+      );
+    }
   }
 
   @media (prefers-reduced-motion: no-preference) {
@@ -1250,14 +1335,19 @@
     position: absolute;
     inset: -26%;
     border-radius: 50%;
-    background: radial-gradient(
-      50% 50% at 50% 50%,
-      color-mix(in oklab, var(--c-primary) 22%, transparent),
-      transparent 70%
-    );
     opacity: 0.85;
     pointer-events: none;
     transition: opacity var(--dur-slow) var(--ease-ember);
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .hero-sigil__aura {
+      background: radial-gradient(
+        50% 50% at 50% 50%,
+        color-mix(in oklab, var(--c-primary) 22%, transparent),
+        transparent 70%
+      );
+    }
   }
 
   @media (prefers-reduced-motion: no-preference) {
@@ -1324,7 +1414,14 @@
     overflow: hidden;
     border: 1px solid var(--c-hairline-strong);
     border-radius: var(--radius-card);
-    background: color-mix(in oklab, var(--c-surface) 72%, transparent);
+    /* 回退：不支持 color-mix() 时用平涂的 surface */
+    background: var(--c-surface);
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .attest {
+      background: color-mix(in oklab, var(--c-surface) 72%, transparent);
+    }
   }
 
   .attest-item {
@@ -1371,24 +1468,14 @@
     height: 6.5rem;
     overflow: hidden;
     border-bottom: 1px solid var(--c-hairline);
-    background: linear-gradient(
-      150deg,
-      color-mix(in oklab, var(--entry-accent, var(--c-primary)) 26%, var(--c-surface)),
-      var(--c-surface) 78%
-    );
+    /* 回退：不支持 color-mix() 时封面就是一块平涂的 surface */
+    background: var(--c-surface);
   }
 
   .cover::before {
     content: '';
     position: absolute;
     inset: 0;
-    background-image: repeating-linear-gradient(
-      to right,
-      color-mix(in oklab, var(--c-ink) 7%, transparent) 0,
-      color-mix(in oklab, var(--c-ink) 7%, transparent) 1px,
-      transparent 1px,
-      transparent 24px
-    );
     mask-image: linear-gradient(90deg, #000, transparent 72%);
     -webkit-mask-image: linear-gradient(90deg, #000, transparent 72%);
   }
@@ -1401,7 +1488,6 @@
     font-family: var(--font-display);
     font-size: 6.5rem;
     line-height: 1;
-    color: color-mix(in oklab, var(--entry-accent, var(--c-primary)) 30%, transparent);
     pointer-events: none;
     user-select: none;
   }
@@ -1420,12 +1506,39 @@
     position: absolute;
     inset: 0;
     transform: translateX(-130%);
-    background: linear-gradient(
-      100deg,
-      transparent 20%,
-      color-mix(in oklab, var(--c-ink) 7%, transparent) 50%,
-      transparent 80%
-    );
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .cover {
+      background: linear-gradient(
+        150deg,
+        color-mix(in oklab, var(--entry-accent, var(--c-primary)) 26%, var(--c-surface)),
+        var(--c-surface) 78%
+      );
+    }
+
+    .cover::before {
+      background-image: repeating-linear-gradient(
+        to right,
+        color-mix(in oklab, var(--c-ink) 7%, transparent) 0,
+        color-mix(in oklab, var(--c-ink) 7%, transparent) 1px,
+        transparent 1px,
+        transparent 24px
+      );
+    }
+
+    .cover-numeral {
+      color: color-mix(in oklab, var(--entry-accent, var(--c-primary)) 30%, transparent);
+    }
+
+    .sheen::before {
+      background: linear-gradient(
+        100deg,
+        transparent 20%,
+        color-mix(in oklab, var(--c-ink) 7%, transparent) 50%,
+        transparent 80%
+      );
+    }
   }
 
   @media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
@@ -1503,7 +1616,6 @@
     font-family: var(--font-display);
     font-size: clamp(6rem, 16vw, 11rem);
     line-height: 1;
-    color: color-mix(in oklab, var(--entry-accent, var(--c-primary)) 14%, transparent);
     pointer-events: none;
     user-select: none;
   }
@@ -1512,8 +1624,17 @@
     position: absolute;
     top: 1.25rem;
     right: 1.25rem;
-    color: color-mix(in oklab, var(--entry-accent, var(--c-primary)) 45%, transparent);
     pointer-events: none;
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .entry-watermark {
+      color: color-mix(in oklab, var(--entry-accent, var(--c-primary)) 14%, transparent);
+    }
+
+    .rune-corner {
+      color: color-mix(in oklab, var(--entry-accent, var(--c-primary)) 45%, transparent);
+    }
   }
 
   /* ---- 图版：一张贴在书页上的图，悬停时描边走强调色 ---- */
@@ -1529,10 +1650,16 @@
   }
 
   @media (hover: hover) and (pointer: fine) {
-    .plate-figure:hover .plate {
-      border-color: color-mix(in oklab, var(--entry-accent, var(--c-primary)) 55%, var(--c-hairline));
-      box-shadow: 0 18px 40px -28px
-        color-mix(in oklab, var(--entry-accent, var(--c-primary)) 60%, transparent);
+    @supports (color: color-mix(in lab, red, red)) {
+      .plate-figure:hover .plate {
+        border-color: color-mix(
+          in oklab,
+          var(--entry-accent, var(--c-primary)) 55%,
+          var(--c-hairline)
+        );
+        box-shadow: 0 18px 40px -28px
+          color-mix(in oklab, var(--entry-accent, var(--c-primary)) 60%, transparent);
+      }
     }
   }
 }

@@ -9,6 +9,12 @@ node_modules/
 # 素材流水线的中间产物（原始截图与 Chrome 日志）
 .assets-raw/
 
+# 工作区数据（记忆 / 计划等本地文件）。
+# 必须忽略：Tailwind 4 的自动源探测会扫描所有未被 gitignore 的文件，
+# 于是记忆文档里的散文一旦出现 outline / flex 这类词，就会被当成工具类
+# 塞进产物（实测多出 165 字节的 .outline），让本地构建比 CI 更容易超预算。
+.workbuddy/
+
 # 日志
 *.log
 npm-debug.log*
