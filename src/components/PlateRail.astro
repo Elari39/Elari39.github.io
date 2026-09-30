@@ -16,7 +16,7 @@ const { items } = Astro.props;
 
 {
   items.length > 0 && (
-    <div class="rail">
+    <div class="rail" tabindex="0" role="region" aria-label="项目图版，可用左右方向键横向浏览">
       {items.map((item) => {
         const size = PLATE_SIZES[item.src.replace(/^\//, '')];
         return (

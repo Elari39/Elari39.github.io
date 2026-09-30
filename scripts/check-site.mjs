@@ -24,12 +24,16 @@
 import { createHash } from 'node:crypto';
 import { existsSync } from 'node:fs';
 import { readFile, readdir } from 'node:fs/promises';
+import { entries as readEntries, files as walkFiles } from './site-model.mjs';
+import { audit } from './audit-site.mjs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { gzipSync } from 'node:zlib';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const DIST = path.join(ROOT, 'dist');
+const DIST = path.resolve(process.argv.includes('--dist') ? process.argv[process.argv.indexOf('--dist') + 1] : path.join(ROOT, 'dist'));
+const audited = await audit(ROOT, DIST);
+if (audited.length) { console.error(audited.join('\n')); process.exit(1); }
 
 const SITE_URL = 'https://elari39.github.io';
 const OWNER = 'github.com/Elari39/';
@@ -65,8 +69,8 @@ function check(condition, message, detail) {
 /* ------------------------------------------------------------------ 解析工具 */
 
 /** 把路由映射到 dist 里的文件：目录格式 + 尾斜杠 */
-function fileForRoute(route) {
-  const clean = route.split('#')[0].split('?')[0];
+function fileForRoute(route, current = '/') {
+  const clean = decodeURIComponent(new URL(route, new URL(current, SITE_URL)).pathname);
   if (clean === '/') return path.join(DIST, 'index.html');
   if (clean.endsWith('/')) return path.join(DIST, clean.slice(1), 'index.html');
   return path.join(DIST, clean.slice(1));
@@ -160,14 +164,7 @@ if (!existsSync(DIST)) {
 
 /* --- 1. 条目来源（用来核对条目数与 order 唯一性） --- */
 const contentDir = path.join(ROOT, 'src', 'content', 'projects');
-const entryFiles = (await readdir(contentDir)).filter((name) => name.endsWith('.md'));
-const entries = [];
-for (const name of entryFiles) {
-  const text = await readFile(path.join(contentDir, name), 'utf8');
-  const order = Number(/^order:\s*(\d+)\s*$/m.exec(text)?.[1] ?? NaN);
-  const draft = /^draft:\s*true\s*$/m.test(text);
-  entries.push({ slug: name.replace(/\.md$/, ''), order, draft });
-}
+const entries = await readEntries(ROOT);
 const published = entries.filter((entry) => !entry.draft);
 
 /** 图版尺寸声明（由 pnpm assets 生成）：页面里的 <img class="plate"> 必须在其中 */
@@ -265,7 +262,7 @@ for (const route of routes) {
   for (const href of hrefs) {
     if (/^(https?:|mailto:|tel:)/i.test(href)) continue;
     if (href.startsWith('#')) continue;
-    const target = fileForRoute(href);
+    const target = fileForRoute(href, route);
     if (!existsSync(target)) broken.push(href);
   }
   check(broken.length === 0, `${label} 站内链接全部可达`, broken.join(', '));
@@ -280,8 +277,10 @@ for (const route of routes) {
     const pathPart = href.slice(0, hashIndex);
     const fragment = href.slice(hashIndex + 1);
     if (!fragment) continue; // 光一个「#」没有目标可核对
-    const ids = await idsForRoute(pathPart === '' ? route : pathPart);
-    if (!ids.has(fragment)) brokenFragments.push(href);
+    const resolved = new URL(href, new URL(route, SITE_URL));
+    if (resolved.origin !== SITE_URL) continue;
+    const ids = await idsForRoute(resolved.pathname);
+    if (!ids.has(decodeURIComponent(fragment))) brokenFragments.push(href);
   }
   check(brokenFragments.length === 0, `${label} 页内锚点都能落地`, brokenFragments.join(', '));
 
@@ -297,7 +296,7 @@ for (const route of routes) {
   ].filter(Boolean);
   const missingAssets = sources.filter((src) => {
     if (/^(https?:|data:)/i.test(src)) return false;
-    return !existsSync(path.join(DIST, src.replace(/^\//, '').split('?')[0]));
+    return !existsSync(fileForRoute(src, route));
   });
   check(missingAssets.length === 0, `${label} 引用的本地资源都存在`, missingAssets.join(', '));
 
@@ -415,11 +414,7 @@ for (const entry of published) {
     html.includes(OWNER),
     `条目 ${entry.slug} 链到自己的 GitHub 仓库`,
   );
-  const highlights = matchAll(
-    await readFile(path.join(contentDir, `${entry.slug}.md`), 'utf8'),
-    /^\s{2}- "/gm,
-  ).length;
-  check(highlights >= 3, `条目 ${entry.slug} 至少 3 条亮点（当前 ${highlights}）`);
+  check(entry.highlights.length >= 3, `条目 ${entry.slug} 至少 3 条亮点`);
 }
 
 /* --- 5. robots.txt 与 sitemap --- */
@@ -507,14 +502,11 @@ const astroDir = path.join(DIST, '_astro');
 let externalRaw = 0;
 let externalGzip = 0;
 let externalCount = 0;
-if (existsSync(astroDir)) {
-  for (const name of await readdir(astroDir)) {
-    if (!name.endsWith('.js')) continue;
-    const content = await readFile(path.join(astroDir, name));
-    externalCount += 1;
-    externalRaw += content.length;
-    externalGzip += gzipSync(content).length;
-  }
+for (const file of (await walkFiles(DIST)).filter(file => /\.(?:js|mjs|cjs)$/.test(file))) {
+  const content = await readFile(file);
+  externalCount += 1;
+  externalRaw += content.length;
+  externalGzip += gzipSync(content).length;
 }
 
 // 内联脚本也要算进预算：Astro 会把体积很小的打包脚本内联进 HTML，
@@ -540,15 +532,12 @@ check(
 );
 
 const indexHtml = await readFile(path.join(DIST, 'index.html'), 'utf8');
-check(indexHtml.length <= 60 * 1024, `首页 HTML ${(indexHtml.length / 1024).toFixed(1)} KB ≤ 60 KB`);
+check(Buffer.byteLength(indexHtml, 'utf8') <= 60 * 1024, `首页 HTML ${(Buffer.byteLength(indexHtml, 'utf8') / 1024).toFixed(1)} KB ≤ 60 KB`);
 
 // CSS 也要有预算：底纹、动效与装饰都在 global.css 里，体积代价得可见
 let cssBytes = 0;
-if (existsSync(astroDir)) {
-  for (const name of await readdir(astroDir)) {
-    if (!name.endsWith('.css')) continue;
-    cssBytes += (await readFile(path.join(astroDir, name))).length;
-  }
+for (const file of (await walkFiles(DIST)).filter(file => file.endsWith('.css'))) {
+  cssBytes += (await readFile(file)).length;
 }
 check(
   cssBytes <= CSS_BUDGET_BYTES,

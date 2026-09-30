@@ -14,12 +14,13 @@ interface Props {
   /** 详情页用条目自己的强调色，让整页的标记与线条跟着走 */
   accent?: 'coral' | 'teal' | 'amber';
   jsonLd?: Record<string, unknown> | Record<string, unknown>[];
+  noindex?: boolean;
 }
 
-const { title, description = SITE.description, ogType = 'website', accent, jsonLd } = Astro.props;
+const { title, description = SITE.description, ogType = 'website', accent, jsonLd, noindex = false } = Astro.props;
 
 const pageTitle = title ? `${title} · ${SITE.title}` : `${SITE.title} · ${SITE.subtitle}`;
-const canonical = new URL(Astro.url.pathname, SITE.url).href;
+const canonical = new URL(noindex ? '/404.html' : Astro.url.pathname, SITE.url).href;
 const ogImage = new URL('/og.png', SITE.url).href;
 const jsonLdBlocks = jsonLd ? (Array.isArray(jsonLd) ? jsonLd : [jsonLd]) : [];
 ---
@@ -36,6 +37,8 @@ const jsonLdBlocks = jsonLd ? (Array.isArray(jsonLd) ? jsonLd : [jsonLd]) : [];
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{pageTitle}</title>
     <meta name="description" content={description} />
+    {noindex && <meta name="robots" content="noindex" />}
+    <link rel="stylesheet" href="/plate-sizes.css" />
     <link rel="canonical" href={canonical} />
     <meta name="author" content={SITE.author.handle} />
     <meta name="generator" content={Astro.generator} />
@@ -70,7 +73,7 @@ const jsonLdBlocks = jsonLd ? (Array.isArray(jsonLd) ? jsonLd : [jsonLd]) : [];
 
     {
       jsonLdBlocks.map((block) => (
-        <script type="application/ld+json" set:html={JSON.stringify(block)}></script>
+        <script type="application/ld+json" set:html={JSON.stringify(block).replace(/</g, '\\u003c')}></script>
       ))
     }
   </head>

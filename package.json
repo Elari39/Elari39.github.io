@@ -14,11 +14,14 @@
     "preview": "astro preview",
     "check": "astro sync && tsc --noEmit && astro check",
     "guard": "node scripts/check-site.mjs",
-    "verify": "pnpm run check && pnpm run build && pnpm run guard",
+    "verify": "pnpm run check && pnpm run build && pnpm run guard && pnpm run test:guard && pnpm run test:assets",
     "verify:browser": "node scripts/verify-browser.mjs",
     "assets": "python scripts/prepare-assets.py",
     "assets:inspect": "python scripts/prepare-assets.py --inspect",
-    "astro": "astro"
+    "astro": "astro",
+    "test:guard": "node --test scripts/*.test.mjs",
+    "test:assets": "python -m unittest discover -s scripts -p test_assets.py",
+    "verify:browser:local": "node scripts/run-browser.mjs"
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.7.4",
@@ -31,7 +34,12 @@
     "@astrojs/check": "^0.9.10",
     "@tailwindcss/vite": "^4.3.3",
     "@types/node": "^26.6.2",
+    "image-size": "^2.0.4",
+    "parse5": "^8.0.1",
+    "postcss": "^8.5.28",
+    "postcss-value-parser": "^4.2.0",
     "tailwindcss": "^4.3.3",
-    "typescript": "~5.9.3"
+    "typescript": "~5.9.3",
+    "yaml": "^2.9.1"
   }
 }

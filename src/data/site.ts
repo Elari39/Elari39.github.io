@@ -12,7 +12,7 @@ export const SITE = {
   subtitle: '灰烬女巫的魔典',
   /** 一句站点定位，用于首页 hero 与 meta description */
   description:
-    '灰烬女巫的魔典：四个自建项目的条目库——个人博客系统 Notes of Ashen、短链服务 AshenCourier、本地文档保险箱 CryptoWitch，以及重庆锐强建筑劳务有限公司官网 Ruiqiang Website。',
+    '灰烬女巫的魔典：自建项目的条目库——个人博客系统 Notes of Ashen、短链服务 AshenCourier、本地文档保险箱 CryptoWitch，以及重庆锐强建筑劳务有限公司官网 Ruiqiang Website。',
   /** 默认 OG/描述用语的简短版本 */
   tagline: '把做过的项目，写成一本可以翻的魔典。',
 
@@ -49,8 +49,8 @@ export const SITE = {
       body: '字体用系统字体栈、图标是内联 SVG、不引任何 CDN 与分析脚本——打开这一页不会顺带通知别的服务器。',
     },
     {
-      title: '默认零客户端 JS',
-      body: '除了 <head> 里一段用于解析主题的内联脚本，页面交互全部是 CSS。脚本体积有守卫脚本盯着上限。',
+      title: '两段主题脚本',
+      body: '主题引导与切换共两段脚本，无客户端框架运行时；其余交互由 HTML 与 CSS 完成，脚本 gzip 总量不超过 4 KB。',
     },
     {
       title: '内容是文件，不是数据库',
@@ -69,7 +69,7 @@ export const SITE = {
   attestations: [
     { value: '0', caption: '次第三方请求 · 字体与图标都是自己的' },
     { value: '≤ 4 KB', caption: '客户端 JS（gzip）· 守卫盯着上限' },
-    { value: '9 组', caption: '配色 × 3 主题 ≥ 4.5:1' },
+    { value: '9 组', caption: '配色 × 3 主题 · 文字 ≥ 4.5:1，装饰 ≥ 3:1' },
   ],
 } as const;
 

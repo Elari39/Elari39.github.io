@@ -121,6 +121,11 @@ const jsonLd = {
       <Toc items={tocItems} />
     </div>
 
+    <details class="mobile-toc mb-8 xl:hidden">
+      <summary>本页目录</summary>
+      <Toc items={tocItems} showTitle={false} />
+    </details>
+
     <div>
       <p class="border-l-2 border-primary pl-4 text-lg text-ink">{data.summary}</p>
 
@@ -151,7 +156,8 @@ const jsonLd = {
             <h2 class="text-xl">图版</h2>
             <div class="mt-5 space-y-8">
               {plates.map((plate) => (
-                <figure class="plate-figure">
+                <figure class={`plate-figure plate-width-${plate.size?.width}`}>
+                  <a href={plate.src} aria-label={`查看原图：${plate.alt}`}>
                   <img
                     class="plate"
                     src={plate.src}
@@ -161,6 +167,7 @@ const jsonLd = {
                     width={plate.size?.width}
                     height={plate.size?.height}
                   />
+                  </a>
                   {plate.caption && (
                     <figcaption class="mt-3 text-sm text-muted">{plate.caption}</figcaption>
                   )}

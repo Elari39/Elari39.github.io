@@ -1,6 +1,8 @@
 ---
+import { getCollection } from 'astro:content';
 import { SITE } from '../data/site';
 import BaseLayout from '../layouts/BaseLayout.astro';
+const count = (await getCollection('projects', ({ data }) => !data.draft)).length;
 ---
 
 <BaseLayout
@@ -15,7 +17,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       <p>
         这个站点是 {SITE.author.handle} 的项目条目库。每个项目是魔典里的一条：
         结构化字段写在 frontmatter，长文叙述写在正文，页面由 Astro 在构建期渲染成纯静态 HTML。
-        目前收录四条，都是自己从零设计、实现并部署的项目。
+        目前收录 {count} 条，都是自己设计与实现的项目。
       </p>
 
       <h2>三条自我约束</h2>
@@ -76,7 +78,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           <code>scripts/verify-browser.mjs</code>（<code>pnpm verify:browser</code>）用无头 Chrome
           把页面真跑一遍：主题引导脚本在 CSP 之下确实执行了、没有控制台报错、三套主题的计算样式
           确实两两不同（含新粗野主义的方角与硬阴影）、滚动进场动画一定收敛到可见终态、
-          1440px 与 390px 都没有横向滚动；并把每页的浅色 / 深色 / 新粗野主义 / 窄屏截图写到
+          320、390、768、1280 与 1440px 下导航完整且没有横向滚动；并把每页的浅色 / 深色 / 新粗野主义 / 窄屏截图写到
           <code>.assets-raw/verify/</code> 供人眼复核。
         </li>
       </ul>

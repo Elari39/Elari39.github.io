@@ -532,17 +532,17 @@
   }
 
   .badge-live {
-    background: color-mix(in oklab, var(--c-teal) 16%, transparent);
+    background: var(--c-surface);
     color: var(--c-teal);
   }
 
   .badge-wip {
-    background: color-mix(in oklab, var(--c-amber) 18%, transparent);
+    background: var(--c-surface);
     color: var(--c-amber);
   }
 
   .badge-archived {
-    background: color-mix(in oklab, var(--c-muted) 18%, transparent);
+    background: var(--c-surface);
     color: var(--c-muted);
   }
 
@@ -1470,4 +1470,17 @@
 [data-theme='brutal'] .toc-link:hover {
   background: var(--c-card-strong);
   color: var(--c-ink);
+}
+
+/* Mobile navigation remains legible without a scripted menu. */
+.site-nav a { white-space: nowrap; }
+.mobile-toc { border: 1px solid var(--c-hairline); padding: 1rem; }
+.mobile-toc summary { cursor: pointer; font-weight: 700; }
+.mobile-toc nav { margin-top: 1rem; }
+.plate-figure { margin-inline: auto; }
+@media (max-width: 47.999rem) {
+  .header-inner { flex-direction: column; align-items: stretch; gap: .5rem; }
+  .site-nav { margin-left: 0; justify-content: flex-end; }
+  html { scroll-padding-top: 8.5rem; }
+  #entries { scroll-margin-top: 0; }
 }

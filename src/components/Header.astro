@@ -14,7 +14,7 @@ function isCurrent(href: string): boolean {
 ---
 
 <header class="site-header sticky top-0 z-50 border-b border-hairline bg-canvas/85 backdrop-blur-md">
-  <div class="mx-auto flex max-w-5xl items-center gap-3 px-5 py-3">
+  <div class="header-inner mx-auto flex max-w-5xl items-center gap-3 px-5 py-3">
     <a href="/" class="flex items-center gap-3 no-underline">
       <span class="text-primary">
         <Glyph name="sigil" size={26} />
@@ -25,7 +25,7 @@ function isCurrent(href: string): boolean {
       </span>
     </a>
 
-    <nav class="ml-auto flex items-center gap-0.5" aria-label="站点导航">
+    <nav class="site-nav ml-auto flex items-center gap-0.5" aria-label="站点导航">
       {
         SITE.nav.map((item) => (
           <a

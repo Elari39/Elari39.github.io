@@ -23,3 +23,6 @@ pnpm-debug.log*
 .DS_Store
 Thumbs.db
 .idea/
+
+# Python test/import cache
+__pycache__/

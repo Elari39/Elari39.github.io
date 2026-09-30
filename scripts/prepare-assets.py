@@ -3,8 +3,8 @@
 
 为什么是一个独立脚本、而不是构建步骤：
 
-  * 这些素材**只在素材变了的时候**才需要重跑。CI 只做 `astro build`，
-    不碰无头浏览器 —— 构建过程因此保持确定、可复现。
+  * 这些素材**只在素材变了的时候**才需要重跑。CI 只验证已提交的素材，
+    不重新生成；浏览器验收独立运行。
   * 四个被展示的项目在站点仓库之外（`../AshenCourier`、`../ruiqiang-website` 等）。
     这里只**读**它们，复制出来加工，绝不修改源目录。
   * 刻意不引 sharp / astro:assets：那个原生依赖换机器时最容易装不上，
@@ -20,7 +20,7 @@
 
 所以**线上站点不在这里抓**。需要某个项目的线上截图时，请人工截好放进
 `public/shots/<slug>/`，再把它写进条目的 gallery。`--inspect` 会告诉你
-某张图是不是空白页 —— 这正是当初发现上面那次失败的检查。
+某张图是否疑似空白页；它无法识别验证页，内容仍需人工确认。
 
 跑法：`pnpm assets`（需要 Pillow 与一个 Chrome / Edge）
 体检：`pnpm assets --inspect`
@@ -37,6 +37,8 @@
 from __future__ import annotations
 
 import json
+import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -63,6 +65,8 @@ EMBER = (224, 141, 109)
 AMBER = (232, 165, 90)
 
 CHROME_CANDIDATES = [
+    *([Path(os.environ["CHROME_PATH"])] if os.environ.get("CHROME_PATH") else []),
+    Path("/usr/bin/google-chrome"), Path("/usr/bin/chromium"),
     Path(r"C:\Program Files\Google\Chrome\Application\chrome.exe"),
     Path(r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe"),
     Path(r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"),
@@ -128,6 +132,7 @@ def render(chrome: Path, url: str, out: Path, size: tuple[int, int], wait_ms: in
     out.parent.mkdir(parents=True, exist_ok=True)
     last_error: Exception | None = None
     for mode in ("--headless=new", "--headless"):
+        out.unlink(missing_ok=True)
         try:
             run_chrome(
                 chrome,
@@ -237,8 +242,7 @@ def build_plates() -> None:
         for name, filename in plates.items():
             source = shots_dir / filename
             if not source.exists():
-                log(f"  跳过 {slug}/{name}：找不到 {source}")
-                continue
+                raise SystemExit(f"缺少素材来源：{source}")
             save_plate(source, PUBLIC / "shots" / slug / f"{name}.webp")
 
 
@@ -266,7 +270,7 @@ def write_plate_sizes() -> None:
         # 变成一堆「已修改」的假差异
         newline="\n",
     )
-    log(f"\n图版尺寸：{target.relative_to(ROOT)}（{len(manifest)} 条）")
+    log(f"\n图版尺寸：{target.name}（{len(manifest)} 条）")
 
 
 def build_og(chrome: Path) -> None:
@@ -279,66 +283,92 @@ def build_og(chrome: Path) -> None:
         log(f"OG 卡片：{out.name}  {image.width}x{image.height}")
 
 
-def inspect() -> None:
-    """素材体检。
+def validate_image(target: Path) -> tuple[int, int]:
+    """Reject broken/blank images; visual review still determines content validity."""
+    with Image.open(target) as image:
+        image.load()
+        stats = ImageStat.Stat(image.convert("L"))
+        colors = image.convert("RGB").getcolors(maxcolors=200_000)
+        if stats.stddev[0] < 3 or (stats.mean[0] > 250 and colors and len(colors) < 5000):
+            raise ValueError(f"疑似空白/白屏图片：{target}")
+        return image.size
 
-    存在的理由：流水线产出的图版必须被**看过**才算验收。如果当前环境没有可用的
-    图像查看能力，就得有一条不依赖肉眼、也不依赖"相信它没问题"的检查路径。
-    这里用灰度均值 / 标准差 / 颜色数给每张图一个可读的指纹：
 
-      * 标准差 < 3              —— 几乎纯色，多半是空白页
-      * 均值 > 250 且颜色数少   —— 白屏
-      * 颜色数很少              —— 内容稀薄，可能是加载占位或错误页
+def public_images(directory: Path) -> list[Path]:
+    return sorted(p for p in directory.rglob("*") if p.is_file() and p.suffix.lower() in {".png", ".webp", ".jpg", ".jpeg", ".ico"})
 
-    它不是"好看"的检查，但能挡住"截到验证页/空白页却当成品提交"这类事故 ——
-    这个检查正是当初发现 blog.miku831.fun 截到 Cloudflare 验证页的原因。
-    """
-    log("素材体检（灰度均值 / 标准差 / 颜色数）")
-    targets = (
-        sorted(PUBLIC.glob("shots/**/*.webp"))
-        + sorted(PUBLIC.glob("*.png"))
-        + sorted(PUBLIC.glob("*.ico"))
-        + sorted(RAW.glob("**/*.png"))
-    )
+
+def inspect(directory: Path | None = None) -> None:
+    targets = public_images(directory or PUBLIC)
     if not targets:
-        log("  没有可检查的图片")
-        return
+        raise ValueError("没有可检查的发布图片")
+    errors = []
     for target in targets:
-        with Image.open(target) as image:
-            stats = ImageStat.Stat(image.convert("L"))
-            colors = image.convert("RGB").getcolors(maxcolors=200_000)
-        mean, stddev = stats.mean[0], stats.stddev[0]
-        color_count: int | str = len(colors) if colors else ">200000"
-        flags = []
-        if stddev < 3:
-            flags.append("疑似空白页")
-        if mean > 250 and isinstance(color_count, int) and color_count < 5000:
-            flags.append("疑似白屏")
-        suffix = f"  ← {', '.join(flags)}" if flags else ""
-        log(
-            f"  {str(target.relative_to(ROOT)).ljust(46)} "
-            f"{image.size[0]}x{image.size[1]}  "
-            f"均值 {mean:6.1f}  标准差 {stddev:6.1f}  颜色 {color_count}{suffix}"
-        )
+        try:
+            width, height = validate_image(target)
+            log(f"  {target.name}: {width}x{height} {describe(target)}")
+        except (OSError, ValueError) as error:
+            errors.append(str(error))
+    if errors:
+        raise ValueError("\n".join(errors))
+
+
+def collect_sizes() -> None:
+    manifest.clear()
+    for target in public_images(PUBLIC / "shots"):
+        width, height = validate_image(target)
+        manifest[target.relative_to(PUBLIC).as_posix()] = {"width": width, "height": height}
+
+
+def publish(staged: list[tuple[Path, Path]]) -> None:
+    """Replace only validated generated files, rolling back a failed commit."""
+    original = {target: target.read_bytes() if target.exists() else None for _, target in staged}
+    changed = []
+    try:
+        for source, target in staged:
+            target.parent.mkdir(parents=True, exist_ok=True)
+            os.replace(source, target)
+            changed.append(target)
+    except BaseException:
+        for target in reversed(changed):
+            if original[target] is None:
+                target.unlink(missing_ok=True)
+            else:
+                target.write_bytes(original[target])
+        raise
+
+
+def generate(chrome: Path) -> None:
+    global PUBLIC, DATA
+    # Validate every configured source before producing or replacing anything.
+    for _, source_dir, mappings in PLATE_SOURCES:
+        for filename in mappings.values():
+            validate_image(source_dir / filename)
+    original_public, original_data = PUBLIC, DATA
+    RAW.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(prefix="assets-stage-", dir=RAW) as temporary:
+        stage = Path(temporary)
+        PUBLIC, DATA = stage / "public", stage / "data"
+        try:
+            shutil.copytree(original_public, PUBLIC)
+            build_icons()
+            build_plates()
+            build_og(chrome)
+            inspect(PUBLIC)
+            collect_sizes()  # Includes hand-added public/shots images.
+            write_plate_sizes()
+            generated = [(f, original_public / f.relative_to(PUBLIC)) for f in public_images(PUBLIC)]
+            generated.append((DATA / "plates.ts", original_data / "plates.ts"))
+            publish(generated)
+        finally:
+            PUBLIC, DATA = original_public, original_data
 
 
 def main() -> None:
     if "--inspect" in sys.argv:
         inspect()
-        return
-
-    chrome = find_chrome()
-    log(f"无头浏览器：{chrome}")
-    RAW.mkdir(parents=True, exist_ok=True)
-
-    build_icons()
-    build_plates()
-    write_plate_sizes()
-    build_og(chrome)
-
-    log("\n尺寸清单")
-    log(json.dumps(manifest, ensure_ascii=False, indent=2))
-    log("\n完成。")
+    else:
+        generate(find_chrome())
 
 
 if __name__ == "__main__":

@@ -4,7 +4,7 @@ import { SITE } from '../data/site';
 import BaseLayout from '../layouts/BaseLayout.astro';
 ---
 
-<BaseLayout title="页面不存在" description="这一页不在魔典里。">
+<BaseLayout title="页面不存在" description="这一页不在灰烬女巫的魔典里。请返回首页浏览已收录的项目条目，或前往 GitHub 查看源码。" noindex>
   <div class="mx-auto max-w-2xl px-5 py-20">
     <p class="label">404</p>
 
@@ -21,7 +21,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     </p>
     <div class="mt-8 flex flex-wrap gap-2">
       <a class="btn btn-primary" href="/">回到序言</a>
-      <a class="btn" href="/#entries">看四个条目</a>
+      <a class="btn" href="/#entries">浏览项目条目</a>
       <a class="btn" href={SITE.author.github} rel="noopener noreferrer">去 GitHub</a>
     </div>
   </div>

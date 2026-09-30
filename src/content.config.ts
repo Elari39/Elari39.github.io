@@ -1,6 +1,6 @@
-import { defineCollection } from 'astro:content';
-import { glob } from 'astro/loaders';
-import { z } from 'astro/zod';
+import { defineCollection } from "astro:content";
+import { glob } from "astro/loaders";
+import { z } from "astro/zod";
 
 /**
  * 「条目」内容集合。
@@ -14,37 +14,63 @@ import { z } from 'astro/zod';
  *   - 仓库地址必须指向 github.com/Elari39/ —— 避免把别处的链接当成本项目
  *   - 至少三条亮点 —— 首页卡片按前三条渲染，少于三条会空一块
  */
-const httpsUrl = z.string().refine((value) => value.startsWith('https://'), {
-  message: '链接必须以 https:// 开头',
-});
+const httpsUrl = z
+  .string()
+  .url()
+  .refine((value) => new URL(value).protocol === "https:", {
+    message: "链接必须以 https:// 开头",
+  });
 
 const repoUrl = z
   .string()
-  .refine((value) => value.startsWith('https://github.com/Elari39/'), {
-    message: 'repo 必须指向 https://github.com/Elari39/ 下的仓库',
-  });
+  .url()
+  .refine(
+    (value) => {
+      const url = new URL(value);
+      return (
+        url.origin === "https://github.com" &&
+        /^\/Elari39\/[^/]+\/?$/.test(url.pathname) &&
+        !url.username &&
+        !url.password &&
+        !url.search &&
+        !url.hash
+      );
+    },
+    {
+      message: "repo 必须指向 https://github.com/Elari39/ 下的仓库",
+    },
+  );
 
 const galleryPlate = z.object({
   /** public/ 下的绝对路径，例如 /shots/ashen-courier/landing.webp */
-  src: z.string().refine((value) => value.startsWith('/'), {
-    message: '截图路径必须以 / 开头（相对 public/）',
-  }),
+  src: z
+    .string()
+    .refine(
+      (value) =>
+        value.startsWith("/shots/") &&
+        !value.includes("..") &&
+        !value.includes("\\") &&
+        !/[?#]/.test(value),
+      {
+        message: "截图路径必须以 / 开头（相对 public/）",
+      },
+    ),
   alt: z.string().min(1),
   caption: z.string().optional(),
 });
 
 const projects = defineCollection({
-  loader: glob({ pattern: '**/*.md', base: './src/content/projects' }),
+  loader: glob({ pattern: "**/*.md", base: "./src/content/projects" }),
   schema: z.object({
     title: z.string().min(1),
     tagline: z.string().min(1),
     summary: z.string().min(1),
-    status: z.enum(['live', 'wip', 'archived']),
+    status: z.enum(["live", "wip", "archived"]),
     year: z.number().int().min(2000).max(2100),
     role: z.string().min(1),
     /** 色板里的名字，不是十六进制 —— 见 src/styles/global.css 的 .accent-* */
-    accent: z.enum(['coral', 'teal', 'amber']),
-    glyph: z.enum(['book', 'link', 'lock', 'sigil', 'github']),
+    accent: z.enum(["coral", "teal", "amber"]),
+    glyph: z.enum(["book", "link", "lock", "sigil", "github"]),
     /** 首页排序，必须唯一（check-site.mjs 会检查） */
     order: z.number().int().positive(),
     stack: z.array(z.string().min(1)).min(1),

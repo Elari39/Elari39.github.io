@@ -24,13 +24,13 @@
 | I | **Notes of Ashen** | 前后端分离的个人博客系统（Go + go-zero + MySQL / Redis + React 18） | <https://blog.miku831.fun/> |
 | II | **AshenCourier** | 匿名可用的短链服务（Go 1.27 标准库 + PostgreSQL 18 + Redis 8 + Vue 3） | <https://shorten.miku831.fun/> |
 | III | **CryptoWitch** | 本地文档保险箱（Go + Wails v3 + Argon2id / AES-256-GCM） | 仅仓库（无 Release） |
-| IV | **Ruiqiang Website** | 重庆锐强建筑劳务有限公司官网：纯静态、零后端的 Next.js 企业官网（Next 16 + React 19 + Tailwind 4，167 条断言守合规） | <https://ruiqiang-jianzhu.netlify.app/> |
+| IV | **Ruiqiang Website** | 重庆锐强建筑劳务有限公司官网：纯静态、零后端的 Next.js 企业官网（Next 16 + React 19 + Tailwind 4，自动化测试守合规） | <https://ruiqiang-jianzhu.netlify.app/> |
 
 首页是五段：**序言**（左文字右印记）、**数字条**（四条可核对的事实，其中条目数是
 构建期从内容集合算出来的）、**条目**（四张程序化封面的卡片）、**图版**（把各个条目的
 截图摊成一条横向走廊）与**三条自我约束**。
 
-站点本身就是个小工程：不引任何第三方运行时资源、默认零客户端 JS，并且带一套
+站点本身就是个小工程：不引任何第三方运行时资源、仅两段主题脚本，并且带一套
 **构建产物守卫**与一套**浏览器级验收**。下面把这些都写清楚。
 
 ## 目录
@@ -54,7 +54,7 @@
 | 站点框架 | **Astro 7**（`output: static`） | 纯静态输出与 GitHub Pages 的托管模型天然对齐：不需要 SPA 的 404 回退技巧、没有客户端路由、首屏与 SEO 都更好 |
 | 内容 | **内容集合 + zod schema** | 每个项目是一份 Markdown；字段不全、亮点少于三条、仓库地址写错都会**构建失败**，而不是上线后才发现 |
 | 样式 | **Tailwind CSS 4**（`@theme inline`） | 设计 token 是运行时 CSS 变量，所以三套主题不需要三份工具类 |
-| 客户端 JS | 一段主题引导脚本 + 一段切换按钮脚本 | 内联后 gzip **0.42 KB**；守卫脚本盯着这个预算 |
+| 客户端 JS | 一段主题引导脚本 + 一段切换按钮脚本 | 内联后 gzip **≤ 4 KB**（实际值以本次守卫输出为准）；守卫脚本盯着这个预算 |
 | 安全 | Astro 原生 `security.csp` + 一份手工登记的哈希 | GitHub Pages 不能自定义响应头，只能用 `<meta>` 形式的 CSP |
 | 部署 | GitHub Actions + `actions/deploy-pages` | 产物以 artifact 上传，不落 `gh-pages` 分支 |
 
@@ -103,8 +103,9 @@ pnpm preview        # 拿 dist/ 起静态服务器
 ```
 
 环境要求：Node ≥ 22.12（CI 用 24）、pnpm（版本由 `packageManager` 字段钉住）。
-素材流水线额外需要 Python + Pillow 与一个 Chrome / Edge —— 但**只有素材变了才需要**，
-日常开发与 CI 都不碰它。
+静态验收的素材反例需要 Python + Pillow：`python -m pip install -r scripts/requirements-assets.txt`。
+浏览器验收需要 Chrome / Edge，支持 Windows / Linux，并可通过 `CHROME_PATH` 显式指定。
+只有重新生成素材才需要相邻项目的公开截图；日常构建与 CI 不依赖相邻仓库。
 
 ## 质量守卫
 
@@ -112,9 +113,10 @@ pnpm preview        # 拿 dist/ 起静态服务器
 检查盯着；CI 里 `verify` 不过就不发布。
 
 ```bash
-pnpm verify          # astro sync + tsc --noEmit + astro check + build + guard
+pnpm verify          # 类型检查 + build + guard + 静态反例 + 素材反例
 pnpm guard           # 只跑构建产物守卫（需要先 build）
 pnpm verify:browser  # 浏览器级验收（需要先起 pnpm preview）
+pnpm verify:browser:local # 自动启动预览、验收同一份 dist、清理自身服务
 ```
 
 ### `pnpm guard` —— 对 `dist/` 的十七组核对
@@ -123,7 +125,7 @@ pnpm verify:browser  # 浏览器级验收（需要先起 pnpm preview）
 | --- | --- |
 | 结构 | 该有的页面与文件一个不少（含 `404.html`、`robots.txt`、`sitemap-index.xml`、图标与 OG 图） |
 | SEO | 每页都有唯一的 `<title>`、description、canonical、`og:image`，且 canonical 必须等于本站地址 |
-| 链接 | 站内链接与本地资源在 `dist/` 里确实存在 —— 图版路径写错会当场暴露 |
+| 链接 | 站内链接与本地资源在 `dist/` 里确实存在 —— 图版路径写错会当场暴露；HTML 声明尺寸还须与图片真实像素一致 |
 | 锚点 | 每个 `#锚点`（含 `/#entries` 这种跨页写法）都要在目标页里真的存在对应的 `id` —— 详情页目录完全靠它 |
 | 唯一 id | 同一页里 `id` 不得重复 —— 重复会让锚点跳到第一个，也会让印记里的 SVG 渐变引用错元素 |
 | 图版 | 每个 `<img class="plate">` 都能在 `plates.ts` 里查到尺寸（否则会跳版） |
@@ -134,7 +136,7 @@ pnpm verify:browser  # 浏览器级验收（需要先起 pnpm preview）
 | 图片尺寸 | 每个 `<img>` 都要声明 `width`/`height` —— 否则图版加载完成前占不住位置，会累计布局偏移 |
 | 跳转目标 | 每页都有 `id="main"`，skip link 指的确实是它 |
 | 装饰 SVG | 每个 `<svg>` 都要 `aria-hidden="true"` —— 装饰图形不该进可访问性树（需要语义的图形请用 `<img alt>`） |
-| 对比度 | 用 `global.css` 里的**真实 token** 算 WCAG 比值，三套主题各 9 对，正文与标记要求 ≥ 4.5:1；另外核对三套的画布色互不相同 |
+| 对比度 | 用 `global.css` 里的**真实 token** 算 WCAG 比值，三套主题各 9 对：8 对文字 ≥ 4.5:1，1 对大字号 / 装饰 ≥ 3:1；浏览器另测真实组件背景，另外核对画布色互不相同 |
 | 体积 | 客户端 JS（gzip，含内联）≤ 4 KB；首页 HTML ≤ 60 KB |
 | CSS 预算 | 外链 CSS ≤ 48 KB —— 底纹、动效与装饰都在 `global.css` 里，体积代价得看得见 |
 | 反漂移 | 首页数字条上的两个数字必须与守卫里的常量一致（`4 KB`、`9 组`） |
@@ -144,7 +146,8 @@ pnpm verify:browser  # 浏览器级验收（需要先起 pnpm preview）
 
 ### `pnpm verify:browser` —— 文件级检查证明不了的事
 
-无头 Chrome + CDP 把页面真跑一遍（零 npm 依赖：Node 自带 `WebSocket` 与 `fetch`）。
+无头 Chrome + CDP 把页面真跑一遍（Node 自带 `WebSocket` 与 `fetch`，不引客户端依赖）。
+CI 会运行同一套验收，失败阻止发布。路由从构建产物发现，覆盖 404；命令或加载超时直接失败。
 它回答的是守卫脚本回答不了的问题：
 
 - 内联主题引导脚本在 CSP 之下**确实被执行**了。判据是 `data-themeSource` ——
@@ -167,7 +170,7 @@ pnpm verify:browser  # 浏览器级验收（需要先起 pnpm preview）
   `border-radius` 为 0、阴影的模糊半径为 0、`h1` 走粗黑无衬线而不是衬线、页头不再毛玻璃。
   这一条挡的是"只改了变量、忘了形状"这种半生效的改动 —— 也正是它需要在
   `global.css` 末尾那样一个无层级覆盖块的原因；
-- 1440px 与 390px 下都没有横向滚动，**且 390px 那一次是在新粗野主义下量的**：
+- 320、390、768、1280、1440px × 三主题下导航不拆行、图版不放大且没有横向滚动，**且 390px 那一次是在新粗野主义下量的**：
   硬阴影向右下探出，是这套主题唯一真实的溢出风险，只在默认主题下量是量不到它的；
 - **滚动进场动画一定收敛到可见终态**：逐个把 `.reveal` 滚进视口，再断言它的 `transform`
   归位、`opacity` 为 1 —— 挡住"动到一半就永久停住"这种只有真跑一遍才看得见的回归
@@ -181,7 +184,7 @@ pnpm verify:browser  # 浏览器级验收（需要先起 pnpm preview）
 外加首页在新粗野主义下四个滚动位置、390px 与「禁用脚本」的一张预览图，供人眼复核。
 
 > 两个脚本的分工值得说明：`guard` 是**快速、离线、每次提交都跑**的契约测试；
-> `verify:browser` 是**慢一些、需要浏览器**的行为验收。
+> `verify:browser` 是**慢一些、需要浏览器且 CI 必跑**的行为验收。
 > 前者挡回归，后者挡「看起来对了但其实没生效」—— 它已经抓到过一次真问题：
 > Astro 只为它自己产出的脚本生成哈希，通过 `set:html` 注入的内联主题脚本没有哈希，
 > 于是那段脚本在 CSP 下会被直接拦掉。
@@ -220,10 +223,11 @@ DOM 里 <title> 就是这四个字，没有任何文章链接；
 ```
 
 所以线上截图不自动化。需要某个项目的线上截图时：人工截好放进
-`public/shots/<slug>/`，先 `pnpm assets:inspect` 确认它不是空白页，再写进条目的 `gallery`。
+`public/shots/<slug>/`，先人工确认内容有效，写进条目的 `gallery`，再运行 `pnpm assets` 将手工图纳入尺寸清单，最后 `pnpm assets:inspect`。
+正式图片全部通过检查后才替换成品；缺少任何配置源图、损坏图或疑似空白图都会失败并保留旧产物。
 
-> 那次失败正是被 `--inspect` 里「标准差 < 3 判为空白页」这条检查发现的。
-> 这也正是它存在的理由：流水线产出的图必须被检查过，才算验收。
+> 图片统计只能提示空白/白屏，不能判定内容有效，更不能凭标准差识别 Cloudflare 验证页。
+> `--inspect` 只检查正式发布图片，失败返回非零退出码；人工复核仍不可省略。
 
 ### 不要带进仓库的东西
 
@@ -334,7 +338,7 @@ DOM 里 <title> 就是这四个字，没有任何文章链接；
 > —— 有客观指标，不必凭感觉说"更有质感了"。
 
 三个新 token（`--c-hairline-strong` / `--c-grid` / `--c-ember-soft`）**只用于描边、
-网格与封面渐变，从不承载文字**，所以不参与守卫的对比度计算；正文级颜色仍是原来那 9 对，
+网格与封面渐变，从不承载文字**，所以不参与守卫的对比度计算；基础对比度契约仍是原来那 9 对，
 一个都没改 —— 新粗野主义也是这 9 对，只是换了一组值（外加同类的两个硬阴影 token）。动效的时间与缓动 token（`--ease-ember` / `--dur-*`）刻意放在 `:root` 而
 不放进 `@theme`：放进去会覆盖 Tailwind 内建的 `--ease-out`，改变已有工具类的语义。
 
@@ -355,9 +359,8 @@ DOM 里 <title> 就是这四个字，没有任何文章链接；
 
 发布流程（`.github/workflows/deploy.yml`）：
 
-1. `verify`：任何 push 与 PR 都跑 —— 类型检查、构建、守卫。
-2. `deploy`：只有 `main`（或手动触发）才跑，重新构建并以 artifact 上传，
-   由 `actions/deploy-pages` 发布。
+1. `verify`：main push、面向 main 的 PR 与手动触发都跑：类型检查、一次构建、静态守卫与反例、素材检查、完整浏览器验收。成功后上传该份 `dist` 的 Pages artifact，失败时保留日志与截图。
+2. `deploy`：仅 main 上非 PR 事件执行，直接发布已验收的 artifact，不重新安装或构建。
 
 **Pages 的发布源必须是「GitHub Actions」**（Settings → Pages → Source）。
 如果发布 job 报找不到 Pages 站点，就是这一项没设：
@@ -378,7 +381,7 @@ gh api -X POST repos/Elari39/Elari39.github.io/pages -f build_type=workflow
 - **CSP 之外没有响应头。** HSTS、`X-Content-Type-Options`、`Referrer-Policy`
   这些同样需要响应头，本站都没有。
 - **无分析、无评论、无搜索、无 i18n。** 都是刻意的：前三个会破坏「没有第三方请求」
-  与「零客户端 JS」这两条承诺；i18n 会让正文翻倍。将来要加，也该先想清楚
+  与「仅两段主题脚本」这两条承诺；i18n 会让正文翻倍。将来要加，也该先想清楚
   它值不值得放弃某条承诺。
 - **图版靠人眼。** 自动化只能判断「是不是空白页」，判断不了「好不好看」。
 - **默认主题不跟随系统偏好。** 深色系统的访客第一眼看到的也是纸白的新粗野主义 ——
@@ -392,11 +395,20 @@ gh api -X POST repos/Elari39/Elari39.github.io/pages -f build_type=workflow
   本站只收录它 README 已公开发布的那三张实拍，绝不碰 `img/` 下的营业执照原图；
   图上的浏览器窗口外框是那个项目的脚本合成的，右下角的 `Powered by Netlify`
   角标则是真实存在的。
-- **那条手机端图版只有 418px 宽。** 流水线「只缩不放」，而详情页的 `.plate`
-  是 `width: 100%`，所以它会被 CSS 放大到正文列宽度，看着偏软 ——
-  这是取图时的取舍，不是流水线坏了。
+- **那条手机端图版只有 418px 宽。** 详情页通过构建生成的外链 CSS 限制在原始宽度以内；点击图版可打开原图。
 
 ## 许可
 
 MIT。本站自身是 MIT；被展示的四个项目各自另有许可 —— `AshenCourier` 与
 `ruiqiang-website` 为 MIT，`CryptoWitch` 与 `Notes of Ashen` 未声明许可。
+
+
+### 守卫自身的反例与验收证据
+
+`pnpm test:guard` 在临时目录复制真实构建后注入故障：404 行内样式、重复标题、非首块 JSON-LD 损坏、伪同源域名、缺资源、非首页 JS 超预算、UTF-8 超预算、图片尺寸不符、CSS 第三方资源及数字说明漂移。每个案例必须断言具体错误，不接受任意异常代替预期失败。原始 dist 不被修改。
+
+`pnpm test:assets` 覆盖缺源、损坏图、空白图、手工图入清单、生成失败保留成品与替换中途失败回滚。测试故障注入仅作用于临时目录，不代表真实 Chrome 已渲染成功。
+
+浏览器除原有主题循环、CSP、无 JS、动画与 reduced-motion 契约外，还检查精确 HTTP 状态、所有阶段的网络和控制台错误、真实组件背景的文字对比度、键盘目录和图版、无效主题值及不可用存储。截图及 `result.json` 位于 `.assets-raw/verify/`，预览日志为 `.assets-raw/preview.log`。任何失败阻止发布。
+
+手机页头为品牌与导航两行；小于 1280px 时目录使用原生 `<details>`。这两项与图版原图入口都不增加客户端脚本。
