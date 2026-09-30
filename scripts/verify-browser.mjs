@@ -1146,6 +1146,323 @@ try {
     `localStorage.removeItem('grimoire-theme'); document.documentElement.dataset.theme='brutal';`,
   );
 
+  /* --------------------------------- 就地预览抽屉：原生 <dialog> + showModal() */
+
+  console.log("\u001b[1m就地预览抽屉（<dialog>）\u001b[0m");
+
+  await cdp.send("Emulation.setDeviceMetricsOverride", {
+    width: 1280,
+    height: 900,
+    deviceScaleFactor: 1,
+    mobile: false,
+  });
+  await navigate(`${BASE}/`);
+  await sleep(350);
+
+  const dialogs = await cdp.evaluate(`(() => {
+  const buttons = [...document.querySelectorAll('[data-preview]')];
+  const all = [...document.querySelectorAll('dialog.preview')];
+  const first = buttons.length ? document.getElementById(buttons[0].getAttribute('data-preview')) : null;
+  return {
+    buttons: buttons.length,
+    dialogs: all.length,
+    openBefore: all.filter((dialog) => dialog.open).length,
+    reachesDialog: Boolean(first),
+    labelled: first ? first.getAttribute('aria-labelledby') === (first.id + '-title') : false,
+    archChars: first?.querySelector('.preview__arch')?.textContent?.trim().length ?? 0,
+    items: first?.querySelectorAll('.preview__list li').length ?? 0,
+    titleChars: first?.querySelector('h2')?.textContent?.trim().length ?? 0,
+    h1Inside: all.reduce((sum, dialog) => sum + dialog.querySelectorAll('h1').length, 0),
+    cards: document.querySelectorAll('.entry-card').length,
+  };
+})()`);
+  check(
+    dialogs.buttons === 4 && dialogs.dialogs === 4 && dialogs.buttons === dialogs.cards,
+    `卡片各有一个预览按钮与抽屉（按钮 ${dialogs.buttons} / 抽屉 ${dialogs.dialogs} / 卡片 ${dialogs.cards}）`,
+  );
+  check(dialogs.reachesDialog, "预览按钮的 data-preview 指得到抽屉");
+  check(dialogs.openBefore === 0, "抽屉默认全是关着的");
+  check(dialogs.labelled, "抽屉用 aria-labelledby 指向自己的标题");
+  check(dialogs.archChars >= 40, `架构图有内容（${dialogs.archChars} 字）`);
+  check(dialogs.items >= 4, `难点与心得共 ${dialogs.items} 条（每类至少两条）`);
+  check(dialogs.titleChars > 0, "抽屉里有标题");
+  check(dialogs.h1Inside === 0, "抽屉里没有 h1（每页只能有一个）");
+
+  // 打开
+  await cdp.evaluate(`document.querySelector('[data-preview]').click()`);
+  await sleep(350);
+  const opened = await cdp.evaluate(`(() => {
+  const dialog = document.querySelector('dialog.preview[open]');
+  if (!dialog) return { open: false };
+  const style = getComputedStyle(dialog);
+  const backdrop = getComputedStyle(dialog, '::backdrop');
+  const rect = dialog.getBoundingClientRect();
+  const title = dialog.querySelector('.preview__title');
+  return {
+    open: dialog.open,
+    modal: dialog.matches(':modal'),
+    focusInside: dialog.contains(document.activeElement),
+    bg: style.backgroundColor,
+    color: style.color,
+    radius: style.borderRadius,
+    backdrop: backdrop.backgroundColor,
+    width: Math.round(rect.width),
+    height: Math.round(rect.height),
+    inViewport: rect.left >= -1 && rect.right <= window.innerWidth + 1,
+    overflowX: document.documentElement.scrollWidth > window.innerWidth + 1,
+    // 抽屉是否停在开头：焦点若落在底部的关闭按钮上，浏览器会把它滚进视口，
+    // 于是标题被滚出可见区（这一条是截图发现的，断言里原本没有）
+    scrollTop: dialog.scrollTop,
+    titleVisible: title ? title.getBoundingClientRect().top >= rect.top - 1 : false,
+  };
+})()`);
+  check(opened.open === true, "点「快速预览」会打开抽屉");
+  check(opened.modal === true, "抽屉是**模态**对话框（showModal：背景 inert + 焦点陷阱）");
+  check(opened.focusInside === true, "打开后焦点被移进抽屉内部");
+  check(
+    opened.backdrop !== "rgba(0, 0, 0, 0)" && opened.backdrop !== "transparent",
+    `抽屉带半透明背景遮罩（${opened.backdrop}）`,
+  );
+  check(
+    opened.width > 200 && opened.height > 100 && opened.inViewport && !opened.overflowX,
+    `抽屉尺寸合理且在视口内（${opened.width}×${opened.height}，无横向滚动）`,
+  );
+  // 抽屉必须停在开头：焦点若给了底部的关闭按钮，浏览器会为了让它可见而把内容下滚，
+  // 于是抽屉一打开就错过了自己的标题（这条是看截图才发现的）
+  check(
+    opened.scrollTop === 0 && opened.titleVisible,
+    `抽屉打开时停在开头、标题可见（scrollTop=${opened.scrollTop}）`,
+  );
+
+  // 视觉继承主题变量：换主题，抽屉的底色/文字色必须跟着变（而不是写死的颜色）
+  const dialogThemeFacts = {};
+  for (const theme of ["brutal", "cyber"]) {
+    await cdp.evaluate(`document.documentElement.dataset.theme='${theme}'`);
+    await sleep(250);
+    dialogThemeFacts[theme] = await cdp.evaluate(`(() => {
+    const dialog = document.querySelector('dialog.preview[open]');
+    const style = getComputedStyle(dialog);
+    return { bg: style.backgroundColor, color: style.color, radius: style.borderRadius };
+  })()`);
+  }
+  check(
+    dialogThemeFacts.brutal.bg !== dialogThemeFacts.cyber.bg &&
+      dialogThemeFacts.brutal.color !== dialogThemeFacts.cyber.color,
+    `抽屉的底色与文字色跟随主题变量（${dialogThemeFacts.brutal.bg} vs ${dialogThemeFacts.cyber.bg}）`,
+  );
+  check(
+    dialogThemeFacts.brutal.radius === "0px" && dialogThemeFacts.cyber.radius === "0px",
+    `方角主题下抽屉也是方角（${dialogThemeFacts.brutal.radius} / ${dialogThemeFacts.cyber.radius}）`,
+  );
+  await cdp.evaluate(`document.documentElement.dataset.theme='brutal'`);
+  await sleep(200);
+
+  // 三条关闭路径：关闭按钮、Esc（原生）、点背景（原生的缺口，由脚本补）
+  await cdp.evaluate(
+    `document.querySelector('dialog.preview[open] [data-preview-close]').click()`,
+  );
+  await sleep(250);
+  check(
+    await cdp.evaluate(`document.querySelectorAll('dialog.preview[open]').length === 0`),
+    "「关闭预览」按钮能关掉抽屉",
+  );
+
+  await cdp.evaluate(`document.querySelector('[data-preview]').click()`);
+  await sleep(300);
+  check(
+    await cdp.evaluate(`Boolean(document.querySelector('dialog.preview[open]'))`),
+    "第二次打开仍然有效（不是只能开一次）",
+  );
+  await pressKey("Escape", "Escape", 27);
+  await sleep(300);
+  check(
+    await cdp.evaluate(`document.querySelectorAll('dialog.preview[open]').length === 0`),
+    "Esc 能关掉抽屉（原生行为）",
+  );
+
+  await cdp.evaluate(`document.querySelector('[data-preview]').click()`);
+  await sleep(300);
+  // 先做个命中测试：确认那个点真的落在抽屉外面（落在遮罩上）。
+  // 命中测试的结果直接进断言消息，失败时不用猜。
+  const backdropProbe = await cdp.evaluate(`(() => {
+  const dialog = document.querySelector('dialog.preview[open]');
+  const rect = dialog.getBoundingClientRect();
+  const x = Math.max(4, Math.round(rect.left - 20));
+  const y = Math.round(rect.top + rect.height / 2);
+  const hit = document.elementFromPoint(x, y);
+  return {
+    x, y,
+    rect: [Math.round(rect.left), Math.round(rect.top), Math.round(rect.right), Math.round(rect.bottom)].join(','),
+    viewport: window.innerWidth + 'x' + window.innerHeight,
+    hitTag: hit ? hit.tagName : null,
+    hitIsDialog: hit === dialog,
+  };
+})()`);
+  for (const type of ["mousePressed", "mouseReleased"]) {
+    await cdp.send("Input.dispatchMouseEvent", {
+      type,
+      x: backdropProbe.x,
+      y: backdropProbe.y,
+      button: "left",
+      clickCount: 1,
+    });
+  }
+  await sleep(300);
+  check(
+    await cdp.evaluate(`document.querySelectorAll('dialog.preview[open]').length === 0`),
+    "点抽屉外面（背景遮罩）也能关掉（原生 <dialog> 并不会因为点背景而关）",
+    `点击点 (${backdropProbe.x}, ${backdropProbe.y})，抽屉 rect=${backdropProbe.rect}，` +
+      `视口 ${backdropProbe.viewport}，命中 ${backdropProbe.hitTag}（是抽屉本身：${backdropProbe.hitIsDialog}）`,
+  );
+
+  /* -------------------------- 卡片触感：按下与柔光（纯 CSS，不产生布局抖动） */
+
+  console.log("\u001b[1m卡片触感（按下 / 柔光）\u001b[0m");
+
+  /** 取所有 box-shadow 图层的模糊半径。Chrome 的计算值把颜色放在最前面，
+      而 rgba(...) 里含有逗号 —— 所以颜色部分要整体匹配，不能按逗号切。 */
+  const shadowBlurs = (shadow) =>
+    [...shadow.matchAll(/(?:rgba?\([^)]*\))?\s*(-?[\d.]+)px\s+(-?[\d.]+)px\s+([\d.]+)px/g)].map(
+      (match) => Number(match[3]),
+    );
+
+  /**
+   * 设好主题 → 移到卡片上（触发 :hover）→ 按下不放，量三组值：
+   * 计算样式、**布局盒**、以及"后面的兄弟有没有被挤走"。
+   * transform 会改变 getBoundingClientRect（它包含变换），所以"没有布局抖动"
+   * 不能拿 rect 比 —— 要比 offsetWidth/Height 与兄弟的位置。
+   */
+  async function pressCard(theme) {
+    await cdp.evaluate(`document.documentElement.dataset.theme='${theme}'`);
+    await sleep(400);
+    // 必须用 behavior:'instant' 并当场做命中测试：站点在 html 上设了
+    // `scroll-behavior: smooth`，所以 scrollIntoView 是一段 300ms+ 的动画 ——
+    // 在动画途中量坐标、再派发鼠标事件，指针会落到**另一张卡片**上
+    // （实测命中 LI、而 .entry-card 的 :hover 为 false，看着像"CSS 伪类没生效"，
+    //   其实是我们的指针站错了地方）。
+    const point = await cdp.evaluate(`(() => {
+    const card = document.querySelector('.entry-card');
+    const top =
+      card.getBoundingClientRect().top +
+      window.scrollY -
+      Math.max(0, (window.innerHeight - card.offsetHeight) / 2);
+    window.scrollTo({ top, behavior: 'instant' });
+    const rect = card.getBoundingClientRect();
+    const x = Math.round(rect.left + rect.width / 2);
+    const y = Math.round(rect.top + 30);
+    const hit = document.elementFromPoint(x, y);
+    return {
+      x,
+      y,
+      inViewport: rect.top >= 0 && y <= window.innerHeight,
+      onCard: Boolean(hit) && card.contains(hit),
+    };
+  })()`);
+    check(
+      point.inViewport && point.onCard,
+      `卡片滚进视口且指针真的落在它上面（x=${point.x} y=${point.y}）`,
+    );
+    await cdp.send("Input.dispatchMouseEvent", {
+      type: "mouseMoved",
+      x: point.x,
+      y: point.y,
+    });
+    await sleep(250);
+    const hover = await cdp.evaluate(
+      `getComputedStyle(document.querySelector('.entry-card')).boxShadow`,
+    );
+    await cdp.send("Input.dispatchMouseEvent", {
+      type: "mousePressed",
+      x: point.x,
+      y: point.y,
+      button: "left",
+      clickCount: 1,
+    });
+    await sleep(350);
+    const pressed = await cdp.evaluate(`(() => {
+    const card = document.querySelector('.entry-card');
+    const next = card.parentElement.nextElementSibling;
+    const style = getComputedStyle(card);
+    const hit = document.elementFromPoint(${point.x}, ${point.y});
+    return {
+      transform: style.transform,
+      shadow: style.boxShadow,
+      hovered: card.matches(':hover'),
+      active: card.matches(':active'),
+      hitTag: hit ? hit.tagName + '.' + String(hit.className || '') : null,
+      layoutWidth: card.offsetWidth,
+      layoutHeight: card.offsetHeight,
+      nextTop: next ? Math.round(next.getBoundingClientRect().top) : null,
+      docHeight: document.documentElement.scrollHeight,
+    };
+  })()`);
+    await cdp.send("Input.dispatchMouseEvent", {
+      type: "mouseReleased",
+      x: point.x,
+      y: point.y,
+      button: "left",
+      clickCount: 1,
+    });
+    // 把指针移开，避免残留的 :hover 影响后面的阶段
+    await cdp.send("Input.dispatchMouseEvent", { type: "mouseMoved", x: 4, y: 4 });
+    await sleep(300);
+    const rest = await cdp.evaluate(`(() => {
+    const card = document.querySelector('.entry-card');
+    const next = card.parentElement.nextElementSibling;
+    return {
+      layoutWidth: card.offsetWidth,
+      layoutHeight: card.offsetHeight,
+      nextTop: next ? Math.round(next.getBoundingClientRect().top) : null,
+      docHeight: document.documentElement.scrollHeight,
+    };
+  })()`);
+    return { hover, pressed, rest };
+  }
+
+  const brutalPress = await pressCard("brutal");
+  check(
+    isHardShadow(brutalPress.hover),
+    `粗野主义下卡片悬停仍是硬阴影（${brutalPress.hover}）`,
+  );
+  check(
+    brutalPress.pressed.transform === "matrix(1, 0, 0, 1, 3, 3)",
+    `粗野主义下按下卡片会被"踩"下去 3px（${brutalPress.pressed.transform}）`,
+    `:hover=${brutalPress.pressed.hovered} :active=${brutalPress.pressed.active} 命中 ${brutalPress.pressed.hitTag}`,
+  );
+  check(
+    brutalPress.pressed.shadow === "none",
+    `粗野主义下按下时阴影被踩平（${brutalPress.pressed.shadow}）`,
+  );
+  check(
+    brutalPress.pressed.layoutWidth === brutalPress.rest.layoutWidth &&
+      brutalPress.pressed.layoutHeight === brutalPress.rest.layoutHeight &&
+      brutalPress.pressed.nextTop === brutalPress.rest.nextTop &&
+      brutalPress.pressed.docHeight === brutalPress.rest.docHeight,
+    `按下只动 transform，布局没变（盒 ${brutalPress.pressed.layoutWidth}×${brutalPress.pressed.layoutHeight}，` +
+      `后一张卡 top ${brutalPress.pressed.nextTop}，文档高 ${brutalPress.pressed.docHeight}）`,
+  );
+
+  const darkPress = await pressCard("dark");
+  check(
+    shadowBlurs(darkPress.pressed.shadow).some((blur) => blur > 0),
+    `暗色下按下时卡片边缘透出一圈柔光（${darkPress.pressed.shadow}）`,
+  );
+  check(
+    darkPress.pressed.layoutWidth === darkPress.rest.layoutWidth &&
+      darkPress.pressed.nextTop === darkPress.rest.nextTop &&
+      darkPress.pressed.docHeight === darkPress.rest.docHeight,
+    "暗色的柔光同样不改变布局",
+  );
+  check(
+    shadowBlurs(brutalPress.pressed.shadow).length === 0,
+    "粗野主义按下时完全没有模糊（与暗色的柔光形成对照）",
+  );
+
+  // 复位，后面的阶段从干净状态开始
+  await cdp.evaluate(
+    `localStorage.removeItem('grimoire-theme'); document.documentElement.dataset.theme='brutal';`,
+  );
+
   /* ------------------------- 动效契约：进场动画必须收敛到可见终态 */
 
   console.log("\u001b[1m动效契约（滚动进场）\u001b[0m");

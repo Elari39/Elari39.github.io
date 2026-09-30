@@ -8,8 +8,8 @@
  * 组件级的 <script> 会让首页变成三段、或者让各页脚本不一致，两条都会直接判红。
  *
  * 因此这里的每一块都按「元素可能在也可能不在」来写：主题面板每页都有，
- * 标签过滤条只在首页出现，但这个脚本每页都跑。用 getElementById + 可选链兜住，
- * 而不是按路由判断。
+ * 标签过滤条与预览抽屉只在首页出现，但这个脚本每页都跑。用 getElementById +
+ * 可选链兜住，而不是按路由判断。
  *
  * 体积是要守的：打包产物必须小于 4096 字节才能被 Astro 内联（否则页面多一个请求），
  * 所以能一行写完的就不写三行，能用事件委托的就不逐个绑定。多出来的字节不是风格问题，
@@ -126,8 +126,9 @@ function applyFilter(): void {
 
 /* ------------------------------------------------------- 事件（一次委托） */
 
-// 一个 document 级监听处理三件事：选主题、切标签、以及"点面板外面收起面板"。
-// 逐个元素绑定会在每次渲染后重复注册，也会让体积随组件数增长。
+// 一个 document 级监听处理四件事：选主题、切标签、开关预览抽屉、
+// 以及"点面板外面收起面板"。逐个元素绑定会在每次渲染后重复注册，
+// 也会让体积随组件数增长。
 document.addEventListener('click', (event) => {
   const target = event.target as Element | null;
   if (!target) return;
@@ -152,6 +153,35 @@ document.addEventListener('click', (event) => {
       button.setAttribute('aria-pressed', 'false');
     }
     applyFilter();
+    return;
+  }
+
+  // 卡片的「就地预览」抽屉。用原生 showModal()：焦点陷阱、Esc 关闭、背景 inert
+  // 都由浏览器给，我们只需要"打开"这一件事。
+  //
+  // 后面那句 scrollTop = 0 不是多余的：showModal() 会把焦点交给抽屉里第一个可聚焦的
+  // 东西（我们给了容器 autofocus，但浏览器仍会为"把焦点元素滚进视口"动一次滚动，
+  // 实测停在 19px —— 正好是外层 1.2rem 的内边距），于是抽屉一打开就错过了自己的标题。
+  // 与其去赌焦点元素的滚动对齐方式，不如打开后直接把它归位。
+  const opener = target.closest('[data-preview]');
+  if (opener) {
+    const dialog = document.getElementById(opener.getAttribute('data-preview') ?? '');
+    if (dialog instanceof HTMLDialogElement) {
+      dialog.showModal();
+      dialog.scrollTop = 0;
+    }
+    return;
+  }
+
+  if (target.closest('[data-preview-close]')) {
+    target.closest('dialog')?.close();
+    return;
+  }
+
+  // 点抽屉的背景关闭：命中背景时事件目标就是 <dialog> 本身（内容都在 .preview__inner 里）。
+  // 原生 <dialog> 并不会因为点背景而关闭，这是要自己补的第二处。
+  if (target instanceof HTMLDialogElement && target.classList.contains('preview')) {
+    target.close();
     return;
   }
 

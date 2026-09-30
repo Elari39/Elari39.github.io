@@ -738,14 +738,23 @@
     display: none;
   }
 
-  .theme-dot {
-    display: block;
+  /* 色块：触发器上的那一枚，与面板里每一格的预览共用同一套画法 ——
+     两者只在布局上不同（一个 block、一个不许被压扁），所以合并成一条规则。
+     色块画的是 var(--c-canvas)/var(--c-primary)：写在触发器上它就自动是"当前主题"，
+     写在面板选项上（那些选项自带 data-theme）它就是"那一套主题"。 */
+  .theme-dot,
+  .theme-opt__swatch {
     width: 1rem;
     height: 1rem;
+    /* 描边宽度读 --bw，而它是**色块自己那套主题**的值：粗野主义那一格是 2px 方角、
+       瑞士那一格是 1px 方角 */
     border: var(--bw) solid var(--c-hairline);
     border-radius: var(--r-pill);
-    /* 对角两半：强调色 + 画布色。这是"当前主题"的最小可辨认表示 */
     background: linear-gradient(135deg, var(--c-primary) 0 50%, var(--c-canvas) 50% 100%);
+  }
+
+  .theme-dot {
+    display: block;
   }
 
   .theme-menu__panel {
@@ -801,18 +810,11 @@
     font-weight: 600;
   }
 
-  /* 选项前的色块：**它自己**带 data-theme="<id>"，于是那套主题的 token 块
-     对它生效，用 var(--c-canvas)/var(--c-primary) 画出来就是那套主题的颜色。
-     零十六进制重复 —— 也就不会出现"改了主题色、忘了改面板色块"这种漂移。 */
+  /* 面板里的色块**自带 data-theme="<id>"**，于是那套主题的 token 块对它生效，
+     用同一套变量画出来就是那套主题的颜色。零十六进制重复 ——
+     也就不会出现"改了主题色、忘了改面板色块"这种漂移。 */
   .theme-opt__swatch {
     flex: none;
-    width: 1rem;
-    height: 1rem;
-    /* 描边宽度读 --bw —— 而它是**色块自己那套主题**的值，
-       所以粗野主义那一格是 2px 方角、瑞士那一格是 1px 方角 */
-    border: var(--bw) solid var(--c-hairline);
-    border-radius: var(--r-pill);
-    background: linear-gradient(135deg, var(--c-primary) 0 50%, var(--c-canvas) 50% 100%);
   }
 
   /* ---- 标签过滤条：纯静态列表 + 极少量 JS 只切 hidden ----
@@ -872,6 +874,89 @@
     margin-left: auto;
     font-size: 0.8125rem;
     color: var(--c-muted);
+  }
+
+  /* ---- 卡片的「就地预览」抽屉：原生 <dialog> ----
+     焦点陷阱、Esc 关闭、把背景置为 inert、以及 ::backdrop 都由浏览器给，
+     这里只负责"长什么样"。全部读 --r-* / --bw token，所以五套主题
+     （含方角的 brutal / cyber / swiss）不需要各写一份覆盖。
+
+     background / color / margin 这三条是**必须**重申的：UA 给 dialog 的是
+     Canvas / CanvasText（不继承 body），靠 `margin: auto` 居中；而 Tailwind 的
+     preflight 有一句 `* { margin: 0 }`，作者样式优先于 UA 样式，于是模态框会被顶到
+     左上角（实测 rect 从 (272,98) 变成 (0,0)，看着像"抽屉没居中"）。 */
+  .preview {
+    width: min(46rem, 92vw);
+    max-height: 82vh;
+    margin: auto;
+    padding: 1.2rem 1.4rem 1.5rem;
+    border: var(--bw) solid var(--c-hairline);
+    border-radius: var(--r-card);
+    background: var(--c-surface);
+    color: var(--c-body);
+    overflow: auto;
+  }
+
+  .preview::backdrop {
+    background: rgb(0 0 0 / 55%);
+  }
+
+  /* 打开抽屉时我们主动把焦点交给这个容器（见 ProjectCard.astro 的说明），
+     而 Chrome 会把这次程序化聚焦当成"需要可见指示"，于是站内那条
+     `:focus-visible { outline: 2px solid var(--c-primary) }` 会在整个抽屉内容外面
+     画一大圈强调色 —— 截图里一眼就能看到（瑞士极简下是一整圈红框）。
+     它不是键盘操作产生的，所以这里明确不画；抽屉内部的可操作元素（关闭按钮）
+     仍然有自己的焦点环。 */
+  .preview__inner:focus-visible {
+    outline: none;
+  }
+
+  .preview__title {
+    margin-top: 0.3rem;
+    font-size: 1.35rem;
+  }
+
+  /* 三段小标题：等宽小字，与站内其它标签同一种语言 */
+  .preview__h {
+    margin-top: 1.3rem;
+    color: var(--c-muted);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.12em;
+  }
+
+  /* 架构图：等宽 ASCII。横向可滚，但绝不撑宽页面或抽屉 */
+  .preview__arch {
+    margin-top: 0.55rem;
+    overflow-x: auto;
+    padding: 0.85rem 1rem;
+    border: var(--bw) solid var(--c-hairline);
+    border-radius: var(--r-sm);
+    background: var(--c-code);
+    color: var(--c-ink);
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    line-height: 1.7;
+  }
+
+  .preview__list {
+    margin: 0.55rem 0 0;
+    padding-left: 1.2rem;
+    list-style: disc;
+    font-size: 0.9375rem;
+    line-height: 1.7;
+  }
+
+  .preview__list li + li {
+    margin-top: 0.35rem;
+  }
+
+  .preview__foot {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 1.3rem;
+    padding-top: 1rem;
+    border-top: var(--bw) solid var(--c-hairline);
   }
 
   /* 「条目」卡片：书页的质感 —— 发丝描边 + 悬停抬起 + 顶部一道强调色 */
@@ -1846,7 +1931,7 @@
   display: none;
 }
 
-[data-theme='swiss'] :is(.btn, .chip, .badge, .glyph, .plate, .entry-card, .attest, .rounded-card, .nav-link, #theme-toggle) {
+[data-theme='swiss'] :is(.btn, .chip, .badge, .glyph, .plate, .entry-card, .attest, .rounded-card, .nav-link, #theme-toggle, .theme-menu__panel) {
   border-radius: 0;
   box-shadow: none;
 }
@@ -1892,8 +1977,35 @@
   color: var(--c-hairline);
 }
 
-[data-theme='swiss'] .theme-menu__panel {
+/* -----------------------------------------------------------------------------
+   7. 卡片的触感：纯 CSS 伪类，只动 transform 与 box-shadow
+   -----------------------------------------------------------------------------
+   两套主题各得其所 —— 粗野主义是"按下去把阴影踩平"，暗色是"边缘透出一圈柔光"。
+   共同的硬约束：**不产生布局抖动**。transform 走合成层、box-shadow 只重绘不重排，
+   所以按下去前后卡片的 getBoundingClientRect 不会变（浏览器验收里有一条专门量它）。
+
+   放在文件末尾是因为要和上面的 :hover 抢同一个元素的 transform：
+   两者特异度相同（0,2,0），由源序决定 —— 写在后面，按下时才压得住悬停。 */
+
+[data-theme='brutal'] .entry-card:active {
+  /* 与 .btn:active 同一种语言：位移 + 阴影归零 */
+  transform: translate(3px, 3px);
   box-shadow: none;
+}
+
+[data-theme='dark'] .entry-card:hover {
+  /* 一圈柔和的外发光 + 一道发丝描边。用 --c-glow（8 位十六进制带 alpha）
+     而不是 color-mix()，省下产物里的一份 @supports 孪生规则 */
+  box-shadow:
+    0 0 0 1px var(--c-hairline),
+    0 0 30px -9px var(--c-glow);
+}
+
+[data-theme='dark'] .entry-card:active {
+  /* 按下时收窄光晕：同一套语言里的"压下去" */
+  box-shadow:
+    0 0 0 1px var(--c-hairline),
+    0 0 12px -6px var(--c-glow);
 }
 
 /* Mobile navigation remains legible without a scripted menu. */

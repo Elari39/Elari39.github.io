@@ -450,6 +450,76 @@ export async function audit(root, dist) {
   check(Boolean(bar), "首页缺少标签过滤条");
   check(attr(bar, "hidden") !== undefined, "标签过滤条在服务端渲染时应带 hidden");
 
+  /* 卡片的「就地预览」抽屉：每张卡片一个、id 唯一、按钮指得到它，
+     而且内容**真的来自 frontmatter** —— 这一条挡的是"抽屉做出来了但里面是占位文字"。
+     比较前把空白压平：YAML 的块标量会带换行与缩进，渲染进 <pre> 后又原样保留，
+     两边形状不同、内容相同。 */
+  const norm = (value) => String(value ?? "").replace(/\s+/g, " ").trim();
+  /** 在某个节点的子树里找匹配的节点（home.nodes 是拍平的，没有父指针） */
+  const within = (node, predicate) => {
+    const found = [];
+    const visit = (current) => {
+      if (current.tagName && predicate(current)) found.push(current);
+      for (const child of current.childNodes ?? []) visit(child);
+      if (current.content) visit(current.content);
+    };
+    visit(node);
+    return found;
+  };
+
+  const dialogs = home.nodes.filter((node) => hasClass(node, "preview"));
+  check(
+    dialogs.length === published.length,
+    `首页预览抽屉数 ${dialogs.length} ≠ 已发布条目数 ${published.length}`,
+  );
+  const previewIds = dialogs.map((node) => attr(node, "id"));
+  check(previewIds.every(Boolean), "预览抽屉缺少 id");
+  check(new Set(previewIds).size === previewIds.length, "预览抽屉的 id 重复");
+
+  const openers = home.nodes.filter((node) => attr(node, "data-preview") !== undefined);
+  check(openers.length === published.length, "预览按钮数与已发布条目数不符");
+  for (const opener of openers) {
+    check(
+      previewIds.includes(attr(opener, "data-preview")),
+      `预览按钮指向的抽屉不存在：${attr(opener, "data-preview")}`,
+    );
+    check(norm(text(opener)).length > 0, "预览按钮没有可访问名称");
+    check(
+      attr(opener, "aria-haspopup") === "dialog",
+      "预览按钮缺少 aria-haspopup=dialog",
+    );
+  }
+
+  dialogs.forEach((dialog, index) => {
+    const entry = published[index];
+    const slug = entry?.slug ?? `#${index}`;
+    const architecture = within(dialog, (node) => hasClass(node, "preview__arch"))[0];
+    check(Boolean(architecture), `${slug} 的预览缺少架构图`);
+    check(
+      norm(text(architecture)) === norm(entry?.preview?.architecture),
+      `${slug} 的预览架构图与 frontmatter 不一致`,
+    );
+    const body = norm(text(dialog));
+    for (const item of [
+      ...(entry?.preview?.challenges ?? []),
+      ...(entry?.preview?.lessons ?? []),
+    ]) {
+      check(
+        body.includes(norm(item)),
+        `${slug} 的预览缺少「${norm(item).slice(0, 14)}…」`,
+      );
+    }
+    // 抽屉在卡片里，所以它绝不能带 h1 —— 每页只允许一个（那条断言在别处也会红）
+    check(
+      within(dialog, (node) => node.tagName === "h1").length === 0,
+      `${slug} 的预览里有 h1`,
+    );
+    check(
+      within(dialog, (node) => attr(node, "data-preview-close") !== undefined).length === 1,
+      `${slug} 的预览缺少关闭按钮`,
+    );
+  });
+
   const locs = [];
   for (const file of inventory.filter((f) => /sitemap.*\.xml$/.test(f)))
     locs.push(

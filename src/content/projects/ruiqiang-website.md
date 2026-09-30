@@ -30,6 +30,29 @@ highlights:
   - "图片管线是白名单 + BLOCKED 优先：从 img/ 派生 webp / avif 各 1600 / 800 两档、单图 < 300 KB，只按登记过的语义 key 产出，输出幂等。"
   - "响应式与交互由浏览器探针验收：headless Chrome 真的去点汉堡菜单、开灯箱、滚页面，三档视口（<768 / 768–1023 / ≥1024）各自断言，而不是只看 CSS 断点写了没有。"
   - "字体构建期自托管：Archivo Black + Space Grotesk + Noto Sans SC 由 next/font 打进本站，靠 unicode-range 子集化切成上百片、中文 preload: false，另有 CJK 兜底链，不出现隐形文字。"
+# 卡片「快速预览」抽屉里的三段内容（详见正文的「三条纪律」与「如实划界」）
+preview:
+  architecture: |
+    文案（每个事实都要能回溯到工商登记材料）
+      │
+      ▼
+    Next.js 16 构建期静态生成 ──► 5 个页面 + sitemap.xml + robots.txt
+      │                              │
+      │                              └─ 产物层断言：canonical / og:url /
+      │                                 og:image / sitemap 必须是线上域名
+      ▼
+    img/ ──白名单 + BLOCKED 优先──► public/images/（webp/avif × 1600/800）
+                                       ▲ 营业执照照在这里被 exit 2 拒绝
+      ▼
+    headless Chrome（CDP）探针：三档视口真点汉堡菜单 / 灯箱 / 悬浮条
+  challenges:
+    - "元数据必须是绝对事实。这条来自一次真实事故：上线后 canonical / og:url / og:image / sitemap 全指向 http://localhost:3000，页面却看起来完全正常。旧断言把产物与「同一进程里算出的 SITE_URL」比对——体检与病灶同源，于是恒真；现在域名以常量内置，环境变量只作可选覆盖，覆盖值不是干净的 https 主机名就直接终止构建。"
+    - "证件照不发布要做成构建闸门：营业执照含统一社会信用代码与法定代表人姓名，它在 public/ 下不存在，并在构建管线的 BLOCKED 名单里被显式拒绝（exit 2）——即使有人把它塞进派生白名单，构建也会主动终止。"
+    - "禁止词表自身也要有自检测试：「承接过」「已完成项目」「众多客户」「深耕多年」这类词命中即让构建失败，而表里每一条都必须是能匹配到的活规则，否则会悄悄积累一批永不触发的废规则。"
+  lessons:
+    - "测试要读产物层，不是源码层：只测组件渲染会漏掉「产物里的 URL 指错了」这类只有产物才看得见的错。"
+    - "三档视口的交互得靠浏览器探针真点一遍——只看 CSS 断点写了没有，等于没测。"
+    - "地图刻意不含精确坐标：现有材料里没有经纬度的出处，而一个标错的地图点比没有标点更糟。"
 links:
   repo: "https://github.com/Elari39/ruiqiang-website"
   live: "https://ruiqiang-jianzhu.netlify.app/"

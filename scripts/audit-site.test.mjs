@@ -165,6 +165,44 @@ const cases = [
     (s) => nthReplace(s, /data-tags="[^"]*"/, 0, 'data-tags="go go"'),
     "有重复标签",
   ],
+  // 就地预览抽屉：内容必须真的来自 frontmatter，按钮必须指得到抽屉
+  [
+    "预览按钮指向不存在的抽屉",
+    "index.html",
+    (s) => nthReplace(s, /data-preview="[^"]*"/, 0, 'data-preview="nope"'),
+    "指向的抽屉不存在",
+  ],
+  [
+    "预览按钮缺 aria-haspopup",
+    "index.html",
+    (s) => nthReplace(s, / aria-haspopup="dialog"/, 0, ""),
+    "缺少 aria-haspopup",
+  ],
+  [
+    "预览抽屉里有 h1",
+    "index.html",
+    // 用正则匹配整个开标签：那个 div 上还有 tabindex / autofocus，
+    // 写死成 `<div class="preview__inner">` 会在属性变化后静默失配
+    // （失配会被下面那句"反例必须实际改变输入"抓住，但那是夹具过期的报警，不是产品的问题）
+    (s) => s.replace(/(<div class="preview__inner"[^>]*>)/, "$1<h1>故障</h1>"),
+    "的预览里有 h1",
+  ],
+  [
+    "预览架构图与 frontmatter 不一致",
+    "index.html",
+    (s) =>
+      s.replace(
+        '<pre class="preview__arch">',
+        '<pre class="preview__arch">被改掉的内容 ',
+      ),
+    "架构图与 frontmatter 不一致",
+  ],
+  [
+    "预览里少了一条心得",
+    "index.html",
+    (s) => nthReplace(s, /<li>[^<]{0,40}<\/li>/, 0, "<li>换掉了</li>"),
+    "的预览缺少",
+  ],
 ];
 for (const [name, file, mutate, expected] of cases)
   test(name, async () => {

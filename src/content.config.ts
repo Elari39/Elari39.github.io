@@ -85,6 +85,21 @@ const projects = defineCollection({
      */
     tags: z.array(z.string().min(1)).min(2),
     highlights: z.array(z.string().min(1)).min(3),
+    /**
+     * 卡片「快速预览」抽屉里的三段内容。
+     *
+     * 为什么不复用 summary + highlights：抽屉要回答的是另外三个问题 ——
+     * 这套东西怎么搭起来的（架构）、当时卡在哪（难点）、最后学到什么（心得）。
+     * 而且这里是**策展的浓缩版**：正文仍是一份完整叙述、不是抽屉的加长版，
+     * 所以每一段都刻意短（架构图控制在十来行）。
+     * 两条的下限是有意的：只写一条几乎等于没写，而强制两条能逼出"另一面"。
+     */
+    preview: z.object({
+      /** 等宽 ASCII 架构图（与正文里的 ```text 图同一种风格，这里是浓缩版） */
+      architecture: z.string().min(20),
+      challenges: z.array(z.string().min(1)).min(2),
+      lessons: z.array(z.string().min(1)).min(2),
+    }),
     links: z.object({
       repo: repoUrl,
       live: httpsUrl.optional(),

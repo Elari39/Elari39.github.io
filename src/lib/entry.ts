@@ -20,6 +20,13 @@ export interface ProjectLinks {
   live?: string;
 }
 
+/** 卡片「快速预览」抽屉的内容：架构图 / 实现难点 / 心得 */
+export interface ProjectPreview {
+  architecture: string;
+  challenges: string[];
+  lessons: string[];
+}
+
 export interface ProjectView {
   /** 路由片段，也就是 Markdown 文件名 */
   slug: string;
@@ -37,6 +44,8 @@ export interface ProjectView {
   /** 首页标签过滤用的策展标签（已归一化，见 src/lib/tags.ts） */
   tags: string[];
   highlights: string[];
+  /** 卡片上「快速预览」抽屉的内容 */
+  preview: ProjectPreview;
   links: ProjectLinks;
   gallery: GalleryPlate[];
 }

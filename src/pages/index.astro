@@ -29,6 +29,11 @@ const projects: ProjectView[] = entries.map((entry) => ({
   stack: [...entry.data.stack],
   tags: normalizeTags(entry.data.tags),
   highlights: [...entry.data.highlights],
+  preview: {
+    architecture: entry.data.preview.architecture,
+    challenges: [...entry.data.preview.challenges],
+    lessons: [...entry.data.preview.lessons],
+  },
   links: { ...entry.data.links },
   gallery: entry.data.gallery.map((plate) => ({ ...plate })),
 }));

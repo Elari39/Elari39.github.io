@@ -31,6 +31,27 @@ highlights:
   - "匿名也能管理：一次性管理密钥只在创建响应里出现一次，数据库只存它的 SHA-256，登录后可以把它认领到账号下。"
   - "降级而不是熔断：Redis 限流不可用时全量放行并累计降级次数；PostgreSQL 不可用时按 SQLSTATE 分类，只对连接类与资源类失败返回 503 + Retry-After。"
   - "契约与隐私：/api 统一错误体覆盖到 net/http 内建的 404 与 405；点击明细的 IP 只回掩码网段（IPv4 /24、IPv6 /64）；CDN 前置时用 real_ip 还原访客地址。"
+# 卡片「快速预览」抽屉里的三段内容：跳转路径是这套系统的主轴，所以架构图从它画起
+preview:
+  architecture: |
+    GET /{code}
+       │
+       ▼
+    Redis ──GET──┬── 命中 ──► 302 跳转
+                 │             └─ INCR 计数 + XADD 点击流（都不阻塞跳转）
+                 └── 未命中 ──► singleflight ──► PostgreSQL 回源一次 ──► 回填 Redis
+                                                       │
+          worker（每 2 秒）◄── Redis Stream（有界队列）──┘  批量落库
+    详情页 / 列表页的「总点击」= PG 基线 + Redis 待同步增量
+  challenges:
+    - "跳转路径上一个数据库调用都不能有：GET /{code} 只碰 Redis（GET + INCR + XADD），缓存未命中才回源一次 PostgreSQL，同一短码的并发未命中用 singleflight 合并成一次回源。"
+    - "统计不能拖慢跳转：点击写入有界队列（默认 4096），队满直接丢弃并计数——丢弃数在 /healthz/details 的 dropped_clicks 里可见。宁可少记一次点击，也不让 302 慢 1 毫秒。"
+    - "两个口径的计数要一致：详情页与列表页的「总点击」都是 PG 基线 + Redis 待同步增量，列表页一次 MGET 批量读，worker 每 2 秒回刷，正常偏差小于 2 秒。"
+    - "降级而不是熔断：Redis 限流不可用时全量放行并累计降级次数；PostgreSQL 不可用时按 SQLSTATE 分类，只对连接类与资源类失败返回 503 + Retry-After。"
+  lessons:
+    - "先写清楚「哪条路径绝对不能慢」，再决定哪些事可以异步——跳转是同步的、统计是异步的。这条线划对了，后面每个决定都会自己落位。"
+    - "「匿名也能管理」这件事要在写「登录后才能管理」之前想清楚：一次性管理密钥只在创建响应里出现一次、库里只存它的 SHA-256，登录后再认领到账号下。晚一步就要动数据模型。"
+    - "把丢弃数暴露出来：有界队列的关键不是不丢，而是丢了多少看得见。"
 links:
   repo: "https://github.com/Elari39/AshenCourier"
   live: "https://shorten.miku831.fun/"
