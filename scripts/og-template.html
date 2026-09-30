@@ -1,7 +1,9 @@
 <!doctype html>
 <!--
   OG 卡片模板。
-  由 scripts/prepare-assets.py 用无头 Chrome 渲染成 public/og.png（1200×630）。
+  由 scripts/prepare-assets.py 用无头 Chrome 渲染成 public/og.jpg（1200×630）。
+  JPEG 而不是 PNG：这张图是扁平渐变，PNG 要 290 KB，JPEG q85 只要 ~42 KB —— 
+  社交平台只把它当缩略图看，看不出差别。
   这里刻意不引任何外部资源：字体走系统字体栈，图形是 CSS，
   和站点本体保持同一套色板（见 src/styles/global.css）。
 -->
@@ -71,7 +73,9 @@
 
       .sub {
         margin-top: 30px;
-        max-width: 900px;
+        /* 960px 是刻意的：这一行的文案约 32 个汉字 × 25px ≈ 800px，
+           留出余量就不会在「企业官 / 网」这种地方断行（断在半句上很难看）。 */
+        max-width: 960px;
         font-size: 25px;
         line-height: 1.5;
         color: #d8d4cb;
@@ -110,11 +114,12 @@
     <div class="rule"></div>
     <h1>Ashen Witch's Grimoire</h1>
     <p class="cn">灰烬女巫的魔典</p>
-    <p class="sub">三个自建项目的条目库：博客系统、短链服务，以及一个本地文档保险箱。</p>
+    <p class="sub">四个自建项目的条目库：博客系统、短链服务、文档保险箱与企业官网。</p>
     <div class="entries">
       <span>Notes of Ashen</span>
       <span>AshenCourier</span>
       <span>CryptoWitch</span>
+      <span>Ruiqiang Website</span>
     </div>
   </body>
 </html>

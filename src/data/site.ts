@@ -69,7 +69,7 @@ export const SITE = {
   attestations: [
     { value: '0', caption: '次第三方请求 · 字体与图标都是自己的' },
     { value: '≤ 4 KB', caption: '客户端 JS（gzip）· 守卫盯着上限' },
-    { value: '9 组', caption: '配色 × 5 主题 · 文字 ≥ 4.5:1，装饰 ≥ 3:1' },
+    { value: '9 组', caption: '配色 × 9 主题 · 文字 ≥ 4.5:1，装饰 ≥ 3:1' },
   ],
 } as const;
 

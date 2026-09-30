@@ -21,7 +21,9 @@ const { title, description = SITE.description, ogType = 'website', accent, jsonL
 
 const pageTitle = title ? `${title} · ${SITE.title}` : `${SITE.title} · ${SITE.subtitle}`;
 const canonical = new URL(noindex ? '/404.html' : Astro.url.pathname, SITE.url).href;
-const ogImage = new URL('/og.png', SITE.url).href;
+/** OG 卡片。JPEG 而不是 PNG：同样是 1200×630，PNG 要 290 KB、JPEG 只要 ~42 KB，
+ *  而每一次分享预览都要付这份流量。守卫会核对这个绝对地址与产物里的文件。 */
+const ogImage = new URL('/og.jpg', SITE.url).href;
 const jsonLdBlocks = jsonLd ? (Array.isArray(jsonLd) ? jsonLd : [jsonLd]) : [];
 ---
 
@@ -50,6 +52,7 @@ const jsonLdBlocks = jsonLd ? (Array.isArray(jsonLd) ? jsonLd : [jsonLd]) : [];
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonical} />
     <meta property="og:image" content={ogImage} />
+    <meta property="og:image:type" content="image/jpeg" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content={`${SITE.title} —— ${SITE.subtitle}`} />

@@ -30,7 +30,7 @@
   public/shots/ruiqiang-website/*.webp —— 复用 ruiqiang-website 已公开发布的那三张实拍
   public/apple-touch-icon.png         —— Pillow 画出来的印记
   public/favicon.ico                  —— 由同一枚印记生成多尺寸
-  public/og.png                       —— 用无头 Chrome 渲染 scripts/og-template.html
+  public/og.jpg                       —— 用无头 Chrome 渲染 scripts/og-template.html，再存成 JPEG
   src/data/plates.ts                  —— 图版真实像素尺寸（喂给 <img> 的 width/height）
 """
 
@@ -275,12 +275,15 @@ def write_plate_sizes() -> None:
 
 def build_og(chrome: Path) -> None:
     template = ROOT / "scripts" / "og-template.html"
-    out = PUBLIC / "og.png"
+    out = PUBLIC / "og.jpg"
     render(chrome, template.as_uri(), out, (1200, 630), wait_ms=1500)
     with Image.open(out) as image:
         image = image.convert("RGB")
-        image.save(out, "PNG", optimize=True)
-        log(f"OG 卡片：{out.name}  {image.width}x{image.height}")
+        # JPEG 而不是 PNG：这张卡片是 1200×630 的扁平渐变，PNG 要 290 KB、
+        # JPEG q85 只要 ~42 KB（省 86%）。社交平台只把它当缩略图看，
+        # 而每一次分享预览都要为它付流量。质量 85 实测文字边缘没有可见损失。
+        image.save(out, "JPEG", quality=85, optimize=True, progressive=True)
+        log(f"OG 卡片：{out.name}  {image.width}x{image.height}  {out.stat().st_size // 1024} KB")
 
 
 def validate_image(target: Path) -> tuple[int, int]:

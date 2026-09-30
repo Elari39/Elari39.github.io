@@ -11,7 +11,7 @@
  *     选中态唯一、键盘可达（Enter 展开 / Tab 落到选项 / Enter 选中）、
  *     Esc 与点外部能收起（这两处原生不支持，是脚本补的）
  *   · 视图过渡真的被调用过（而不只是 API 存在），且把 API 删掉后切换照样生效
- *   · 五套主题的 CSS 变量真的生效（读 computedStyle，不是看源码）
+ *   · 每套主题的 CSS 变量真的生效（读 computedStyle，不是看源码）
  *   · 每套主题"token 覆盖不到"的那一半也真的生效：粗野主义的方角/硬阴影/字重/去毛玻璃、
  *     赛博终端的 CRT 扫描线（读 ::after 的 background-image）与等宽显示字体、
  *     瑞士极简的关底纹/去阴影/加大字号
@@ -100,7 +100,8 @@ const CHROME_CANDIDATES = [
   "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
 ];
 
-/** 五套主题的 id —— 从 src/lib/theme.ts 的 THEME_IDS 读，见上面的说明 */
+/** 全部主题的 id —— 从 src/lib/theme.ts 的 THEME_IDS 读，见上面的说明。
+ *  条数由 THEME_IDS 决定，别在文案或断言里写死数字。 */
 const DIST = path.join(ROOT, "dist");
 const ROUTES = (await files(DIST))
   .filter((f) => f.endsWith(".html"))
@@ -542,7 +543,7 @@ try {
       brokenImages.map((image) => image.src).join(", "),
     );
 
-    /* 五套主题的计算样式。
+    /* 逐套主题的计算样式。
        不满足于"背景色变了"：主题里有一半东西是 token 覆盖不到的（方角、硬阴影、
        字重、去掉毛玻璃、CRT 扫描线、大字号），只能读计算值才看得见。
        每套主题都等够 .entry-card 那条 240ms 的 box-shadow 过渡 —— 等太短会读到
@@ -580,7 +581,7 @@ try {
     const backgrounds = THEMES.map((theme) => facts[theme].bg);
     check(
       new Set(backgrounds).size === THEMES.length,
-      `${route.path} 五套主题的背景色互不相同（${backgrounds.join(" / ")}）`,
+      `${route.path} ${THEMES.length} 套主题的背景色互不相同（${backgrounds.join(" / ")}）`,
     );
 
     // 显示字体换的是不是只有粗野主义那一套：浅色必须回到衬线栈。
@@ -687,6 +688,77 @@ try {
       `${route.path} 瑞士极简的 h1 比粗野主义更大（${swiss.h1Size} > ${brutal.h1Size}）`,
     );
 
+    /* 后加的四套主题（水墨宣纸 / 午夜档案馆 / 霓虹落日 / 孔版印刷）。
+       它们的个性全部走**运行时 token**（标题字体栈、方角/圆角、错位套印），
+       而不是像 brutal / swiss 那样另写一份无层级的逐类覆盖块 —— 那是为了把产物体积
+       压进 48 KB 预算（见 global.css 第 1b 与第 8 节的说明）。所以这里同样只能读计算值：
+       只换颜色的"假主题"会在这几条上红。 */
+    const { ink, archive, sunset, riso } = facts;
+    const SERIF = /Iowan|Georgia|Palatino|Songti/i;
+
+    for (const [name, f] of [
+      ["水墨宣纸", ink],
+      ["孔版印刷", riso],
+    ]) {
+      /* `--r-pill` 归零只对读运行时 token 的组件生效（面板触发器每页都在）；
+         既有组件读的是被 @theme inline 内联的字面量，所以卡片方角靠 global.css
+         第 8 节那条覆盖 —— 卡片只在首页出现，先确认它真的在再量（空集不算通过）。 */
+      check(
+        f.toggleRadius === "0px",
+        `${route.path} ${name}下按钮是方角（${f.toggleRadius}）`,
+      );
+      if (route.path === "/") {
+        check(f.cardCount > 0, `首页确实有 ${f.cardCount} 张条目卡`);
+        check(
+          f.cardRadius === "0px",
+          `${route.path} ${name}的卡片是方角（${f.cardRadius}）`,
+        );
+      }
+    }
+
+    for (const [name, f] of [
+      ["午夜档案馆", archive],
+      ["霓虹落日", sunset],
+    ]) {
+      check(
+        Number.parseFloat(f.toggleRadius) > 0,
+        `${route.path} ${name}保留圆角（${f.toggleRadius}）`,
+      );
+    }
+
+    // 字体：ink / archive 走默认衬线栈（中文落到宋体），sunset / riso 各有一套无衬线栈
+    check(
+      SERIF.test(ink.h1Font) && SERIF.test(archive.h1Font),
+      `${route.path} 水墨宣纸与午夜档案馆的 h1 是衬线`,
+      `${ink.h1Font} | ${archive.h1Font}`,
+    );
+    check(
+      !SERIF.test(sunset.h1Font) && !SERIF.test(riso.h1Font),
+      `${route.path} 霓虹落日与孔版印刷的 h1 是无衬线`,
+      `${sunset.h1Font} | ${riso.h1Font}`,
+    );
+    check(
+      sunset.h1Font !== riso.h1Font,
+      `${route.path} 两套无衬线主题用的是不同的字体栈`,
+      `${sunset.h1Font} | ${riso.h1Font}`,
+    );
+
+    /* 孔版印刷的"错位套印"：也是硬阴影，但与粗野主义的区别在**阴影颜色** ——
+       粗野主义用描边色（黑），孔版印刷用第二色（青）。只断言 isHardShadow 是分不开的。
+       卡片只在首页出现，所以先确认它真的在，再量（空集不算通过）。 */
+    if (route.path === "/") {
+      check(riso.cardCount > 0, `首页确实有 ${riso.cardCount} 张条目卡`);
+      check(
+        isHardShadow(riso.cardShadow) &&
+          /rgb\(10,\s*95,\s*90\)/.test(riso.cardShadow ?? ""),
+        `${route.path} 孔版印刷的卡片是青色的错位套印（${riso.cardShadow}）`,
+      );
+      check(
+        riso.cardShadow !== brutal.cardShadow,
+        `${route.path} 孔版印刷的套印与粗野主义的硬阴影不是同一种`,
+      );
+    }
+
     // 窄屏
     await cdp.send("Emulation.setDeviceMetricsOverride", {
       width: 390,
@@ -723,7 +795,7 @@ try {
     report.push({
       route: route.path,
       ...state,
-      // 每套主题的背景色都留档：人复核 report.json 时能一眼看出"五套确实不同"
+      // 每套主题的背景色都留档：人复核 report.json 时能一眼看出"每套确实不同"
       themeBackgrounds: Object.fromEntries(
         THEMES.map((theme) => [theme, facts[theme].bg]),
       ),
@@ -842,7 +914,7 @@ try {
   }
   check(
     new Set(seenBackgrounds.values()).size === THEMES.length,
-    `五套主题的背景色互不相同（${[...seenBackgrounds.values()].join(" / ")}）`,
+    `${THEMES.length} 套主题的背景色互不相同（${[...seenBackgrounds.values()].join(" / ")}）`,
   );
 
   // 刷新后保持。这一步顺带证明「引导脚本与 THEME_IDS 是同步的」：
@@ -1442,17 +1514,21 @@ try {
       `后一张卡 top ${brutalPress.pressed.nextTop}，文档高 ${brutalPress.pressed.docHeight}）`,
   );
 
-  const darkPress = await pressCard("dark");
-  check(
-    shadowBlurs(darkPress.pressed.shadow).some((blur) => blur > 0),
-    `暗色下按下时卡片边缘透出一圈柔光（${darkPress.pressed.shadow}）`,
-  );
-  check(
-    darkPress.pressed.layoutWidth === darkPress.rest.layoutWidth &&
-      darkPress.pressed.nextTop === darkPress.rest.nextTop &&
-      darkPress.pressed.docHeight === darkPress.rest.docHeight,
-    "暗色的柔光同样不改变布局",
-  );
+  /* 三套暗色主题（灰烬 / 午夜档案馆 / 霓虹落日）共用同一套"边缘柔光"触感，
+     颜色由各自的 --c-glow 决定 —— 所以这里逐套量模糊半径，而不是只量灰烬那一套。 */
+  for (const theme of ["dark", "archive", "sunset"]) {
+    const press = await pressCard(theme);
+    check(
+      shadowBlurs(press.pressed.shadow).some((blur) => blur > 0),
+      `${theme} 下按下时卡片边缘透出一圈柔光（${press.pressed.shadow}）`,
+    );
+    check(
+      press.pressed.layoutWidth === press.rest.layoutWidth &&
+        press.pressed.nextTop === press.rest.nextTop &&
+        press.pressed.docHeight === press.rest.docHeight,
+      `${theme} 的柔光同样不改变布局`,
+    );
+  }
   check(
     shadowBlurs(brutalPress.pressed.shadow).length === 0,
     "粗野主义按下时完全没有模糊（与暗色的柔光形成对照）",

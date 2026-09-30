@@ -128,13 +128,21 @@ export async function audit(root, dist) {
       canonical.length === 1 && attr(canonical[0], "href") === base.href,
       `${route} canonical 错误`,
     );
+    /* 同 check-site.mjs：只要求是本站的绝对地址，不写死文件名 ——
+       "换个图片格式就要改守卫"会让守卫挡住自己。 */
     check(
       select("meta").some(
         (n) =>
           attr(n, "property") === "og:image" &&
-          attr(n, "content") === SITE + "/og.png",
+          (attr(n, "content") ?? "").startsWith(`${SITE}/`),
       ),
       `${route} og:image 错误`,
+    );
+    check(
+      select("meta").some(
+        (n) => attr(n, "property") === "og:image:type" && attr(n, "content") === "image/jpeg",
+      ),
+      `${route} og:image:type 错误`,
     );
     check(select("h1").length === 1, `${route} 恰好一个 h1`);
     check(attr(select("html")[0], "lang") === "zh-CN", `${route} lang 错误`);
@@ -356,11 +364,15 @@ export async function audit(root, dist) {
         .map((c) => text(c).trim())
         .join(" "),
     );
+  const themeIds = readThemeIds(await readFile(path.join(root, "src/lib/theme.ts"), "utf8"));
   const captions = [
     `${published.length} 条已发布条目 · 全部通过 schema 校验`,
     "0 次第三方请求 · 字体与图标都是自己的",
     "≤ 4 KB 客户端 JS（gzip）· 守卫盯着上限",
-    "9 组 配色 × 5 主题 · 文字 ≥ 4.5:1，装饰 ≥ 3:1",
+    /* 主题数**从 THEME_IDS 现算**，不手抄一个字面量：这条检查要挡的是
+       「加了主题但没同步首页数字条」，抄一份数字反而会让「加主题」这件事
+       悄悄变成「改守卫」—— 而且改错了守卫自己就永远绿。 */
+    `9 组 配色 × ${themeIds.length} 主题 · 文字 ≥ 4.5:1，装饰 ≥ 3:1`,
   ];
   check(
     attest.length === 4 && attest.every((v, i) => v === captions[i]),
@@ -371,7 +383,6 @@ export async function audit(root, dist) {
      面板的色块靠**嵌在页面里的** data-theme="<id>" 去取各自主题的 token ——
      那是最省事、也最容易写错 id 的地方：写错了不会报错，只会安静地显示成别的主题色。
      所以这里不只看"值合法"，还看"清单里每一套都真的有预览"。 */
-  const themeIds = readThemeIds(await readFile(path.join(root, "src/lib/theme.ts"), "utf8"));
   check(themeIds.length >= 2, "主题清单读取失败");
   for (const [route, page] of pages) {
     for (const node of page.nodes) {

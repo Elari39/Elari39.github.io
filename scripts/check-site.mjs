@@ -153,7 +153,7 @@ const REQUIRED_FILES = [
   'favicon.svg',
   'favicon.ico',
   'apple-touch-icon.png',
-  'og.png',
+  'og.jpg',
 ];
 for (const file of REQUIRED_FILES) {
   check(existsSync(path.join(DIST, file)), `存在 ${file}`);
@@ -217,9 +217,13 @@ for (const route of routes) {
   );
 
   const ogImage = attributeOf(matchAll(html, /<meta\b[^>]*property="og:image"[^>]*>/i)[0] ?? '', 'content');
+  /* 不写死文件名。写死 "/og.png" 会让「换个图片格式」变成「改守卫」——
+     而这条要挡的是 og:image 指向了 localhost，或者指向一个产物里并不存在的文件。
+     所以只要求：本站的绝对地址 + dist 里真有这个文件。 */
+  const ogPath = ogImage?.startsWith(`${SITE_URL}/`) ? ogImage.slice(SITE_URL.length) : null;
   check(
-    ogImage === `${SITE_URL}/og.png`,
-    `${label} og:image 指向绝对地址`,
+    ogPath !== null && existsSync(path.join(DIST, decodeURIComponent(ogPath))),
+    `${label} og:image 是本站绝对地址且产物里存在`,
     ogImage ?? '缺失',
   );
 

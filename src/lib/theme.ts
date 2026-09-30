@@ -28,13 +28,24 @@
 export const THEME_STORAGE_KEY = 'grimoire-theme';
 
 /**
- * 五套主题。**第 0 项就是默认主题**，其余顺序就是主题面板里的排列顺序：
- * 新粗野主义 / 羊皮纸 / 灰烬 / 赛博终端 / 瑞士极简。
+ * 九套主题。**第 0 项就是默认主题**，其余顺序就是主题面板里的排列顺序：
+ * 新粗野主义 / 羊皮纸 / 灰烬 / 赛博终端 / 瑞士极简 / 水墨宣纸 / 午夜档案馆 /
+ * 霓虹落日 / 孔版印刷。
  *
  * 顺序上把三套"原有"的排在前面：面板里第一屏就是它们，新加的两套跟在后面，
  * 而默认值仍然是 brutal（第 0 项）。
  */
-export const THEME_IDS: readonly string[] = ['brutal', 'light', 'dark', 'cyber', 'swiss'];
+export const THEME_IDS: readonly string[] = [
+  'brutal',
+  'light',
+  'dark',
+  'cyber',
+  'swiss',
+  'ink',
+  'archive',
+  'sunset',
+  'riso',
+];
 
 /** 没选过主题时用的默认值；与 <html data-theme> 及 CSS 的 :root 基础层是同一套 */
 export const DEFAULT_THEME = THEME_IDS[0] ?? 'brutal';
@@ -46,6 +57,10 @@ export const THEME_LABELS: Record<string, string> = {
   dark: '灰烬',
   cyber: '赛博终端',
   swiss: '瑞士极简',
+  ink: '水墨宣纸',
+  archive: '午夜档案馆',
+  sunset: '霓虹落日',
+  riso: '孔版印刷',
 };
 
 /** 主题的中文名；未知值原样返回，不认识的主题不瞎翻译 */

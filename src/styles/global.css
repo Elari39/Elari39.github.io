@@ -275,7 +275,7 @@
    对比度余量最小的两处都在这一套（红底白字 5.67:1、强调色对白底 5.67:1），
    是整个站点最紧的地方 —— 改这两个值之前先看守卫。
    注意画布用纯 #ffffff：它必须与另外四套（#fffdf4 / #faf9f5 / #121110 / #060a06）都不同，
-   否则"五套主题真的不一样"那条检查会红。 */
+   否则"各主题真的不一样"那条检查会红。 */
 [data-theme='swiss'] {
   color-scheme: light;
 
@@ -308,6 +308,167 @@
   --r-pill: 0;
   --r-sm: 0;
   --bw: 1px;
+}
+
+/* -----------------------------------------------------------------------------
+   1b. 后加的四套主题（水墨宣纸 / 午夜档案馆 / 霓虹落日 / 孔版印刷）
+   -----------------------------------------------------------------------------
+   共同约束：**每套只有一个块**，个性与色板写在同一个块里。
+
+   为什么不像 brutal / swiss 那样另写一份无层级的逐类覆盖块：体积。CSS 预算 48 KB
+   已经用了 45.4 KB，四套主题加起来只有约 2.6 KB 可用，而一份逐个类覆盖的形状块
+   动辄 400–900 字节。所以这几套的个性全部走**运行时 token**：
+
+     --font-display  → h1–h4 与 .attest-value 直接读它，标题字形立刻跟着换
+     --r-card / --r-pill / --r-sm / --bw → 主题面板、预览抽屉、数字条这些新组件都读它们
+     --c-grid        → body::after 那张 32px 方格纸的颜色，整页底纹跟着走
+     --c-glow        → 暗色系的卡片外发光（见文件末尾第 7 节）
+
+   这些都是**计算值可验证**的（浏览器验收里读 getComputedStyle），所以不会沦为
+   「只换颜色的假主题」—— 标题字体栈、面板与抽屉的圆角、底纹颜色都是真的换了。
+
+   色板一律十六进制字面量（守卫只认这个），且九套的 token 键集合必须完全一致。
+   画布色必须与其余八套互不相同：九套是
+   #fffdf4 / #faf9f5 / #121110 / #060a06 / #ffffff / #ebe8e0 / #0d1420 / #170b26 / #ffe94a */
+
+/* 水墨宣纸：绢本底、浓墨描边、朱砂印章。标题用**中文衬线优先**的栈 ——
+   默认那套是 Iowan Old Style 打头（西文衬线），中文会落到系统黑体，出不来「墨」味。 */
+[data-theme='ink'] {
+  color-scheme: light;
+
+  --c-canvas: #ebe8e0;
+  --c-surface: #f2f0e9;
+  --c-card: #f7f5ef;
+  --c-card-strong: #ded9cd;
+  --c-hairline: #1c1c1c;
+  --c-hairline-soft: #2a2a2a;
+  --c-ink: #14120f;
+  --c-body: #2b2823;
+  --c-muted: #565248;
+  --c-muted-soft: #625e53;
+  --c-primary: #a3241a;
+  --c-primary-ink: #8e1b12;
+  --c-on-primary: #fdfbf6;
+  --c-amber: #8a5200;
+  --c-teal: #245a55;
+  --c-code: #ded9cd;
+
+  --c-hairline-strong: #1c1c1c;
+  --c-grid: #ddd8cb;
+  --c-ember-soft: #e8d5d2;
+  --c-glow: #00000000;
+
+  /* 不写 --font-display：默认那套衬线栈本来就以 'Songti SC' / 'Noto Serif CJK SC'
+     兜底，中文正文与标题拿到的就是宋体衬线 —— 这正是水墨要的，省下一份字体栈。 */
+  --r-card: 0;
+  --r-pill: 0;
+  --r-sm: 0;
+  --bw: 1px;
+}
+
+/* 午夜档案馆：深靛蓝连夜灯，黄铜做强调。保留小圆角（阅览室的木作是圆的），
+   卡片边缘透一圈黄铜柔光。 */
+[data-theme='archive'] {
+  color-scheme: dark;
+
+  --c-canvas: #0d1420;
+  --c-surface: #141c28;
+  --c-card: #18212e;
+  --c-card-strong: #1f2a39;
+  --c-hairline: #2a3646;
+  --c-hairline-soft: #212c3a;
+  --c-ink: #f2f4f8;
+  --c-body: #cfd6e0;
+  --c-muted: #98a2b3;
+  --c-muted-soft: #8b95a6;
+  --c-primary: #c9a227;
+  --c-primary-ink: #dcb84a;
+  --c-on-primary: #1a1408;
+  --c-amber: #e29a4a;
+  --c-teal: #5fbcae;
+  --c-code: #18212e;
+
+  --c-hairline-strong: #3a4a5e;
+  --c-grid: #1a2331;
+  --c-ember-soft: #3a2f18;
+  --c-glow: #c9a22755;
+
+  /* 同 ink：不写 --font-display。默认衬线栈就是"阅览室的活字"，
+     这一套的差别在靛蓝画布、黄铜强调与卡片外那圈柔光。 */
+  --r-card: 0.5rem;
+  --r-pill: 999px;
+  --r-sm: 0.35rem;
+  --bw: 1px;
+}
+
+/* 霓虹落日：深紫罗兰底、品红主色配青。等宽与衬线都不合适，走几何无衬线；
+   网格底纹拿到一层暖紫，标题带一点品红辉光。 */
+[data-theme='sunset'] {
+  color-scheme: dark;
+
+  --c-canvas: #170b26;
+  --c-surface: #1d1030;
+  --c-card: #22143a;
+  --c-card-strong: #2b1a47;
+  --c-hairline: #3a2560;
+  --c-hairline-soft: #2e1c4d;
+  --c-ink: #f7eaff;
+  --c-body: #dfc9f2;
+  --c-muted: #b096cc;
+  --c-muted-soft: #a48cc0;
+  --c-primary: #ff2e88;
+  --c-primary-ink: #ff6aa8;
+  --c-on-primary: #1a0421;
+  --c-amber: #ffb257;
+  --c-teal: #35e0d0;
+  --c-code: #22143a;
+
+  --c-hairline-strong: #4a3175;
+  --c-grid: #241540;
+  --c-ember-soft: #4a1836;
+  --c-glow: #ff2e8855;
+
+  --font-display: Futura, 'Century Gothic', 'Avenir Next', 'PingFang SC', system-ui, sans-serif;
+  --r-card: 0.25rem;
+  --r-pill: 999px;
+  --r-sm: 0.25rem;
+  --bw: 1px;
+}
+
+/* 孔版印刷：亮黄纸 + 电光蓝，粗黑描边、全方角，强调用的色块带一道错位套印的硬阴影。
+   亮黄底上的正文必须压到近黑才够 14:1，所以 body / ink 都是近乎纯黑 —— 这是量出来的，
+   不是为了"看起来酷"。 */
+[data-theme='riso'] {
+  color-scheme: light;
+
+  --c-canvas: #ffe94a;
+  --c-surface: #fff19a;
+  --c-card: #fffdf0;
+  --c-card-strong: #f2d93d;
+  --c-hairline: #101010;
+  --c-hairline-soft: #1a1a1a;
+  --c-ink: #0b0b0b;
+  --c-body: #1c1a12;
+  --c-muted: #4a4630;
+  --c-muted-soft: #55503a;
+  --c-primary: #1b2ff0;
+  --c-primary-ink: #1423c4;
+  --c-on-primary: #ffffff;
+  --c-amber: #7a4a00;
+  --c-teal: #0a5f5a;
+  --c-code: #f2d93d;
+
+  --c-hairline-strong: #101010;
+  --c-grid: #e8cf3a;
+  --c-ember-soft: #ffd9d0;
+  --c-glow: #1b2ff055;
+
+  --font-display: 'Helvetica Neue', Helvetica, Arial, system-ui, 'PingFang SC', 'Microsoft YaHei',
+    sans-serif;
+  --r-card: 0;
+  --r-pill: 0;
+  --r-sm: 0;
+  --bw: 2px;
 }
 
 @theme inline {
@@ -637,18 +798,7 @@
   }
 
   /* 余烬分隔线 */
-  @supports (color: color-mix(in lab, red, red)) {
-    .rule-ember {
-      height: 1px;
-      border: 0;
-      background: linear-gradient(
-        90deg,
-        var(--c-primary),
-        color-mix(in oklab, var(--c-primary) 25%, transparent) 42%,
-        transparent
-      );
-    }
-  }
+
 
   .chip {
     display: inline-flex;
@@ -664,11 +814,7 @@
     white-space: nowrap;
   }
 
-  @supports (color: color-mix(in lab, red, red)) {
-    .chip {
-      background: color-mix(in oklab, var(--c-card) 70%, transparent);
-    }
-  }
+
 
   .btn {
     display: inline-flex;
@@ -700,15 +846,7 @@
     font-weight: 500;
   }
 
-  @supports (color: color-mix(in lab, red, red)) {
-    .btn:hover {
-      border-color: color-mix(in oklab, var(--c-primary) 55%, var(--c-hairline));
-    }
 
-    .btn-primary:hover {
-      background: color-mix(in oklab, var(--c-primary) 88%, var(--c-ink));
-    }
-  }
 
   /* 状态标记：.badge 给骨架，.badge-* 只换颜色 */
   .badge {
@@ -767,7 +905,7 @@
      var(--c-canvas)/var(--c-primary)，于是**自动**反映当前主题，
      不需要为每套主题各放一个图标、也不需要 JS 同步。
 
-     面板本身完全靠 --r-* / --bw 这类运行时 token 塑形，所以五套主题
+     面板本身完全靠 --r-* / --bw 这类运行时 token 塑形，所以每套主题
      （含方角的 brutal / cyber / swiss）不用各写一份覆盖。 */
   .theme-menu {
     position: relative;
@@ -927,7 +1065,7 @@
 
   /* ---- 卡片的「就地预览」抽屉：原生 <dialog> ----
      焦点陷阱、Esc 关闭、把背景置为 inert、以及 ::backdrop 都由浏览器给，
-     这里只负责"长什么样"。全部读 --r-* / --bw token，所以五套主题
+     这里只负责"长什么样"。全部读 --r-* / --bw token，所以每套主题
      （含方角的 brutal / cyber / swiss）不需要各写一份覆盖。
 
      background / color / margin 这三条是**必须**重申的：UA 给 dialog 的是
@@ -1035,36 +1173,7 @@
     border-radius: var(--radius-card) var(--radius-card) 0 0;
   }
 
-  @supports (color: color-mix(in lab, red, red)) {
-    .entry-card {
-      background: linear-gradient(
-        170deg,
-        color-mix(in oklab, var(--c-card) 92%, transparent),
-        var(--c-surface)
-      );
-      box-shadow: 0 1px 0 color-mix(in oklab, var(--c-ink) 4%, transparent);
-    }
 
-    .entry-card:hover {
-      border-color: color-mix(
-        in oklab,
-        var(--entry-accent, var(--c-primary)) 60%,
-        var(--c-hairline)
-      );
-      box-shadow:
-        0 18px 40px -24px
-          color-mix(in oklab, var(--entry-accent, var(--c-primary)) 55%, transparent),
-        0 1px 0 color-mix(in oklab, var(--c-ink) 5%, transparent);
-    }
-
-    .entry-card::before {
-      background: linear-gradient(
-        90deg,
-        var(--entry-accent, var(--c-primary)),
-        color-mix(in oklab, var(--entry-accent, var(--c-primary)) 20%, transparent)
-      );
-    }
-  }
 
   /* 项目字形标记：圆角方块里放一枚内联 SVG */
   .glyph {
@@ -1089,15 +1198,7 @@
     border-bottom: 1px solid var(--c-hairline);
   }
 
-  @supports (color: color-mix(in lab, red, red)) {
-    .entry-header {
-      background: linear-gradient(
-        180deg,
-        color-mix(in oklab, var(--entry-accent, var(--c-primary)) 12%, transparent),
-        transparent
-      );
-    }
-  }
+
 
   /* 截图：像贴在书页上的图版 */
   .plate {
@@ -1165,11 +1266,7 @@
     margin-top: 0.4em;
   }
 
-  @supports (color: color-mix(in lab, red, red)) {
-    .prose-grimoire li::marker {
-      color: color-mix(in oklab, var(--c-primary) 80%, var(--c-muted));
-    }
-  }
+
 
   .prose-grimoire code {
     padding: 0.12em 0.4em;
@@ -1204,11 +1301,7 @@
     color: var(--c-muted);
   }
 
-  @supports (color: color-mix(in lab, red, red)) {
-    .prose-grimoire blockquote {
-      border-left-color: color-mix(in oklab, var(--c-primary) 70%, transparent);
-    }
-  }
+
 
   .prose-grimoire hr {
     margin: 2.5rem 0;
@@ -1282,15 +1375,7 @@
     pointer-events: none;
   }
 
-  @supports (color: color-mix(in lab, red, red)) {
-    .site-header::after {
-      background: radial-gradient(
-        60% 100% at 50% 0%,
-        color-mix(in oklab, var(--c-ink) 14%, transparent),
-        transparent
-      );
-    }
-  }
+
 
   @media (prefers-reduced-motion: no-preference) {
     @supports (animation-timeline: scroll()) {
@@ -1340,15 +1425,7 @@
     transition: opacity var(--dur-slow) var(--ease-ember);
   }
 
-  @supports (color: color-mix(in lab, red, red)) {
-    .hero-sigil__aura {
-      background: radial-gradient(
-        50% 50% at 50% 50%,
-        color-mix(in oklab, var(--c-primary) 22%, transparent),
-        transparent 70%
-      );
-    }
-  }
+
 
   @media (prefers-reduced-motion: no-preference) {
     @media (min-width: 48rem) {
@@ -1418,11 +1495,7 @@
     background: var(--c-surface);
   }
 
-  @supports (color: color-mix(in lab, red, red)) {
-    .attest {
-      background: color-mix(in oklab, var(--c-surface) 72%, transparent);
-    }
-  }
+
 
   .attest-item {
     display: flex;
@@ -1508,38 +1581,7 @@
     transform: translateX(-130%);
   }
 
-  @supports (color: color-mix(in lab, red, red)) {
-    .cover {
-      background: linear-gradient(
-        150deg,
-        color-mix(in oklab, var(--entry-accent, var(--c-primary)) 26%, var(--c-surface)),
-        var(--c-surface) 78%
-      );
-    }
 
-    .cover::before {
-      background-image: repeating-linear-gradient(
-        to right,
-        color-mix(in oklab, var(--c-ink) 7%, transparent) 0,
-        color-mix(in oklab, var(--c-ink) 7%, transparent) 1px,
-        transparent 1px,
-        transparent 24px
-      );
-    }
-
-    .cover-numeral {
-      color: color-mix(in oklab, var(--entry-accent, var(--c-primary)) 30%, transparent);
-    }
-
-    .sheen::before {
-      background: linear-gradient(
-        100deg,
-        transparent 20%,
-        color-mix(in oklab, var(--c-ink) 7%, transparent) 50%,
-        transparent 80%
-      );
-    }
-  }
 
   @media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
     .entry-card:hover .sheen::before {
@@ -1627,15 +1669,7 @@
     pointer-events: none;
   }
 
-  @supports (color: color-mix(in lab, red, red)) {
-    .entry-watermark {
-      color: color-mix(in oklab, var(--entry-accent, var(--c-primary)) 14%, transparent);
-    }
 
-    .rune-corner {
-      color: color-mix(in oklab, var(--entry-accent, var(--c-primary)) 45%, transparent);
-    }
-  }
 
   /* ---- 图版：一张贴在书页上的图，悬停时描边走强调色 ---- */
 
@@ -1662,6 +1696,138 @@
       }
     }
   }
+  /* 合并成一个包裹：每少一个 @supports 外壳就少约 55 字节，
+     而这份外壳本来就只是为了让 Tailwind 不要生成孪生回退（见文件头说明）。 */
+  @supports (color: color-mix(in lab, red, red)) {
+
+    .rule-ember {
+      height: 1px;
+      border: 0;
+      background: linear-gradient(
+        90deg,
+        var(--c-primary),
+        color-mix(in oklab, var(--c-primary) 25%, transparent) 42%,
+        transparent
+      );
+    }
+
+    .chip {
+      background: color-mix(in oklab, var(--c-card) 70%, transparent);
+    }
+
+    .btn:hover {
+      border-color: color-mix(in oklab, var(--c-primary) 55%, var(--c-hairline));
+    }
+
+    .btn-primary:hover {
+      background: color-mix(in oklab, var(--c-primary) 88%, var(--c-ink));
+    }
+
+    .entry-card {
+      background: linear-gradient(
+        170deg,
+        color-mix(in oklab, var(--c-card) 92%, transparent),
+        var(--c-surface)
+      );
+      box-shadow: 0 1px 0 color-mix(in oklab, var(--c-ink) 4%, transparent);
+    }
+
+    .entry-card:hover {
+      border-color: color-mix(
+        in oklab,
+        var(--entry-accent, var(--c-primary)) 60%,
+        var(--c-hairline)
+      );
+      box-shadow:
+        0 18px 40px -24px
+          color-mix(in oklab, var(--entry-accent, var(--c-primary)) 55%, transparent),
+        0 1px 0 color-mix(in oklab, var(--c-ink) 5%, transparent);
+    }
+
+    .entry-card::before {
+      background: linear-gradient(
+        90deg,
+        var(--entry-accent, var(--c-primary)),
+        color-mix(in oklab, var(--entry-accent, var(--c-primary)) 20%, transparent)
+      );
+    }
+
+    .entry-header {
+      background: linear-gradient(
+        180deg,
+        color-mix(in oklab, var(--entry-accent, var(--c-primary)) 12%, transparent),
+        transparent
+      );
+    }
+
+    .prose-grimoire li::marker {
+      color: color-mix(in oklab, var(--c-primary) 80%, var(--c-muted));
+    }
+
+    .prose-grimoire blockquote {
+      border-left-color: color-mix(in oklab, var(--c-primary) 70%, transparent);
+    }
+
+    .site-header::after {
+      background: radial-gradient(
+        60% 100% at 50% 0%,
+        color-mix(in oklab, var(--c-ink) 14%, transparent),
+        transparent
+      );
+    }
+
+    .hero-sigil__aura {
+      background: radial-gradient(
+        50% 50% at 50% 50%,
+        color-mix(in oklab, var(--c-primary) 22%, transparent),
+        transparent 70%
+      );
+    }
+
+    .attest {
+      background: color-mix(in oklab, var(--c-surface) 72%, transparent);
+    }
+
+    .cover {
+      background: linear-gradient(
+        150deg,
+        color-mix(in oklab, var(--entry-accent, var(--c-primary)) 26%, var(--c-surface)),
+        var(--c-surface) 78%
+      );
+    }
+
+    .cover::before {
+      background-image: repeating-linear-gradient(
+        to right,
+        color-mix(in oklab, var(--c-ink) 7%, transparent) 0,
+        color-mix(in oklab, var(--c-ink) 7%, transparent) 1px,
+        transparent 1px,
+        transparent 24px
+      );
+    }
+
+    .cover-numeral {
+      color: color-mix(in oklab, var(--entry-accent, var(--c-primary)) 30%, transparent);
+    }
+
+    .sheen::before {
+      background: linear-gradient(
+        100deg,
+        transparent 20%,
+        color-mix(in oklab, var(--c-ink) 7%, transparent) 50%,
+        transparent 80%
+      );
+    }
+
+    .entry-watermark {
+      color: color-mix(in oklab, var(--entry-accent, var(--c-primary)) 14%, transparent);
+    }
+
+    .rune-corner {
+      color: color-mix(in oklab, var(--entry-accent, var(--c-primary)) 45%, transparent);
+    }
+
+  }
 }
 
 /* -----------------------------------------------------------------------------
@@ -1680,7 +1846,7 @@
       var(--font-display)，已经在那条 [data-theme='brutal'] 字体规则里跟着换了。）
 
    体积上刻意只用平涂色、不用 color-mix()：产物会为 color-mix 生成一份 @supports
-   孪生规则，等于每条规则写两遍，而 CSS 预算是 48 KB（现状 34.7 KB）。
+   孪生规则，等于每条规则写两遍，而 CSS 预算是 48 KB。
    -------------------------------------------------------------------------- */
 
 /* ---- 底纹：新粗野主义没有柔光，只有硬网格 ---- */
@@ -2120,7 +2286,9 @@
   box-shadow: none;
 }
 
-[data-theme='dark'] .entry-card:hover {
+/* 三套暗色主题共用「边缘透出一圈柔光」这套触感：颜色由各自的 --c-glow 决定，
+   所以这里只需要把选择器列出来，不必复制规则。 */
+:is([data-theme='dark'], [data-theme='archive'], [data-theme='sunset']) .entry-card:hover {
   /* 一圈柔和的外发光 + 一道发丝描边。用 --c-glow（8 位十六进制带 alpha）
      而不是 color-mix()，省下产物里的一份 @supports 孪生规则 */
   box-shadow:
@@ -2128,11 +2296,64 @@
     0 0 30px -9px var(--c-glow);
 }
 
-[data-theme='dark'] .entry-card:active {
+:is([data-theme='dark'], [data-theme='archive'], [data-theme='sunset']) .entry-card:active {
   /* 按下时收窄光晕：同一套语言里的"压下去" */
   box-shadow:
     0 0 0 1px var(--c-hairline),
     0 0 12px -6px var(--c-glow);
+}
+
+/* -----------------------------------------------------------------------------
+   8. 后加四套主题里"token 表达不了"的那部分
+   -----------------------------------------------------------------------------
+   两件 token 覆盖不到的事：
+
+   (1) 方角。`--r-card / --r-pill / --r-sm` 只有**读运行时 token 的新组件**认
+       （主题面板、过滤条、预览抽屉）。既有的 `.btn / .chip / .entry-card …` 读的是
+       `@theme inline` 内联进工具类/规则里的字面量（`.rounded-card{border-radius:.875rem}`），
+       所以"方角"必须逐类写 —— 与 brutal / swiss 那两块覆盖是同一个原因。
+       这里把 ink 与 riso 合成一条 `:is()` 选择器，省下一半字节。
+   (2) 显式效果：sunset 的标题辉光（text-shadow 没有 token 槽位）、
+       riso 的错位套印与粗描边。
+
+   这三块都必须在所有 @layer **之外**：无层级声明才盖得住 @layer utilities
+   里那些被内联成字面量的工具类（原因同第 4 节）。 */
+
+:is([data-theme='ink'], [data-theme='riso'])
+  :is(
+    .btn,
+    .chip,
+    .badge,
+    .glyph,
+    .plate,
+    .entry-card,
+    .attest,
+    .rounded-card,
+    .nav-link,
+    #theme-toggle,
+    .theme-menu__panel
+  ) {
+  border-radius: 0;
+}
+
+:is([data-theme='ink'], [data-theme='riso']) .entry-card::before {
+  /* 顶部那道渐变条自带 var(--radius-card) 的圆角，方角主题得把它压平 */
+  border-radius: 0;
+}
+
+[data-theme='sunset'] :is(h1, h2) {
+  /* 品红磷光。只加一层很淡的辉光，字号与对比度都不动 */
+  text-shadow: 0 0 22px #ff2e8840;
+}
+
+[data-theme='riso'] :is(.btn, .chip, .badge, .glyph, .plate, #theme-toggle) {
+  /* 这几处把 1px 硬编码在 border 简写里，读不到 --bw */
+  border-width: 2px;
+}
+
+[data-theme='riso'] :is(.btn, .entry-card, .attest, .plate) {
+  /* 错位套印：阴影不带模糊，偏移量比粗野主义更小 —— 是"没对齐"而不是"压上去" */
+  box-shadow: 4px 4px 0 var(--c-teal);
 }
 
 /* Mobile navigation remains legible without a scripted menu. */
