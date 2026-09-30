@@ -7,11 +7,16 @@
  *   · 页面没有任何 CSP 违规或 JS 报错
  *   · 没选过主题时落到默认主题（新粗野主义），data-themeSource 是脚本写上去的 ——
  *     这条同时证明引导脚本真的在 CSP 之下执行了
- *   · 主题切换按钮点下去，data-theme 会按 新粗野主义 → 羊皮纸 → 灰烬 循环并写进
- *     localStorage
- *   · 三套主题的 CSS 变量真的生效（读 computedStyle，不是看源码）
- *   · 新粗野主义那一半"token 覆盖不到"的改动也真的生效：方角、硬阴影、字重、
- *     以及页头不再毛玻璃 —— 这些 @theme inline 编译成了字面量，只改变量是没用的
+ *   · 主题面板：原生 <details> 真的能开能合、5 个选项各自生效并写进 localStorage、
+ *     选中态唯一、键盘可达（Enter 展开 / Tab 落到选项 / Enter 选中）、
+ *     Esc 与点外部能收起（这两处原生不支持，是脚本补的）
+ *   · 视图过渡真的被调用过（而不只是 API 存在），且把 API 删掉后切换照样生效
+ *   · 五套主题的 CSS 变量真的生效（读 computedStyle，不是看源码）
+ *   · 每套主题"token 覆盖不到"的那一半也真的生效：粗野主义的方角/硬阴影/字重/去毛玻璃、
+ *     赛博终端的 CRT 扫描线（读 ::after 的 background-image）与等宽显示字体、
+ *     瑞士极简的关底纹/去阴影/加大字号
+ *   · 标签过滤：按钮筛选真的留下带该标签的卡片、多选是并集、清空能恢复、
+ *     键盘可用，而且**禁用脚本时过滤条整条不出现**（渐进增强的方向）
  *   · 窄屏（390px）不会出现横向滚动（含硬阴影最容易撑破的那一档）
  *   · 滚动进场动画一定收敛到可见终态（不会「动到一半就永久停住」）
  *   · prefers-reduced-motion: reduce 下动效整体让位，内容照样完整可读
@@ -35,9 +40,25 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { componentContrast } from "./browser-contracts.mjs";
+import { readThemeIds, readThemeSource } from "./budget.mjs";
 import { files, entries, routeFor } from "./site-model.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+
+/**
+ * 主题清单**不在这里另抄一份**：从 src/lib/theme.ts 的 THEME_IDS 读。
+ * 抄一份数组的下场是「加了一套主题，但浏览器验收仍然只测三套」——
+ * 而且它不会报错，只会安静地少测一半。
+ */
+const THEMES = readThemeIds(await readThemeSource(ROOT));
+
+/** 默认主题 = THEME_IDS[0]（服务端渲染在 <html> 上的那一套） */
+const DEFAULT_THEME = THEMES[0];
+
+if (THEMES.length < 2) {
+  throw new Error(`没能从 src/lib/theme.ts 解析出主题清单：${JSON.stringify(THEMES)}`);
+}
+
 const SHOTS = path.join(ROOT, ".assets-raw", "verify");
 
 const baseIndex = process.argv.indexOf("--base");
@@ -79,12 +100,7 @@ const CHROME_CANDIDATES = [
   "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
 ];
 
-/** 三套主题的 id；与 src/lib/theme.ts 的 THEME_IDS 一致 */
-const THEMES = ["brutal", "light", "dark"];
-
-/** 默认主题（src/lib/theme.ts 的 DEFAULT_THEME，也就是 THEME_IDS[0]） */
-const DEFAULT_THEME = "brutal";
-
+/** 五套主题的 id —— 从 src/lib/theme.ts 的 THEME_IDS 读，见上面的说明 */
 const DIST = path.join(ROOT, "dist");
 const ROUTES = (await files(DIST))
   .filter((f) => f.endsWith(".html"))
@@ -526,70 +542,57 @@ try {
       brokenImages.map((image) => image.src).join(", "),
     );
 
-    // 浅色截图：显式设主题，不再依赖"默认是什么"（默认已经不是浅色了）。
-    // 等 300ms：卡片那条 240ms 的 box-shadow 过渡走完再量 / 再拍。
-    await cdp.evaluate(`document.documentElement.dataset.theme='light'`);
-    await sleep(300);
-    const light = await cdp.evaluate(`(() => {
-    const h1 = document.querySelector('h1');
-    return {
-      bg: getComputedStyle(document.body).backgroundColor,
-      color: getComputedStyle(document.body).color,
-      h1Font: h1 ? getComputedStyle(h1).fontFamily : '',
-    };
-  })()`);
-    await cdp.screenshot(path.join(SHOTS, `${route.name}-light.png`));
-
-    // 显示字体换的是不是只有粗野主义那一套：浅色必须回到衬线栈。
-    // 这条同时挡住了"把 --font-display 写进 :root、结果三套主题都变粗黑"那类改法。
-    check(
-      /Iowan|Georgia|Palatino/i.test(light.h1Font),
-      `${route.path} 浅色主题下 h1 回到衬线显示字体`,
-      light.h1Font,
-    );
-
-    // 深色截图：直接改 data-theme，等价于用户点过一次切换
-    await cdp.evaluate(`document.documentElement.dataset.theme='dark'`);
-    await sleep(300);
-    const dark = await cdp.evaluate(`(() => ({
-    bg: getComputedStyle(document.body).backgroundColor,
-    color: getComputedStyle(document.body).color,
-  }))()`);
-    await cdp.screenshot(path.join(SHOTS, `${route.name}-dark.png`));
-
-    // 第三套主题：新粗野主义。它有一半的改动是 token 覆盖不了的（方角、硬阴影、
-    // 字重、去掉毛玻璃），所以这里不满足于"背景色变了"，而是直接读那些计算值。
-    await cdp.evaluate(`document.documentElement.dataset.theme='brutal'`);
-    // 等够 .entry-card 那条 240ms 的 box-shadow 过渡再量。等太短就会读到
-    // "从浅色的柔阴影过渡到粗野主义硬阴影"的中间帧 —— 实测量到过
-    // 3px/3.4px、颜色还带着 alpha 的值，看起来像断言太严，其实是量早了。
-    await sleep(400);
-    const brutal = await cdp.evaluate(`(() => {
-    const card = document.querySelector('.entry-card');
-    const button = document.querySelector('.btn');
-    const toggle = document.getElementById('theme-toggle');
-    const h1 = document.querySelector('h1');
-    const header = document.querySelector('.site-header');
+    /* 五套主题的计算样式。
+       不满足于"背景色变了"：主题里有一半东西是 token 覆盖不到的（方角、硬阴影、
+       字重、去掉毛玻璃、CRT 扫描线、大字号），只能读计算值才看得见。
+       每套主题都等够 .entry-card 那条 240ms 的 box-shadow 过渡 —— 等太短会读到
+       "从上一套过渡到这一套"的中间帧，看起来像断言太严，其实是量早了。 */
+    const facts = {};
+    for (const theme of THEMES) {
+      await cdp.evaluate(`document.documentElement.dataset.theme='${theme}'`);
+      await sleep(400);
+      facts[theme] = await cdp.evaluate(`(() => {
     const style = (element) => (element ? getComputedStyle(element) : null);
+    const card = document.querySelector('.entry-card');
+    const h1 = document.querySelector('h1');
+    const pseudo = (name) => getComputedStyle(document.body, name);
     return {
       bg: getComputedStyle(document.body).backgroundColor,
-      h1Font: style(h1).fontFamily,
-      h1Weight: Number(style(h1).fontWeight) || 0,
-      toggleRadius: style(toggle).borderRadius,
-      toggleShadow: style(toggle).boxShadow,
-      headerBlur: style(header).backdropFilter,
+      h1Font: style(h1)?.fontFamily ?? '',
+      h1Weight: Number(style(h1)?.fontWeight) || 0,
+      h1Size: parseFloat(style(h1)?.fontSize) || 0,
+      toggleRadius: style(document.getElementById('theme-toggle'))?.borderRadius ?? null,
+      toggleShadow: style(document.getElementById('theme-toggle'))?.boxShadow ?? null,
+      headerBlur: style(document.querySelector('.site-header'))?.backdropFilter ?? null,
       cardCount: document.querySelectorAll('.entry-card').length,
       cardRadius: card ? style(card).borderRadius : null,
       cardShadow: card ? style(card).boxShadow : null,
-      buttonShadow: button ? style(button).boxShadow : null,
+      buttonShadow: style(document.querySelector('.btn'))?.boxShadow ?? null,
+      // 底纹画在 body 的两个伪元素上：cyber 的 CRT 扫描线就在 ::after
+      gridDisplay: pseudo('::after').display,
+      grid: pseudo('::after').backgroundImage,
+      bloomDisplay: pseudo('::before').display,
     };
   })()`);
-    await cdp.screenshot(path.join(SHOTS, `${route.name}-brutal.png`));
+      await cdp.screenshot(path.join(SHOTS, `${route.name}-${theme}.png`));
+    }
 
+    const backgrounds = THEMES.map((theme) => facts[theme].bg);
     check(
-      new Set([light.bg, dark.bg, brutal.bg]).size === 3,
-      `${route.path} 三套主题的背景色互不相同（${light.bg} / ${dark.bg} / ${brutal.bg}）`,
+      new Set(backgrounds).size === THEMES.length,
+      `${route.path} 五套主题的背景色互不相同（${backgrounds.join(" / ")}）`,
     );
+
+    // 显示字体换的是不是只有粗野主义那一套：浅色必须回到衬线栈。
+    // 这条同时挡住了"把 --font-display 写进 :root、结果所有主题都变粗黑"那类改法。
+    check(
+      /Iowan|Georgia|Palatino/i.test(facts.light.h1Font),
+      `${route.path} 浅色主题下 h1 回到衬线显示字体`,
+      facts.light.h1Font,
+    );
+
+    // 第三套主题：新粗野主义。
+    const brutal = facts.brutal;
     // 页头在粗野主义下必须是实底：不读这一条，backdrop-blur-md 会被悄悄留着
     check(
       brutal.headerBlur === "none",
@@ -628,6 +631,62 @@ try {
       );
     }
 
+    // 赛博终端：底纹换成了扫描线、显示字体换成等宽、方角、近黑画布。
+    // 断言扫描线"真的被画出来"（读 ::after 的 background-image），
+    // 而不是只信 CSS 里写了 repeating-linear-gradient。
+    const cyber = facts.cyber;
+    check(
+      cyber.gridDisplay !== "none" && /repeating-linear-gradient/.test(cyber.grid),
+      `${route.path} 赛博终端画出了 CRT 扫描线`,
+      cyber.grid.slice(0, 90),
+    );
+    check(
+      cyber.grid !== brutal.grid,
+      `${route.path} 赛博终端的底纹与粗野主义不同（不是照抄一份）`,
+    );
+    check(
+      cyber.bloomDisplay === "none",
+      `${route.path} 赛博终端关掉了径向柔光（${cyber.bloomDisplay}）`,
+    );
+    check(
+      cyber.bg === "rgb(6, 10, 6)",
+      `${route.path} 赛博终端的画布是近黑（${cyber.bg}）`,
+    );
+    check(
+      /mono/i.test(cyber.h1Font),
+      `${route.path} 赛博终端的显示字体是等宽`,
+      cyber.h1Font.slice(0, 60),
+    );
+    check(
+      cyber.toggleRadius === "0px",
+      `${route.path} 赛博终端下按钮是方角（${cyber.toggleRadius}）`,
+    );
+
+    // 瑞士极简：关掉底纹与阴影、全方角、字号更大 —— 这套主题做的是"减法"，
+    // 所以断言的重点是"少了什么"和"字大了多少"。
+    const swiss = facts.swiss;
+    check(
+      swiss.gridDisplay === "none" && swiss.bloomDisplay === "none",
+      `${route.path} 瑞士极简关掉了所有底纹（${swiss.gridDisplay} / ${swiss.bloomDisplay}）`,
+    );
+    check(
+      swiss.toggleRadius === "0px",
+      `${route.path} 瑞士极简下按钮是方角（${swiss.toggleRadius}）`,
+    );
+    check(
+      !swiss.cardShadow || swiss.cardShadow === "none",
+      `${route.path} 瑞士极简去掉了卡片阴影（${swiss.cardShadow}）`,
+    );
+    check(
+      !/Iowan|Georgia|Palatino/i.test(swiss.h1Font),
+      `${route.path} 瑞士极简的 h1 是无衬线`,
+      swiss.h1Font,
+    );
+    check(
+      swiss.h1Size > brutal.h1Size,
+      `${route.path} 瑞士极简的 h1 比粗野主义更大（${swiss.h1Size} > ${brutal.h1Size}）`,
+    );
+
     // 窄屏
     await cdp.send("Emulation.setDeviceMetricsOverride", {
       width: 390,
@@ -664,20 +723,19 @@ try {
     report.push({
       route: route.path,
       ...state,
-      lightBackground: light.bg,
-      darkBackground: dark.bg,
-      brutalBackground: brutal.bg,
+      // 每套主题的背景色都留档：人复核 report.json 时能一眼看出"五套确实不同"
+      themeBackgrounds: Object.fromEntries(
+        THEMES.map((theme) => [theme, facts[theme].bg]),
+      ),
     });
   }
 
-  /* ------------------------------------------- 切换按钮：三态循环 + 刷新后保持 */
+  /* --------------------------------- 主题选择面板：5 套主题逐个选中 + 刷新后保持 */
 
-  console.log(
-    "\u001b[1m主题切换按钮（新粗野主义 → 羊皮纸 → 灰烬 → 新粗野主义）\u001b[0m",
-  );
+  console.log('\u001b[1m主题选择面板\u001b[0m');
 
-  // 先验证「没选过 = 默认主题」这条路：清掉存储再刷新，引导脚本该落到 brutal。
-  // 这是这次改动的核心承诺，所以从最干净的状态开始测，而不是从一个手写的值开始。
+  // 先验证「没选过 = 默认主题」这条路：清掉存储再刷新，引导脚本该落到默认主题。
+  // 从最干净的状态开始测，而不是从一个手写的值开始。
   await navigate(`${BASE}/`);
   await sleep(300);
   await cdp.evaluate(`localStorage.removeItem('grimoire-theme')`);
@@ -692,59 +750,188 @@ try {
     `没选过时落到默认主题（${fresh.theme} / ${fresh.source}）`,
   );
 
-  /** 点一下切换按钮，返回点完之后的完整状态 */
-  async function clickToggle() {
-    await cdp.evaluate(`document.getElementById('theme-toggle').click()`);
-    await sleep(180);
-    return cdp.evaluate(`(() => ({
-    theme: document.documentElement.dataset.theme,
-    source: document.documentElement.dataset.themeSource,
-    stored: (() => { try { return localStorage.getItem('grimoire-theme'); } catch { return null; } })(),
-  }))()`);
-  }
-
-  const first = await clickToggle();
-  check(first.theme === "light", `第一次点击 → 羊皮纸（实际 ${first.theme}）`);
+  // 面板结构：触发器是 <summary>、面板默认收起、选项与 THEME_IDS 一一对应。
+  // 这几条同时也是"面板不是摆设"的前提 —— 下面点选项时得真的有那些按钮。
+  const panel = await cdp.evaluate(`(() => {
+  const trigger = document.getElementById('theme-toggle');
+  const menu = trigger?.closest('details');
+  return {
+    tag: trigger?.tagName ?? null,
+    menuOpen: menu?.open ?? null,
+    hasMenu: Boolean(menu),
+    options: [...document.querySelectorAll('[data-theme-opt]')].map((button) => button.dataset.themeOpt),
+    swatches: [...document.querySelectorAll('.theme-opt__swatch')].map((span) => span.dataset.theme),
+    pressed: [...document.querySelectorAll('[data-theme-opt][aria-pressed="true"]')].map((button) => button.dataset.themeOpt),
+    label: trigger?.getAttribute('aria-label') ?? null,
+    panelInsideMenu: menu ? menu.contains(document.querySelector('.theme-menu__panel')) : false,
+  };
+})()`);
+  check(panel.hasMenu, "触发器在 <details> 里面（开合交给原生行为）");
+  check(panel.tag === "SUMMARY", `触发控件是 <summary>（实际 ${panel.tag}）`);
+  check(panel.menuOpen === false, "面板默认是收起的");
   check(
-    first.source === "manual",
-    `第一次点击后标记为手动选择（source=${first.source}）`,
+    JSON.stringify(panel.options) === JSON.stringify(THEMES),
+    `面板选项与 THEME_IDS 一致（${panel.options.join(" / ")}）`,
   );
   check(
-    first.stored === "light",
-    `第一次点击已写入 localStorage（${first.stored}）`,
+    JSON.stringify(panel.swatches) === JSON.stringify(THEMES),
+    `每套主题都有对应的预览色块（${panel.swatches.join(" / ")}）`,
   );
-
-  // 第二次点击进入深色。这一步顺带证明「引导脚本与 THEME_IDS 是同步的」：
-  // 只要两边不一致，下面那次刷新就会掉回默认主题。
-  const second = await clickToggle();
-  check(second.theme === "dark", `第二次点击 → 灰烬（实际 ${second.theme}）`);
   check(
-    second.stored === "dark",
-    `第二次点击已写入 localStorage（${second.stored}）`,
+    panel.pressed.length === 1 && panel.pressed[0] === DEFAULT_THEME,
+    `初始选中态是默认主题（${panel.pressed.join(",") || "无"}）`,
   );
+  check(Boolean(panel.label), `触发器有可访问名称（${panel.label}）`);
+  check(panel.panelInsideMenu, "面板在 <details> 内部");
 
-  // 刷新一次，验证选择被记住（这才是"刷新后保持"）
-  await navigate(`${BASE}/`);
-  await sleep(300);
-  const persisted = await cdp.evaluate(`(() => ({
+  /** 读当前主题状态（面板相关的都从这里取，避免各写一份） */
+  const readThemeState = () =>
+    cdp.evaluate(`(() => ({
   theme: document.documentElement.dataset.theme,
   source: document.documentElement.dataset.themeSource,
+  stored: (() => { try { return localStorage.getItem('grimoire-theme'); } catch { return null; } })(),
+  pressed: [...document.querySelectorAll('[data-theme-opt][aria-pressed="true"]')].map((button) => button.dataset.themeOpt),
+  open: document.getElementById('theme-menu').open,
+  bg: getComputedStyle(document.body).backgroundColor,
 }))()`);
+
+  /** 走真实交互路径选主题：需要时点开面板，再点那个选项 */
+  async function selectTheme(theme) {
+    await cdp.evaluate(`(() => {
+    if (!document.getElementById('theme-menu').open) document.getElementById('theme-toggle').click();
+    document.querySelector('[data-theme-opt="${theme}"]').click();
+  })()`);
+    await sleep(400);
+    return readThemeState();
+  }
+
+  /** 真的点 <summary> 来开合，而不是直接写 .open */
+  async function toggleMenu() {
+    await cdp.evaluate(`document.getElementById('theme-toggle').click()`);
+    await sleep(150);
+    return cdp.evaluate(`document.getElementById('theme-menu').open`);
+  }
+
+  check((await toggleMenu()) === true, "点一下展开面板");
+  const exposed = await cdp.evaluate(`(() => {
+  const button = document.querySelector('[data-theme-opt]');
+  const rect = button.getBoundingClientRect();
+  return { width: Math.round(rect.width), height: Math.round(rect.height), visibility: getComputedStyle(button).visibility };
+})()`);
   check(
-    persisted.theme === "dark" && persisted.source === "manual",
-    `刷新后仍是手动选择的灰烬（${persisted.theme} / ${persisted.source}）`,
+    exposed.width > 20 && exposed.height > 10 && exposed.visibility === "visible",
+    `展开后选项真的可见可点（${exposed.width}×${exposed.height}，${exposed.visibility}）`,
+  );
+  check((await toggleMenu()) === false, "再点一下收起面板");
+
+  // 逐个选中：每一步都断言"主题生效 + 记为手动 + 写入存储 + 选中态唯一 + 面板自动收起"
+  const seenBackgrounds = new Map();
+  for (const theme of THEMES) {
+    const state = await selectTheme(theme);
+    check(state.theme === theme, `选中「${theme}」后 data-theme 生效（实际 ${state.theme}）`);
+    check(
+      state.source === "manual" && state.stored === theme,
+      `选中「${theme}」被记为手动选择并写入 localStorage（${state.source} / ${state.stored}）`,
+    );
+    check(
+      state.pressed.length === 1 && state.pressed[0] === theme,
+      `选中态唯一且指向「${theme}」（${state.pressed.join(",") || "无"}）`,
+    );
+    check(state.open === false, `选中「${theme}」后面板自动收起`);
+    seenBackgrounds.set(theme, state.bg);
+  }
+  check(
+    new Set(seenBackgrounds.values()).size === THEMES.length,
+    `五套主题的背景色互不相同（${[...seenBackgrounds.values()].join(" / ")}）`,
   );
 
-  // 第三次点击回到默认：循环是闭合的，而不是"点着点着卡在某一套上"
-  const third = await clickToggle();
+  // 刷新后保持。这一步顺带证明「引导脚本与 THEME_IDS 是同步的」：
+  // 只要两边不一致，下面那次刷新就会掉回默认主题。
+  await navigate(`${BASE}/`);
+  await sleep(300);
+  const persisted = await readThemeState();
   check(
-    third.theme === DEFAULT_THEME,
-    `第三次点击回到新粗野主义（实际 ${third.theme}）`,
+    persisted.theme === THEMES[THEMES.length - 1] && persisted.source === "manual",
+    `刷新后仍是最后手动选择的那一套（${persisted.theme} / ${persisted.source}）`,
   );
 
-  // 收尾复位：清掉存储 = 回到默认主题，后面的动效与 reduce 阶段不受这次实验影响
-  await cdp.evaluate(
-    `localStorage.removeItem('grimoire-theme'); document.documentElement.dataset.theme='brutal';`,
+  // 键盘可达：Enter 展开 → Tab 落到第一个选项 → Enter 选中。
+  // 复用站内既有的键入手势写法（见详情页目录那一节）。
+  const pressKey = async (key, code, keyCode) => {
+    await cdp.send("Input.dispatchKeyEvent", {
+      type: "keyDown",
+      key,
+      code,
+      windowsVirtualKeyCode: keyCode,
+      // Enter 必须带上 text：不带的话页面只收到一个"没有字符的按键"，
+      // <button> / <summary> 的默认激活行为不会触发（Tab / Esc 不需要 text）。
+      ...(key === "Enter" ? { text: "\r", unmodifiedText: "\r" } : {}),
+    });
+    await cdp.send("Input.dispatchKeyEvent", {
+      type: "keyUp",
+      key,
+      code,
+      windowsVirtualKeyCode: keyCode,
+    });
+  };
+
+  await cdp.evaluate(`document.getElementById('theme-menu').open = false`);
+  await cdp.evaluate(`document.getElementById('theme-toggle').focus()`);
+  await pressKey("Enter", "Enter", 13);
+  await sleep(250);
+  check(
+    (await cdp.evaluate(`document.getElementById('theme-menu').open`)) === true,
+    "键盘 Enter 能展开面板",
+  );
+  await pressKey("Tab", "Tab", 9);
+  await sleep(150);
+  const focused = await cdp.evaluate(
+    `document.activeElement?.getAttribute('data-theme-opt') ?? null`,
+  );
+  check(focused === THEMES[0], `Tab 落到第一个选项（${focused}）`);
+  await pressKey("Enter", "Enter", 13);
+  await sleep(400);
+  const byKeyboard = await readThemeState();
+  check(
+    byKeyboard.theme === THEMES[0] &&
+      byKeyboard.source === "manual" &&
+      byKeyboard.stored === THEMES[0],
+    `键盘选中生效并被记住（${byKeyboard.theme} / ${byKeyboard.source} / ${byKeyboard.stored}）`,
+  );
+
+  // Esc 关闭：<details> **原生不支持**这个，正是脚本要补的两处缺口之一
+  await cdp.evaluate(`document.getElementById('theme-menu').open = true`);
+  await pressKey("Escape", "Escape", 27);
+  await sleep(200);
+  check(
+    (await cdp.evaluate(`document.getElementById('theme-menu').open`)) === false,
+    "Esc 能收起面板（原生 <details> 不会）",
+  );
+
+  // 点面板外部关闭：另一处原生缺口。点在 h1 上（不是链接，不会导航走）
+  await cdp.evaluate(`document.getElementById('theme-menu').open = true`);
+  const outside = await cdp.evaluate(`(() => {
+  const rect = document.querySelector('h1').getBoundingClientRect();
+  return { x: Math.round(rect.left + rect.width / 2), y: Math.round(rect.top + rect.height / 2) };
+})()`);
+  await cdp.send("Input.dispatchMouseEvent", {
+    type: "mousePressed",
+    x: outside.x,
+    y: outside.y,
+    button: "left",
+    clickCount: 1,
+  });
+  await cdp.send("Input.dispatchMouseEvent", {
+    type: "mouseReleased",
+    x: outside.x,
+    y: outside.y,
+    button: "left",
+    clickCount: 1,
+  });
+  await sleep(250);
+  check(
+    (await cdp.evaluate(`document.getElementById('theme-menu').open`)) === false,
+    "点面板外部会收起面板",
   );
 
   /* ------------------------------------------- 主题切换的视图过渡（含降级） */
@@ -759,7 +946,9 @@ try {
   );
 
   // 不只看 API 在不在，要看站点**真的调了它**：包一层计数（原样转发参数、
-  // 立刻还原），再点一次切换按钮。只断言"API 存在"是很容易变成假守卫的写法。
+  // 立刻还原），再走一次真实的"选主题"路径。只断言"API 存在"是很容易变成假守卫的写法。
+  // 这里刻意挑一个**与当前不同**的主题：选当前那套不会产生状态变化，
+  // 那样"主题换了"这条断言会退化成在测一个恒等变换。
   const transition = await cdp.evaluate(`(async () => {
   const original = Document.prototype.startViewTransition;
   let calls = 0;
@@ -769,9 +958,12 @@ try {
   };
   try {
     const before = document.documentElement.dataset.theme;
+    const other = ${JSON.stringify(THEMES)}.find((id) => id !== before);
     document.getElementById('theme-toggle').click();
+    await new Promise((resolve) => setTimeout(resolve, 80));
+    document.querySelector('[data-theme-opt="' + other + '"]').click();
     await new Promise((resolve) => setTimeout(resolve, 600));
-    return { calls, before, after: document.documentElement.dataset.theme };
+    return { calls, before, after: document.documentElement.dataset.theme, other };
   } finally {
     Document.prototype.startViewTransition = original;
   }
@@ -781,8 +973,8 @@ try {
     `切换主题真的走了一次视图过渡（startViewTransition 被调用 ${transition.calls} 次）`,
   );
   check(
-    transition.after !== transition.before,
-    `视图过渡之后主题确实换了（${transition.before} → ${transition.after}）`,
+    transition.after !== transition.before && transition.after === transition.other,
+    `视图过渡之后主题确实换成了选中的那一套（${transition.before} → ${transition.after}）`,
   );
 
   // 降级：把 API 从原型上删掉再刷新。Safari / Firefox 与旧版 Chrome 就是这条路 ——
@@ -794,34 +986,160 @@ try {
   try {
     await navigate(`${BASE}/`);
     await sleep(300);
-    const fallback = await cdp.evaluate(`(async () => {
-    const before = document.documentElement.dataset.theme;
-    const supported = typeof document.startViewTransition;
-    document.getElementById('theme-toggle').click();
-    await new Promise((resolve) => setTimeout(resolve, 300));
-    return {
-      supported,
-      before,
-      after: document.documentElement.dataset.theme,
-      source: document.documentElement.dataset.themeSource,
-      stored: (() => { try { return localStorage.getItem('grimoire-theme'); } catch { return null; } })(),
-    };
-  })()`);
+    const supported = await cdp.evaluate(`typeof document.startViewTransition`);
+    const fallbackBefore = await readThemeState();
+    // 同样挑一个与当前不同的主题：选当前那套不会产生状态变化，
+    // 断言就退化成在测一个恒等变换
+    const fallbackTarget = THEMES.find((id) => id !== fallbackBefore.theme);
+    const fallback = await selectTheme(fallbackTarget);
     check(
-      fallback.supported === "undefined",
-      `降级分支确实生效（typeof startViewTransition = ${fallback.supported}）`,
+      supported === "undefined",
+      `降级分支确实生效（typeof startViewTransition = ${supported}）`,
     );
     check(
-      fallback.after !== fallback.before &&
+      fallback.theme === fallbackTarget &&
+        fallback.theme !== fallbackBefore.theme &&
         fallback.source === "manual" &&
-        fallback.stored === fallback.after,
-      `没有视图过渡时切换照样生效并记住选择（${fallback.before} → ${fallback.after} / ${fallback.source} / ${fallback.stored}）`,
+        fallback.stored === fallbackTarget,
+      `没有视图过渡时切换照样生效并记住选择（${fallbackBefore.theme} → ${fallback.theme} / ${fallback.source} / ${fallback.stored}）`,
     );
   } finally {
     await cdp.send("Page.removeScriptToEvaluateOnNewDocument", {
       identifier: noTransition.identifier,
     });
   }
+
+  /* ------------------------------- 标签过滤：纯静态列表 + 只切 hidden 的脚本 */
+
+  console.log("\u001b[1m标签过滤\u001b[0m");
+
+  await navigate(`${BASE}/`);
+  await sleep(300);
+  await cdp.evaluate(`localStorage.removeItem('grimoire-theme')`);
+  await navigate(`${BASE}/`);
+  await sleep(300);
+
+  const filter = await cdp.evaluate(`(() => {
+  const bar = document.getElementById('tagbar');
+  const buttons = [...document.querySelectorAll('[data-tag]')];
+  const cards = [...document.querySelectorAll('[data-tags]')];
+  return {
+    barHidden: bar?.hasAttribute('hidden') ?? null,
+    barDisplay: bar ? getComputedStyle(bar).display : null,
+    buttons: buttons.length,
+    pressed: buttons.filter((button) => button.getAttribute('aria-pressed') === 'true').length,
+    visibleCards: cards.filter((card) => !card.hasAttribute('hidden')).length,
+    cards: cards.length,
+    status: document.getElementById('tag-status')?.textContent ?? null,
+  };
+})()`);
+  check(filter.barHidden === false, "脚本跑起来后过滤条不再带 hidden");
+  check(
+    filter.barDisplay !== "none",
+    `过滤条真的可见（display=${filter.barDisplay}）`,
+  );
+  check(filter.buttons >= 2, `过滤条有 ${filter.buttons} 个标签按钮（至少两个才有筛选意义）`);
+  check(filter.pressed === 0, "初始没有任何标签处于选中态");
+  check(
+    filter.visibleCards === filter.cards && filter.cards > 0,
+    `初始所有 ${filter.cards} 张卡片都可见`,
+  );
+
+  /** 点一个标签按钮（走真实点击），返回过滤后的状态 */
+  async function clickTag(selector) {
+    const box = await cdp.evaluate(`(() => {
+    const element = document.querySelector('${selector}');
+    if (!element) return null;
+    const rect = element.getBoundingClientRect();
+    return { x: Math.round(rect.left + rect.width / 2), y: Math.round(rect.top + rect.height / 2) };
+  })()`);
+    if (!box) return null;
+    await cdp.send("Input.dispatchMouseEvent", {
+      type: "mousePressed",
+      x: box.x,
+      y: box.y,
+      button: "left",
+      clickCount: 1,
+    });
+    await cdp.send("Input.dispatchMouseEvent", {
+      type: "mouseReleased",
+      x: box.x,
+      y: box.y,
+      button: "left",
+      clickCount: 1,
+    });
+    await sleep(200);
+    return cdp.evaluate(`(() => {
+    const cards = [...document.querySelectorAll('[data-tags]')];
+    return {
+      visible: cards.filter((card) => !card.hasAttribute('hidden')).length,
+      total: cards.length,
+      pressed: [...document.querySelectorAll('[data-tag][aria-pressed="true"]')].map((button) => button.getAttribute('data-tag')),
+      clearHidden: document.querySelector('[data-tag-clear]')?.hasAttribute('hidden') ?? null,
+      status: document.getElementById('tag-status')?.textContent ?? null,
+      firstVisible: cards.filter((card) => !card.hasAttribute('hidden')).map((card) => card.getAttribute('data-tags')),
+    };
+  })()`);
+  }
+
+  // 挑一个最少见的标签来筛（词汇表按出现次数降序排，所以最后一个最"窄"）
+  const narrowTag = await cdp.evaluate(
+    `[...document.querySelectorAll('[data-tag]')].at(-1)?.getAttribute('data-tag') ?? null`,
+  );
+  const filtered = await clickTag(`[data-tag="${narrowTag}"]`);
+  check(Boolean(filtered), `能点到标签按钮「${narrowTag}」`);
+  check(
+    filtered.pressed.length === 1 && filtered.pressed[0] === narrowTag,
+    `点过之后该标签是选中的（${filtered.pressed.join(",") || "无"}）`,
+  );
+  check(
+    filtered.visible < filtered.total && filtered.visible > 0,
+    `筛出 ${filtered.visible}/${filtered.total} 张卡片（既不是全留也不是全没）`,
+  );
+  check(
+    filtered.firstVisible.every((tags) => (tags ?? "").split(" ").includes(narrowTag)),
+    "留下来的每一张卡片都真的带这个标签",
+  );
+  check(filtered.clearHidden === false, "有筛选时「清空筛选」按钮出现");
+  check(
+    (filtered.status ?? "").includes(String(filtered.visible)),
+    `状态文字报出筛出的条数（${filtered.status}）`,
+  );
+
+  // 多选：并集
+  const secondTag = await cdp.evaluate(
+    `[...document.querySelectorAll('[data-tag]')].at(-2)?.getAttribute('data-tag') ?? null`,
+  );
+  const union = await clickTag(`[data-tag="${secondTag}"]`);
+  check(
+    union.pressed.length === 2,
+    `两个标签可以同时选中（${union.pressed.join(",")}）`,
+  );
+  check(
+    union.visible >= filtered.visible,
+    `多选是并集：${union.visible} ≥ 单选时的 ${filtered.visible}`,
+  );
+
+  // 一键清空
+  const cleared = await clickTag("[data-tag-clear]");
+  check(
+    cleared.visible === cleared.total,
+    `清空后所有 ${cleared.total} 张卡片都回来（实际 ${cleared.visible}）`,
+  );
+  check(cleared.pressed.length === 0, "清空后没有任何标签处于选中态");
+  check(cleared.clearHidden === true, "没有筛选时「清空筛选」按钮收起");
+
+  // 键盘可用：Tab 到标签按钮后按 Enter
+  await cdp.evaluate(`document.querySelector('[data-tag]').focus()`);
+  await pressKey("Enter", "Enter", 13);
+  await sleep(200);
+  check(
+    (await cdp.evaluate(
+      `document.querySelector('[data-tag]').getAttribute('aria-pressed')`,
+    )) === "true",
+    "键盘 Enter 也能切换标签",
+  );
+  await clickTag("[data-tag-clear]");
 
   // 复位，后面的阶段从干净状态开始
   await cdp.evaluate(
@@ -904,26 +1222,20 @@ try {
   // 但"换成哪套主题、并记住它"半分不能少。这里就把这件事测出来。
   await navigate(`${BASE}/`);
   await sleep(250);
-  const reduceSwitch = await cdp.evaluate(`(async () => {
-  localStorage.removeItem('grimoire-theme');
-  const before = document.documentElement.dataset.theme;
-  document.getElementById('theme-toggle').click();
-  await new Promise((resolve) => setTimeout(resolve, 400));
-  return {
-    before,
-    after: document.documentElement.dataset.theme,
-    source: document.documentElement.dataset.themeSource,
-    stored: (() => { try { return localStorage.getItem('grimoire-theme'); } catch { return null; } })(),
-    overflowX: document.documentElement.scrollWidth > window.innerWidth + 1,
-  };
-})()`);
-  check(
-    reduceSwitch.after !== reduceSwitch.before &&
-      reduceSwitch.source === "manual" &&
-      reduceSwitch.stored === reduceSwitch.after,
-    `reduce 下主题切换照常生效并记住选择（${reduceSwitch.before} → ${reduceSwitch.after} / ${reduceSwitch.source}）`,
+  await cdp.evaluate(`localStorage.removeItem('grimoire-theme')`);
+  const reduceBefore = await readThemeState();
+  const reduceAfter = await selectTheme(THEMES[1]);
+  const reduceOverflow = await cdp.evaluate(
+    `document.documentElement.scrollWidth > window.innerWidth + 1`,
   );
-  check(!reduceSwitch.overflowX, "reduce 下切换主题不会撑出横向滚动");
+  check(
+    reduceAfter.theme === THEMES[1] &&
+      reduceAfter.theme !== reduceBefore.theme &&
+      reduceAfter.source === "manual" &&
+      reduceAfter.stored === THEMES[1],
+    `reduce 下主题切换照常生效并记住选择（${reduceBefore.theme} → ${reduceAfter.theme} / ${reduceAfter.source}）`,
+  );
+  check(!reduceOverflow, "reduce 下切换主题不会撑出横向滚动");
   await cdp.evaluate(`localStorage.removeItem('grimoire-theme')`);
 
   // 收尾：撤掉媒体模拟
@@ -1008,12 +1320,19 @@ try {
   const noJs = await cdp.evaluate(`(() => {
   const toggle = document.getElementById('theme-toggle');
   const card = document.querySelector('.entry-card');
+  const bars = [...document.querySelectorAll('.tagbar__tag')];
   return {
     theme: document.documentElement.dataset.theme ?? null,
     source: document.documentElement.dataset.themeSource ?? null,
     bg: getComputedStyle(document.body).backgroundColor,
     toggleRadius: toggle ? getComputedStyle(toggle).borderRadius : null,
     cardShadow: card ? getComputedStyle(card).boxShadow : null,
+    barHidden: document.getElementById('tagbar')?.hasAttribute('hidden') ?? null,
+    // 注意用 checkVisibility() 而不是读按钮自己的 display ——
+    // display:none 的祖先不会改变子元素的计算 display（读出来仍是 inline-flex），
+    // 那样写会得到"5 个按钮都可见"的假结论。
+    tagButtonsVisible: bars.filter((button) => button.checkVisibility()).length,
+    tagSlots: bars.length,
   };
 })()`);
   await cdp.screenshot(path.join(SHOTS, "home-nojs.png"));
@@ -1033,6 +1352,17 @@ try {
   check(
     noJs.toggleRadius === "0px" && isHardShadow(noJs.cardShadow),
     `禁用脚本时形状也是粗野主义（圆角 ${noJs.toggleRadius}，卡片阴影 ${noJs.cardShadow}）`,
+  );
+  // 渐进增强的方向必须是"少了功能"而不是"多了一堆坏掉的东西"：
+  // 过滤条在服务端渲染时就带 hidden，所以无 JS 时它整条不出现。
+  // 先断言这些按钮真的存在（否则"都不可见"是空集上的假通过），再断言它们被藏住。
+  check(
+    noJs.tagSlots >= 2,
+    `禁用脚本时过滤条仍渲染出 ${noJs.tagSlots} 个标签按钮（下面那条不是空集断言）`,
+  );
+  check(
+    noJs.barHidden === true && noJs.tagButtonsVisible === 0,
+    `禁用脚本时过滤条保持隐藏（hidden=${noJs.barHidden}，可见按钮 ${noJs.tagButtonsVisible} 个）`,
   );
 
   await cdp.send("Emulation.setScriptExecutionDisabled", { value: false });
@@ -1225,7 +1555,7 @@ try {
     ),
     "存储不可用时引导正常",
   );
-  const temporary = await clickToggle();
+  const temporary = await selectTheme("light");
   check(
     temporary.theme === "light" && temporary.stored === null,
     "存储不可用时仍可切换主题",

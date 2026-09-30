@@ -74,6 +74,16 @@ const projects = defineCollection({
     /** 首页排序，必须唯一（check-site.mjs 会检查） */
     order: z.number().int().positive(),
     stack: z.array(z.string().min(1)).min(1),
+    /**
+     * 首页标签过滤用的策展标签。
+     *
+     * 刻意**不**从 stack 自动派生：stack 里是 "Go 1.27"、"Docker Compose + nginx"
+     * 这种带版本号的实现细节，拿来做筛选词又长又碎；标签是"一个人会用它来找东西"
+     * 的维度，得手工挑。写成小写、短词，且必须在条目之间真正共用（首页词汇表只收
+     * 被 ≥2 个条目共用的标签，只属于一个条目的标签筛出来就是它自己）。
+     * 归一化（小写、去重、排序）见 src/lib/tags.ts。
+     */
+    tags: z.array(z.string().min(1)).min(2),
     highlights: z.array(z.string().min(1)).min(3),
     links: z.object({
       repo: repoUrl,

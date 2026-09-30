@@ -8,6 +8,13 @@ role: "独立设计与开发"
 accent: "coral"
 glyph: "book"
 order: 1
+# 首页标签过滤的筛选维度（不写实现细节，写"一个人会用它来找东西"的词）
+tags:
+  - "go"
+  - "vue"
+  - "全栈"
+  - "后端"
+  - "搜索"
 stack:
   - "Go 1.25"
   - "go-zero REST"

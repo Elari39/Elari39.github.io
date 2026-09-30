@@ -49,8 +49,8 @@ export const SITE = {
       body: '字体用系统字体栈、图标是内联 SVG、不引任何 CDN 与分析脚本——打开这一页不会顺带通知别的服务器。',
     },
     {
-      title: '两段主题脚本',
-      body: '主题引导与切换共两段脚本，无客户端框架运行时；其余交互由 HTML 与 CSS 完成，脚本 gzip 总量不超过 4 KB。',
+      title: '两段脚本',
+      body: '主题引导与主题面板/标签过滤共两段脚本，无客户端框架运行时；动效与形状都由 CSS 完成，脚本 gzip 总量不超过 4 KB。',
     },
     {
       title: '内容是文件，不是数据库',
@@ -69,7 +69,7 @@ export const SITE = {
   attestations: [
     { value: '0', caption: '次第三方请求 · 字体与图标都是自己的' },
     { value: '≤ 4 KB', caption: '客户端 JS（gzip）· 守卫盯着上限' },
-    { value: '9 组', caption: '配色 × 3 主题 · 文字 ≥ 4.5:1，装饰 ≥ 3:1' },
+    { value: '9 组', caption: '配色 × 5 主题 · 文字 ≥ 4.5:1，装饰 ≥ 3:1' },
   ],
 } as const;
 

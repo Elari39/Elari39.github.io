@@ -34,6 +34,8 @@ export interface ProjectView {
   glyph: GlyphName;
   order: number;
   stack: string[];
+  /** 首页标签过滤用的策展标签（已归一化，见 src/lib/tags.ts） */
+  tags: string[];
   highlights: string[];
   links: ProjectLinks;
   gallery: GalleryPlate[];

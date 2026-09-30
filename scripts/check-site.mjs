@@ -475,23 +475,6 @@ check(
   `${themes.size} 套主题的画布色互不相同（${canvases.join(' / ')}）`,
 );
 
-// 产物里出现的每一个 data-theme 值都必须是已知主题。
-// 主题面板的色块靠嵌套 `data-theme="<id>"` 来拿到对应主题的 token ——
-// 那是最省事也最容易写错 id 的地方：写错了不会报错，只会安静地显示错颜色。
-const unknownThemeValues = new Set();
-const themeScanFiles = [...routes.map((route) => fileForRoute(route)), path.join(DIST, '404.html')];
-for (const file of themeScanFiles) {
-  if (!existsSync(file)) continue;
-  for (const match of (await readFile(file, 'utf8')).matchAll(/\bdata-theme="([^"]*)"/g)) {
-    if (!THEME_IDS.includes(match[1])) unknownThemeValues.add(match[1]);
-  }
-}
-check(
-  unknownThemeValues.size === 0,
-  '产物里的 data-theme 值都是已知主题',
-  [...unknownThemeValues].join(', '),
-);
-
 /* --- 6.5 动效契约（静态核对） --- */
 section('动效契约（静态核对）');
 

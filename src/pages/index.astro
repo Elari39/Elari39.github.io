@@ -8,6 +8,7 @@ import SigilPlate from '../components/SigilPlate.astro';
 import { SITE } from '../data/site';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import type { GlyphName, ProjectStatus, ProjectView } from '../lib/entry';
+import { normalizeTags, tagVocabulary, tagsAttribute } from '../lib/tags';
 
 const entries = (await getCollection('projects', ({ data }) => !data.draft)).sort(
   (a, b) => a.data.order - b.data.order,
@@ -26,10 +27,18 @@ const projects: ProjectView[] = entries.map((entry) => ({
   glyph: entry.data.glyph as GlyphName,
   order: entry.data.order,
   stack: [...entry.data.stack],
+  tags: normalizeTags(entry.data.tags),
   highlights: [...entry.data.highlights],
   links: { ...entry.data.links },
   gallery: entry.data.gallery.map((plate) => ({ ...plate })),
 }));
+
+/**
+ * 标签过滤条的内容：只收被两个以上条目共用的标签（规则见 src/lib/tags.ts）。
+ * 构建期算出来、渲染成静态按钮 —— 过滤本身不做任何数据请求，
+ * 运行时只切卡片的 hidden 属性。
+ */
+const tags = tagVocabulary(projects.map((project) => project.tags));
 
 /**
  * 图版走廊：把所有已发布条目的图版摊平成一条横向走廊。
@@ -114,10 +123,36 @@ const jsonLd = [
       <p class="label">{projects.length} 条 · 按条目顺序编排</p>
     </div>
 
+    {/*
+      标签过滤条：**服务端渲染时就带 hidden**，由客户端脚本去掉。
+      这样没有 JS 的访客看到的是一条完整的条目列表，而不是一排点了没反应的按钮
+      —— 渐进增强的方向是"少了功能"，不是"多了一堆坏掉的东西"。
+      卡片始终留在 DOM 里、顺序不变，过滤只切它们的 hidden 属性。
+    */}
+    <div class="tagbar" id="tagbar" role="group" aria-label="按标签筛选条目" hidden>
+      <p class="label">按标签筛选</p>
+      <ul class="tagbar__list">
+        {
+          tags.map(({ tag, count }) => (
+            <li>
+              <button type="button" class="tagbar__tag" data-tag={tag} aria-pressed="false">
+                {tag}
+                <span class="tagbar__n">{count}</span>
+              </button>
+            </li>
+          ))
+        }
+      </ul>
+      <button type="button" class="tagbar__clear" data-tag-clear hidden>
+        清空筛选
+      </button>
+      <p class="tagbar__status" id="tag-status" aria-live="polite"></p>
+    </div>
+
     <div class="mt-8 space-y-5">
       {
         projects.map((project, index) => (
-          <div class="reveal">
+          <div class="reveal" data-tags={tagsAttribute(project.tags)}>
             <ProjectCard project={project} index={index} />
           </div>
         ))

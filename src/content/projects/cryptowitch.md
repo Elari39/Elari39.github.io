@@ -8,6 +8,11 @@ role: "独立设计与开发"
 accent: "amber"
 glyph: "lock"
 order: 3
+tags:
+  - "go"
+  - "typescript"
+  - "桌面端"
+  - "密码学"
 stack:
   - "Go"
   - "Wails v3"

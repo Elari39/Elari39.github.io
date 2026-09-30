@@ -1,7 +1,7 @@
 ---
 import { SITE } from '../data/site';
 import Glyph from './Glyph.astro';
-import ThemeToggle from './ThemeToggle.astro';
+import ThemeMenu from './ThemeMenu.astro';
 
 const path = Astro.url.pathname;
 
@@ -44,7 +44,7 @@ function isCurrent(href: string): boolean {
       >
         GitHub
       </a>
-      <ThemeToggle />
+      <ThemeMenu />
     </nav>
   </div>
 </header>

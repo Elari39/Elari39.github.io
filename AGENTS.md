@@ -23,7 +23,14 @@
 - `prefers-reduced-motion: reduce` 下必须显式关掉视图过渡 —— base 层那条全局兜底
   只作用于 `*::before` / `*::after`，管不到顶层伪元素树里的 `::view-transition-*`。
 - 主题清单只有一处来源（`src/lib/theme.ts` 的 `THEME_IDS`）；各套主题的 token 键集合
-  必须一致，且产物里不得出现未知的 `data-theme` 值。
+  必须一致，且产物里不得出现未知的 `data-theme` 值。加一套主题要同时照顾四处：
+  CSS 的 token 块、面板里的预览色块、首页数字条上的主题数、以及验收脚本（后者从
+  `THEME_IDS` 自动读，不用改）。
+- 新组件（主题面板 / 标签过滤条 / 预览弹层）用 `--r-card` / `--r-pill` / `--r-sm` /
+  `--bw` / `--c-glow` 这些**运行时** token 塑形，不要为每套主题各写一份类覆盖 ——
+  `@theme inline` 会把 token 的值内联进工具类，所以既有的 `.rounded-*` 只能逐类覆盖，
+  而新组件不必再背这个包袱。半透明色写 8 位十六进制，别用 `color-mix()`（它会生成
+  `@supports` 孪生规则、体积翻倍，而 CSS 预算是硬的）。
 - 每页恰好一个 `<h1>`；图片要有 `alt` 与 `width`/`height`；装饰 SVG 一律 `aria-hidden`。
 - 现有 `--c-*` 色板与每一套主题的对比度是契约（每套 9 对：8 对 ≥ 4.5:1，1 对 ≥ 3:1）——
   改色或加主题之前先看守卫的对比度检查。

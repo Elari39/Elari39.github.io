@@ -1,0 +1,63 @@
+---
+/**
+ * 主题选择面板（Popover）。
+ *
+ * 用原生 `<details>` / `<summary>` 做开合：不需要自己实现"点击外部关闭"的焦点陷阱，
+ * 键盘可达性也是浏览器给的。原生的两处缺口由脚本补上（Esc 与点击面板外部关闭）。
+ *
+ * 触发器沿用原来的 id（`#theme-toggle`）与 36px 见方的尺寸：这个位置紧挨导航，
+ * 一旦变宽就会在窄屏把导航挤到换行 —— 那是这个改动最容易踩的回归，
+ * 所以面板里**不放文字**，只放一枚色块。
+ *
+ * 色块读 var(--c-canvas)/var(--c-primary)，所以它自动就是"当前主题"的样子：
+ * 不需要为每套主题各画一个图标，也不需要脚本同步它。脚本只负责选中态
+ * （aria-pressed）与朗读区。
+ *
+ * 面板里每个选项的色块**自带 data-theme="<id>"**，于是那套主题的 token 块对它生效，
+ * 用同一套变量画出来就是那套主题的颜色 —— 零十六进制重复，也就不会出现
+ * "改了主题色、忘了改面板色块"这种漂移。
+ *
+ * 注意这里**没有** <script>：全站客户端脚本只能有一段（见 src/scripts/interactions.ts），
+ * 由 BaseLayout 统一引入。组件自带脚本会让首页多出第三段，守卫当场红。
+ */
+import { DEFAULT_THEME, THEME_IDS, THEME_LABELS } from '../lib/theme';
+
+// 服务端渲染不可能知道访客选过什么（那在 localStorage 里），所以初始选中态按默认主题
+// 渲染；引导脚本会先把 data-theme 改对，随后脚本再把 aria-pressed 修正过来。
+const current = DEFAULT_THEME;
+---
+
+<details class="theme-menu" id="theme-menu">
+  <summary
+    id="theme-toggle"
+    class="ml-1 grid h-9 w-9 place-items-center rounded-full border border-hairline bg-card text-muted transition-colors hover:border-primary hover:text-ink"
+    aria-label="选择界面主题"
+    title="选择界面主题"
+  >
+    <span class="theme-dot" aria-hidden="true"></span>
+  </summary>
+
+  <div class="theme-menu__panel">
+    <p class="label">界面主题</p>
+    <ul class="theme-menu__list">
+      {
+        THEME_IDS.map((id) => (
+          <li>
+            <button
+              type="button"
+              class="theme-opt"
+              data-theme-opt={id}
+              aria-pressed={id === current ? 'true' : 'false'}
+            >
+              <span class="theme-opt__swatch" data-theme={id} aria-hidden="true" />
+              <span>{THEME_LABELS[id]}</span>
+            </button>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</details>
+
+{/* 选择结果用 aria-live 播报：面板收起后焦点回到触发器，读屏需要知道换成了哪一套 */}
+<span id="theme-live" class="sr-only" aria-live="polite"></span>

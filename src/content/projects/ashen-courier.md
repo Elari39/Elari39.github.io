@@ -8,6 +8,12 @@ role: "独立设计与开发"
 accent: "teal"
 glyph: "link"
 order: 2
+tags:
+  - "go"
+  - "vue"
+  - "全栈"
+  - "后端"
+  - "redis"
 stack:
   - "Go 1.27"
   - "net/http ServeMux"

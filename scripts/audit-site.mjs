@@ -6,6 +6,7 @@ import { gzipSync } from "node:zlib";
 import postcss from "postcss";
 import valueParser from "postcss-value-parser";
 import { imageSize } from "image-size";
+import { readThemeIds } from "./budget.mjs";
 import {
   SITE,
   files,
@@ -359,12 +360,96 @@ export async function audit(root, dist) {
     `${published.length} 条已发布条目 · 全部通过 schema 校验`,
     "0 次第三方请求 · 字体与图标都是自己的",
     "≤ 4 KB 客户端 JS（gzip）· 守卫盯着上限",
-    "9 组 配色 × 3 主题 · 文字 ≥ 4.5:1，装饰 ≥ 3:1",
+    "9 组 配色 × 5 主题 · 文字 ≥ 4.5:1，装饰 ≥ 3:1",
   ];
   check(
     attest.length === 4 && attest.every((v, i) => v === captions[i]),
     "数字条完整说明不符",
   );
+
+  /* 主题：产物里每个 data-theme 值都必须是已知主题，且每套主题在面板里都有色块。
+     面板的色块靠**嵌在页面里的** data-theme="<id>" 去取各自主题的 token ——
+     那是最省事、也最容易写错 id 的地方：写错了不会报错，只会安静地显示成别的主题色。
+     所以这里不只看"值合法"，还看"清单里每一套都真的有预览"。 */
+  const themeIds = readThemeIds(await readFile(path.join(root, "src/lib/theme.ts"), "utf8"));
+  check(themeIds.length >= 2, "主题清单读取失败");
+  for (const [route, page] of pages) {
+    for (const node of page.nodes) {
+      const value = attr(node, "data-theme");
+      check(
+        value === undefined || themeIds.includes(value),
+        `${route} 出现未知的 data-theme 值：${value}`,
+      );
+    }
+    const swatches = page.nodes
+      .filter((node) => hasClass(node, "theme-opt__swatch"))
+      .map((node) => attr(node, "data-theme"));
+    check(
+      swatches.length === themeIds.length,
+      `${route} 主题面板的色块数 ${swatches.length} ≠ 主题数 ${themeIds.length}`,
+    );
+    check(
+      themeIds.every((id) => swatches.includes(id)),
+      `${route} 主题面板缺少某套主题的预览色块`,
+    );
+  }
+
+  /* 标签过滤：卡片上的 data-tags 与过滤条按钮必须彼此自洽。
+     这里刻意**不**重算"该显示哪些标签"（那条规则在 src/lib/tags.ts），
+     只核对渲染结果本身的性质 —— 规则改了不会让这里误报，但
+     "按钮筛不出任何东西""计数对不上""没有 JS 时也少了东西"一定会红。 */
+  const tagged = home.nodes.filter(
+    (node) => hasClass(node, "reveal") && attr(node, "data-tags") !== undefined,
+  );
+  check(tagged.length === published.length, "首页带标签的卡片数与已发布条目数不符");
+  published.forEach((entry, index) =>
+    check(
+      text(tagged[index]).includes(entry.title),
+      `首页带标签的卡片顺序与条目顺序不符（第 ${index + 1} 张）`,
+    ),
+  );
+  const cardTags = tagged.map((node) => {
+    const raw = attr(node, "data-tags") ?? "";
+    const parts = raw.split(/\s+/).filter(Boolean);
+    check(parts.length >= 2, `data-tags="${raw}" 的标签少于两个`);
+    check(parts.length === new Set(parts).size, `data-tags="${raw}" 有重复标签`);
+    check(
+      parts.join(" ") === [...parts].sort().join(" "),
+      `data-tags="${raw}" 未排序（应与 src/lib/tags.ts 的归一化一致）`,
+    );
+    check(
+      parts.every((tag) => tag === tag.trim().toLowerCase()),
+      `data-tags="${raw}" 未小写或含空白`,
+    );
+    return new Set(parts);
+  });
+  const tagButtons = home.nodes.filter((node) => hasClass(node, "tagbar__tag"));
+  check(tagButtons.length > 0, "首页没有标签过滤按钮");
+  for (const button of tagButtons) {
+    const tag = attr(button, "data-tag");
+    check(Boolean(tag), "标签按钮缺少 data-tag");
+    if (!tag) continue;
+    check(text(button).includes(tag), `标签按钮的文字里没有 ${tag}`);
+    check(
+      attr(button, "aria-pressed") === "false",
+      `标签按钮 ${tag} 的初始 aria-pressed 应为 false`,
+    );
+    const shared = cardTags.filter((set) => set.has(tag)).length;
+    // 只被一个条目用的标签筛出来就是它自己，不该出现在过滤条里
+    check(shared >= 2, `标签 ${tag} 只被 ${shared} 个条目使用，不该出现在过滤条里`);
+    const countNode = (button.childNodes ?? []).find((child) =>
+      hasClass(child, "tagbar__n"),
+    );
+    check(
+      text(countNode).trim() === String(shared),
+      `标签 ${tag} 显示的计数 ${text(countNode).trim()} 与带它的条目数 ${shared} 不符`,
+    );
+  }
+  // 过滤条在服务端渲染时必须是隐藏的：没有 JS 的访客不该看到一排点了没反应的按钮
+  const bar = home.nodes.find((node) => attr(node, "id") === "tagbar");
+  check(Boolean(bar), "首页缺少标签过滤条");
+  check(attr(bar, "hidden") !== undefined, "标签过滤条在服务端渲染时应带 hidden");
+
   const locs = [];
   for (const file of inventory.filter((f) => /sitemap.*\.xml$/.test(f)))
     locs.push(

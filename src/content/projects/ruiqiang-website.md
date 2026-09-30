@@ -8,6 +8,11 @@ role: "独立设计与开发"
 accent: "coral"
 glyph: "sigil"
 order: 4
+tags:
+  - "typescript"
+  - "前端"
+  - "静态站"
+  - "设计"
 stack:
   - "Next.js 16.3.6"
   - "React 19.3"

@@ -71,14 +71,17 @@ const count = (await getCollection('projects', ({ data }) => !data.draft)).lengt
           <code>scripts/check-site.mjs</code>（<code>pnpm guard</code>）只看构建产物 <code>dist/</code>：
           页面与文件是否齐全、SEO 与 canonical、站内链接与图片是否真的存在、CSP 里有没有放行
           页面上每一个内联脚本、有没有第三方请求、有没有行内 <code>style</code> 属性、图片有没有
-          <code>alt</code> 与宽高、三套主题的对比度比值，以及客户端 JS 与 CSS 的体积预算。
+          <code>alt</code> 与宽高、每一套主题的对比度比值、主题清单与面板是否自洽、
+          标签过滤的按钮与卡片数据是否对得上，以及客户端 JS 与 CSS 的体积预算。
           它很快、离线、每次提交都跑。
         </li>
         <li>
           <code>scripts/verify-browser.mjs</code>（<code>pnpm verify:browser</code>）用无头 Chrome
-          把页面真跑一遍：主题引导脚本在 CSP 之下确实执行了、没有控制台报错、三套主题的计算样式
-          确实两两不同（含新粗野主义的方角与硬阴影）、滚动进场动画一定收敛到可见终态、
-          320、390、768、1280 与 1440px 下导航完整且没有横向滚动；并把每页的浅色 / 深色 / 新粗野主义 / 窄屏截图写到
+          把页面真跑一遍：主题引导脚本在 CSP 之下确实执行了、没有控制台报错、主题面板能开能合
+          （含键盘与 Esc）、五套主题的计算样式确实两两不同（含新粗野主义的方角与硬阴影、
+          赛博终端的 CRT 扫描线、瑞士极简的大字号）、标签过滤真的筛得动且没有 JS 时整条不出现、
+          切主题走原生视图过渡并能降级、滚动进场动画一定收敛到可见终态、
+          320、390、768、1280 与 1440px 下导航完整且没有横向滚动；并把每页的五套主题与窄屏截图写到
           <code>.assets-raw/verify/</code> 供人眼复核。
         </li>
       </ul>

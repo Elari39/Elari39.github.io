@@ -7,6 +7,16 @@ import { randomBytes } from "node:crypto";
 import { audit } from "./audit-site.mjs";
 
 const root = process.cwd();
+
+/** 只替换第 n 个（从 0 数）匹配，用来精准地改某一张卡片的属性 */
+function nthReplace(source, pattern, index, replacement) {
+  let seen = -1;
+  return source.replace(new RegExp(pattern.source, pattern.flags + "g"), (match) => {
+    seen += 1;
+    return seen === index ? replacement : match;
+  });
+}
+
 test("真实构建基线通过", async () =>
   assert.deepEqual(await audit(root, path.join(root, "dist")), []));
 const cases = [
@@ -88,6 +98,72 @@ const cases = [
     "index.html",
     (s) => s.replace("文字 ≥ 4.5:1，装饰 ≥ 3:1", "所有颜色 ≥ 4.5:1"),
     "数字条完整说明",
+  ],
+  // 主题清单：主题数改了却没同步数字条（这正是「加一套主题」时最容易漏的一步）
+  [
+    "数字条主题数漂移",
+    "index.html",
+    (s) => s.replace("配色 × 5 主题", "配色 × 3 主题"),
+    "数字条完整说明",
+  ],
+  // 面板色块靠嵌套 data-theme 取各自主题的 token —— 写错 id 不会报错，
+  // 只会安静地显示成别的主题色，所以必须有守卫
+  [
+    "面板色块主题 id 写错",
+    "index.html",
+    (s) => s.replace('data-theme="cyber"', 'data-theme="nope"'),
+    "未知的 data-theme 值",
+  ],
+  [
+    "面板少一套主题的预览",
+    "index.html",
+    (s) =>
+      s.replace(
+        '<span class="theme-opt__swatch" data-theme="brutal" aria-hidden="true"></span>',
+        "",
+      ),
+    "色块数",
+  ],
+  // 标签过滤：按钮、计数、卡片三者必须自洽
+  [
+    "标签计数与卡片数不符",
+    "index.html",
+    (s) =>
+      s.replace(
+        '<span class="tagbar__n">3</span>',
+        '<span class="tagbar__n">9</span>',
+      ),
+    "显示的计数",
+  ],
+  [
+    "过滤条在服务端渲染时未隐藏",
+    "index.html",
+    (s) => s.replace(' aria-label="按标签筛选条目" hidden>', ' aria-label="按标签筛选条目">'),
+    "应带 hidden",
+  ],
+  [
+    "过滤条出现只被一个条目使用的标签",
+    "index.html",
+    (s) => nthReplace(s, /data-tags="[^"]*"/, 1, 'data-tags="go"'),
+    "只被 1 个条目使用",
+  ],
+  [
+    "data-tags 未归一化（顺序）",
+    "index.html",
+    (s) => nthReplace(s, /data-tags="[^"]*"/, 0, 'data-tags="vue go"'),
+    "未排序",
+  ],
+  [
+    "data-tags 未归一化（大小写）",
+    "index.html",
+    (s) => nthReplace(s, /data-tags="[^"]*"/, 0, 'data-tags="go Vue"'),
+    "未小写",
+  ],
+  [
+    "data-tags 有重复标签",
+    "index.html",
+    (s) => nthReplace(s, /data-tags="[^"]*"/, 0, 'data-tags="go go"'),
+    "有重复标签",
   ],
 ];
 for (const [name, file, mutate, expected] of cases)

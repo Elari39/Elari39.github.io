@@ -7,17 +7,20 @@
  * 第二段就是这个 —— 由 BaseLayout 统一引入，所有路由共用同一份产物。
  * 组件级的 <script> 会让首页变成三段、或者让各页脚本不一致，两条都会直接判红。
  *
- * 因此这里的每一块都按「元素可能在也可能不在」来写：面板块与过滤条只在首页出现，
- * 但这个脚本每页都跑。用 getElementById + 可选链兜住，而不是按路由判断。
+ * 因此这里的每一块都按「元素可能在也可能不在」来写：主题面板每页都有，
+ * 标签过滤条只在首页出现，但这个脚本每页都跑。用 getElementById + 可选链兜住，
+ * 而不是按路由判断。
  *
  * 体积是要守的：打包产物必须小于 4096 字节才能被 Astro 内联（否则页面多一个请求），
  * 所以能一行写完的就不写三行，能用事件委托的就不逐个绑定。多出来的字节不是风格问题，
- * 是守卫会红的问题。
+ * 是守卫会红的问题。（注释不计入：打包时会被压缩掉。）
  */
 
-import { THEME_STORAGE_KEY, nextTheme, themeLabel } from '../lib/theme';
+import { THEME_STORAGE_KEY, themeLabel } from '../lib/theme';
 
 const root = document.documentElement;
+
+/* --------------------------------------------------------------- 主题 */
 
 /**
  * 把主题写到 <html> 上，并记住这次选择。
@@ -35,7 +38,7 @@ function applyTheme(id: string): void {
     /* 存不下（隐私模式 / 被策略禁用）就只影响本次会话，不弹错 */
   }
 
-  sync();
+  syncTheme();
 }
 
 /**
@@ -55,22 +58,117 @@ function switchTheme(id: string): void {
   }
 }
 
-/** 同步提示语与播报：按钮始终告诉用户「再点会变成什么」 */
-function sync(): void {
-  const current = root.dataset.theme;
-  const next = nextTheme(current);
-  const button = document.getElementById('theme-toggle');
+const menu = document.getElementById('theme-menu');
 
-  button?.setAttribute('aria-label', `切换界面主题（当前：${themeLabel(current)}）`);
-  button?.setAttribute('title', `切换到：${themeLabel(next)}`);
-
-  const live = document.getElementById('theme-live');
-  if (live) live.textContent = `当前主题：${themeLabel(current)}`;
+/** 收起主题面板。<details> 原生不支持 Esc 与"点外面关闭"，都得自己补 */
+function closeMenu(): void {
+  if (menu instanceof HTMLDetailsElement) menu.open = false;
 }
 
-// 模块脚本默认是 defer 的，执行时 DOM 已经解析完，这里可以安全地直接取元素。
-document.getElementById('theme-toggle')?.addEventListener('click', () => {
-  switchTheme(nextTheme(root.dataset.theme));
+/** 把"当前是哪套主题"同步到按钮提示、选项的 aria-pressed 与朗读区 */
+function syncTheme(): void {
+  const current = root.dataset.theme ?? '';
+  const label = themeLabel(current);
+  const trigger = document.getElementById('theme-toggle');
+
+  trigger?.setAttribute('aria-label', `选择界面主题（当前：${label}）`);
+  trigger?.setAttribute('title', `界面主题：${label}`);
+
+  // aria-pressed 既是视觉选中态（CSS 用 [aria-pressed='true'] 上色）也是给辅助技术的
+  // 状态，一个状态只有一个来源：不额外加 .is-active 之类的类，避免两者对不上。
+  for (const option of document.querySelectorAll('[data-theme-opt]')) {
+    option.setAttribute('aria-pressed', String(option.getAttribute('data-theme-opt') === current));
+  }
+
+  const live = document.getElementById('theme-live');
+  if (live) live.textContent = `当前主题：${label}`;
+}
+
+/* ----------------------------------------------------------- 标签过滤 */
+
+// 过滤条在服务端渲染时带 hidden：没有 JS 的访客看到的是一条完整的条目列表，
+// 而不是一排点了没反应的按钮。这里才是它"被启用"的地方。
+const tagbar = document.getElementById('tagbar');
+const cards = document.querySelectorAll('[data-tags]');
+const clearButton = document.querySelector('[data-tag-clear]');
+const status = document.getElementById('tag-status');
+
+const pressedTags = () =>
+  [...document.querySelectorAll('[data-tag][aria-pressed="true"]')].map(
+    (button) => button.getAttribute('data-tag') ?? '',
+  );
+
+/**
+ * 按当前选中的标签切换每张卡片的显示状态。
+ *
+ * 只切 hidden 属性、不做数据重排：卡片始终留在 DOM 里且顺序不变 ——
+ * 守卫会核对首页的卡片数量与顺序，重排会打破它；而对读屏与 SEO 来说，
+ * "被筛掉的条目仍然在页面上"也比"被删掉"更稳妥。多选是并集。
+ */
+function applyFilter(): void {
+  const active = pressedTags();
+  let shown = 0;
+
+  for (const card of cards) {
+    const tags = (card.getAttribute('data-tags') ?? '').split(' ');
+    const match = active.length === 0 || active.some((tag) => tags.includes(tag));
+    card.toggleAttribute('hidden', !match);
+    if (match) shown += 1;
+  }
+
+  if (clearButton) clearButton.toggleAttribute('hidden', active.length === 0);
+
+  if (status) {
+    status.textContent =
+      active.length === 0 ? `共 ${cards.length} 条` : `筛出 ${shown} / ${cards.length} 条`;
+  }
+}
+
+/* ------------------------------------------------------- 事件（一次委托） */
+
+// 一个 document 级监听处理三件事：选主题、切标签、以及"点面板外面收起面板"。
+// 逐个元素绑定会在每次渲染后重复注册，也会让体积随组件数增长。
+document.addEventListener('click', (event) => {
+  const target = event.target as Element | null;
+  if (!target) return;
+
+  const option = target.closest('[data-theme-opt]');
+  if (option) {
+    const id = option.getAttribute('data-theme-opt');
+    if (id) switchTheme(id);
+    closeMenu();
+    return;
+  }
+
+  const tag = target.closest('[data-tag]');
+  if (tag) {
+    tag.setAttribute('aria-pressed', String(tag.getAttribute('aria-pressed') !== 'true'));
+    applyFilter();
+    return;
+  }
+
+  if (target.closest('[data-tag-clear]')) {
+    for (const button of document.querySelectorAll('[data-tag]')) {
+      button.setAttribute('aria-pressed', 'false');
+    }
+    applyFilter();
+    return;
+  }
+
+  // 点面板外部：只有面板开着时才关（避免每次点击都写一次 open）
+  if (menu instanceof HTMLDetailsElement && menu.open && !menu.contains(target)) menu.open = false;
 });
 
-sync();
+document.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape') closeMenu();
+});
+
+/* ------------------------------------------------------------------ 初始化 */
+
+// 模块脚本默认是 defer 的，执行时 DOM 已经解析完，这里可以安全地直接取元素。
+syncTheme();
+
+if (tagbar) {
+  tagbar.toggleAttribute('hidden', false);
+  applyFilter();
+}
