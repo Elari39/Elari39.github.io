@@ -14,9 +14,14 @@
  *   无内联样式 —— 因为 style-src 没有 'unsafe-inline'，行内 style 会被拦掉
  *   可访问性 —— 唯一的 h1、lang、skip link、img 都有 alt 与宽高、装饰 SVG 都 aria-hidden
  *   锚点     —— 每个 #锚点都要在目标页里真的存在对应的 id
- *   对比度   —— 用 global.css 里的真实 token 算 WCAG 比值，三套主题都算
- *   体积     —— 客户端 JS（gzip）与 CSS 都不超过预算
- *   反漂移   —— 首页数字条上的两个数字必须与这里的预算常量一致
+ *   对比度   —— 用 global.css 里的真实 token 算 WCAG 比值，**每一套主题**都算
+ *   主题清单 —— 主题 id 只有一处来源（theme.ts 的 THEME_IDS），产物里不出现未知主题
+ *   体积     —— 客户端 JS（gzip）、CSS、首页 HTML 都不超过预算，且打包脚本仍在
+ *                Astro 的内联阈值内（否则页面会多一个外链请求）
+ *   反漂移   —— 首页数字条上的数字必须与预算常量、配色组数与主题数一致
+ *
+ * 体积与对比度的**口径**不在这里：它们在 scripts/budget.mjs，与 CI 里那条显式的
+ * 「体积 / 对比度静态断言」共用同一份实现，避免两套数字互相矛盾。
  *
  * 零依赖：只用 node: 内置模块。跑法：pnpm guard
  */
@@ -24,11 +29,26 @@
 import { createHash } from 'node:crypto';
 import { existsSync } from 'node:fs';
 import { readFile, readdir } from 'node:fs/promises';
-import { entries as readEntries, files as walkFiles } from './site-model.mjs';
+import { entries as readEntries } from './site-model.mjs';
 import { audit } from './audit-site.mjs';
+import {
+  CSS_BUDGET_BYTES,
+  HOME_HTML_BUDGET_BYTES,
+  INLINE_SCRIPT_RAW_LIMIT,
+  PAIRS,
+  JS_BUDGET_BYTES,
+  closesViewTransitionUnderReducedMotion,
+  contrastMatrix,
+  inlineScripts,
+  measureCss,
+  measureHomeHtml,
+  measureJs,
+  readThemeIds,
+  readThemeSource,
+  readThemeTokens,
+} from './budget.mjs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { gzipSync } from 'node:zlib';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = path.resolve(process.argv.includes('--dist') ? process.argv[process.argv.indexOf('--dist') + 1] : path.join(ROOT, 'dist'));
@@ -38,11 +58,10 @@ if (audited.length) { console.error(audited.join('\n')); process.exit(1); }
 const SITE_URL = 'https://elari39.github.io';
 const OWNER = 'github.com/Elari39/';
 
-/** 客户端 JS 预算（gzip 后，全部 .js 之和）。首页只有一个主题切换脚本。 */
-const JS_BUDGET_BYTES = 4096;
-
-/** CSS 预算（未压缩字节）。装饰、底纹与动效全在 global.css 里，得给它一条上限。 */
-const CSS_BUDGET_BYTES = 48 * 1024;
+/**
+ * 体积预算与对比度阈值都不在这里定义 —— 它们在 scripts/budget.mjs，
+ * 与 CI 里那条显式的「体积 / 对比度」断言共用同一份口径。
+ * 这个脚本只负责「拿 dist 去核对」。 */
 
 const failures = [];
 const notes = [];
@@ -91,18 +110,6 @@ function attributeOf(tag, name) {
   return match ? match[1] : undefined;
 }
 
-/** 找出所有 <script> 元素的内容（不含 src 的才算内联） */
-function inlineScripts(html) {
-  const found = [];
-  const regex = /<script\b([^>]*)>([\s\S]*?)<\/script>/gi;
-  for (const match of html.matchAll(regex)) {
-    const attrs = match[1] ?? '';
-    if (/\bsrc\s*=/i.test(attrs)) continue;
-    found.push({ attrs, body: match[2] ?? '' });
-  }
-  return found;
-}
-
 /** 页面里所有 id 值 —— 用来核对页内锚点能不能落地 */
 function idsOf(html) {
   const found = new Set();
@@ -112,44 +119,6 @@ function idsOf(html) {
 
 function sha256base64(text) {
   return createHash('sha256').update(text, 'utf8').digest('base64');
-}
-
-/* -------------------------------------------------------------- 对比度计算器 */
-
-function relativeLuminance(hex) {
-  const value = hex.replace('#', '').trim();
-  const full =
-    value.length === 3
-      ? value
-          .split('')
-          .map((char) => char + char)
-          .join('')
-      : value;
-  const channels = [0, 2, 4].map((offset) => parseInt(full.slice(offset, offset + 2), 16) / 255);
-  const [r, g, b] = channels.map((channel) =>
-    channel <= 0.03928 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4,
-  );
-  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
-}
-
-function contrastRatio(foreground, background) {
-  const a = relativeLuminance(foreground);
-  const b = relativeLuminance(background);
-  const [light, dark] = a > b ? [a, b] : [b, a];
-  return (light + 0.05) / (dark + 0.05);
-}
-
-/** 从 global.css 里取出某个块里的全部 --c-* token */
-function tokensFromBlock(css, blockStart) {
-  const start = css.indexOf(blockStart);
-  if (start === -1) return {};
-  const end = css.indexOf('}', start);
-  const block = css.slice(start, end);
-  const tokens = {};
-  for (const match of block.matchAll(/--(c-[a-z-]+)\s*:\s*(#[0-9a-fA-F]{3,8})\s*;/g)) {
-    tokens[match[1].replace(/^c-/, '')] = match[2];
-  }
-  return tokens;
 }
 
 /* --------------------------------------------------------------------- 主流程 */
@@ -448,103 +417,138 @@ check(
 section('对比度（WCAG）');
 
 const css = await readFile(path.join(ROOT, 'src', 'styles', 'global.css'), 'utf8');
-// 默认主题（新粗野主义）是基础层，token 写在 :root 上；羊皮纸与灰烬是它之上的
-// 覆盖，只能手动选到 —— 但三套一样要过对比度：主题是用户自己选的，
-// 可读性不是可选项。
-const themes = {
-  新粗野主义: tokensFromBlock(css, ':root {'),
-  羊皮纸: tokensFromBlock(css, "[data-theme='light'] {"),
-  灰烬: tokensFromBlock(css, "[data-theme='dark'] {"),
-};
 
-/** [前景, 背景, 最低要求, 说明] —— 正文与标记都是小字号，按 4.5 要求 */
-const PAIRS = [
-  ['body', 'canvas', 4.5, '正文'],
-  ['ink', 'canvas', 4.5, '标题'],
-  ['muted', 'canvas', 4.5, '次要文字'],
-  ['muted-soft', 'canvas', 4.5, '页脚小字'],
-  ['primary-ink', 'canvas', 4.5, '链接'],
-  ['teal', 'canvas', 4.5, 'teal 标记'],
-  ['amber', 'canvas', 4.5, 'amber 标记'],
-  ['on-primary', 'primary', 4.5, '主按钮文字'],
-  ['primary', 'canvas', 3.0, '强调色（大字号 / 装饰）'],
-];
+// 主题清单只有一处来源：src/lib/theme.ts 的 THEME_IDS（第 0 项即默认主题，
+// 它同时决定引导脚本接受的合法值、<html data-theme> 的服务端渲染值、
+// 以及主题面板里的选项）。守卫**不另抄一份数组** —— 抄一份就意味着
+// 「加了一套主题但这里忘了改」会静默变成「有一整套主题从没被检查过」。
+const themeSource = await readThemeSource(ROOT);
+const THEME_IDS = readThemeIds(themeSource);
+check(
+  THEME_IDS.length >= 2,
+  `主题清单来自 src/lib/theme.ts（${THEME_IDS.length} 套：${THEME_IDS.join(' / ')}）`,
+  '没能从 THEME_IDS 解析出主题 id',
+);
 
-for (const [themeName, tokens] of Object.entries(themes)) {
-  check(Object.keys(tokens).length > 0, `读到 ${themeName} 主题的 token`);
-  for (const [foreground, background, minimum, label] of PAIRS) {
-    const fg = tokens[foreground];
-    const bg = tokens[background];
-    if (!fg || !bg) {
-      bad(`${themeName}：找不到 ${foreground} / ${background} token`);
-      continue;
-    }
-    const ratio = contrastRatio(fg, bg);
-    check(
-      ratio >= minimum,
-      `${themeName} · ${label} ${fg} on ${bg} = ${ratio.toFixed(2)}:1（需 ≥ ${minimum}）`,
-    );
-  }
+// 默认主题的 token 写在 `:root` 上（它是基础层，其余主题是它之上的覆盖），
+// 所以第 0 项要落在含 `:root` 的块里；其余各落在 [data-theme='<id>'] 里。
+// 取不到就报错，而不是"一套都没读到、于是对比度全过"。
+const { tokens: themeTokens, problems: themeProblems } = readThemeTokens(css, THEME_IDS);
+for (const problem of themeProblems) bad(problem);
+
+const themes = new Map(THEME_IDS.map((id) => [id, themeTokens.get(id) ?? {}]));
+
+for (const [themeId, tokens] of themes) {
+  check(Object.keys(tokens).length > 0, `读到主题 ${themeId} 的 token`);
 }
 
-// 三套主题不能是"照抄一份、看不出区别"。这一步同时证明了三个 token 块都真的
+// 对比度矩阵由 scripts/budget.mjs 生成，与 CI 里那条显式断言用的是同一份口径。
+for (const row of contrastMatrix(themes)) {
+  if (row.ratio === null) {
+    bad(`主题 ${row.theme}：找不到 ${row.foreground} / ${row.background} token`);
+    continue;
+  }
+  check(
+    row.ok,
+    `主题 ${row.theme} · ${row.label} ${row.foreground} on ${row.background} = ${row.ratio.toFixed(2)}:1（需 ≥ ${row.minimum}）`,
+  );
+}
+
+// 每套主题的 token 键集合必须完全一致。
+// 这条是「加主题」时最容易漏的地方：新主题少写一个 --c-*，对比度那头会因为
+// 「找不到 token」红一次，但只在它被 PAIRS 引用时才红；没被引用的装饰 token
+// 漏掉则完全无声 —— 而面板色块、glow 这些恰好用的是非 PAIRS 的 token。
+const keySets = [...themes].map(([id, tokens]) => [id, Object.keys(tokens).sort().join(',')]);
+const referenceKeys = keySets[0]?.[1] ?? '';
+const drifted = keySets.filter(([, keys]) => keys !== referenceKeys).map(([id]) => id);
+check(
+  drifted.length === 0,
+  `${themes.size} 套主题的 token 键集合一致（基准 ${THEME_IDS[0]} 共 ${referenceKeys.split(',').length} 个）`,
+  drifted.length ? `键集合不一致：${drifted.join(', ')}` : undefined,
+);
+
+// 主题之间不能是"照抄一份、看不出区别"。这一步同时证明了每个 token 块都真的
 // 被读到了 —— 选择器名写错（比如默认主题换了地方）会在这里露出来。
-const canvases = Object.values(themes).map((tokens) => tokens.canvas);
+const canvases = [...themes.values()].map((tokens) => tokens.canvas);
 check(
   canvases.every(Boolean) && new Set(canvases).size === canvases.length,
-  `三套主题的画布色互不相同（${canvases.join(' / ')}）`,
+  `${themes.size} 套主题的画布色互不相同（${canvases.join(' / ')}）`,
+);
+
+// 产物里出现的每一个 data-theme 值都必须是已知主题。
+// 主题面板的色块靠嵌套 `data-theme="<id>"` 来拿到对应主题的 token ——
+// 那是最省事也最容易写错 id 的地方：写错了不会报错，只会安静地显示错颜色。
+const unknownThemeValues = new Set();
+const themeScanFiles = [...routes.map((route) => fileForRoute(route)), path.join(DIST, '404.html')];
+for (const file of themeScanFiles) {
+  if (!existsSync(file)) continue;
+  for (const match of (await readFile(file, 'utf8')).matchAll(/\bdata-theme="([^"]*)"/g)) {
+    if (!THEME_IDS.includes(match[1])) unknownThemeValues.add(match[1]);
+  }
+}
+check(
+  unknownThemeValues.size === 0,
+  '产物里的 data-theme 值都是已知主题',
+  [...unknownThemeValues].join(', '),
+);
+
+/* --- 6.5 动效契约（静态核对） --- */
+section('动效契约（静态核对）');
+
+// base 层那条「把所有 animation-duration 压到 0.01ms」的全局兜底只作用于
+// *::before / *::after，**管不到视图过渡** —— 那几个伪元素在独立的顶层树里。
+// 所以 prefers-reduced-motion 下必须有一条显式规则，否则开了 reduce 的访客
+// 切主题时照样会看到一次全屏交叉淡出。这条很容易在重构样式时被顺手删掉。
+check(
+  closesViewTransitionUnderReducedMotion(css),
+  'reduce 下显式关闭视图过渡（全局兜底管不到顶层伪元素）',
 );
 
 /* --- 7. 体积预算 --- */
 section('体积预算');
 
-const astroDir = path.join(DIST, '_astro');
-let externalRaw = 0;
-let externalGzip = 0;
-let externalCount = 0;
-for (const file of (await walkFiles(DIST)).filter(file => /\.(?:js|mjs|cjs)$/.test(file))) {
-  const content = await readFile(file);
-  externalCount += 1;
-  externalRaw += content.length;
-  externalGzip += gzipSync(content).length;
-}
-
-// 内联脚本也要算进预算：Astro 会把体积很小的打包脚本内联进 HTML，
-// 只统计 dist/_astro/*.js 会写成一个"永远为 0、永远通过"的假守卫。
-const indexHtmlEarly = await readFile(path.join(DIST, 'index.html'), 'utf8');
-let inlineRaw = 0;
-let inlineGzip = 0;
-for (const script of inlineScripts(indexHtmlEarly)) {
-  if (/application\/ld\+json/i.test(script.attrs)) continue; // 数据块，不是要执行的代码
-  const bytes = Buffer.from(script.body, 'utf8');
-  inlineRaw += bytes.length;
-  inlineGzip += gzipSync(bytes).length;
-}
-
-const jsGzip = externalGzip + inlineGzip;
+// 口径在 scripts/budget.mjs：外链 .js 的 gzip 之和 + 首页内联脚本的 gzip 之和。
+// 只统计 dist/_astro/*.js 会漏掉被 Astro 内联进 HTML 的那段，写成一个
+// "永远为 0、永远通过"的假守卫。
+const js = await measureJs(DIST);
 notes.push(
-  `客户端 JS：外链 ${externalCount} 个文件 ${(externalRaw / 1024).toFixed(1)} KB` +
-    ` + 内联 ${(inlineRaw / 1024).toFixed(2)} KB = ${(jsGzip / 1024).toFixed(2)} KB（gzip）`,
+  `客户端 JS：外链 ${js.externalFiles.length} 个文件 ${(js.externalRaw / 1024).toFixed(1)} KB` +
+    ` + 内联 ${(js.inlineRaw / 1024).toFixed(2)} KB = ${(js.totalGzip / 1024).toFixed(2)} KB（gzip）`,
 );
 check(
-  jsGzip <= JS_BUDGET_BYTES,
-  `客户端 JS（gzip）${(jsGzip / 1024).toFixed(2)} KB ≤ 预算 ${(JS_BUDGET_BYTES / 1024).toFixed(0)} KB`,
+  js.totalGzip <= JS_BUDGET_BYTES,
+  `客户端 JS（gzip）${(js.totalGzip / 1024).toFixed(2)} KB ≤ 预算 ${(JS_BUDGET_BYTES / 1024).toFixed(0)} KB`,
+);
+
+// 「每页恰好两段脚本」这条由 audit-site.mjs 逐页核对（它先跑）。这里补的是另一半：
+// 那两段**必须是内联的**。Astro 只在打包产物小于 4096 字节时才内联，超过就改吐
+// _astro/*.js —— 页面会多一个请求，而这条契约没有别的地方盯着。
+check(
+  js.externalFiles.length === 0,
+  '没有外链 JS 文件（打包产物仍在 Astro 的内联阈值内）',
+  js.externalFiles.map((file) => path.relative(DIST, file)).join(', '),
+);
+check(
+  js.inlineMaxRaw < INLINE_SCRIPT_RAW_LIMIT,
+  `单段内联脚本最大 ${(js.inlineMaxRaw / 1024).toFixed(2)} KB < 阈值 ${(INLINE_SCRIPT_RAW_LIMIT / 1024).toFixed(0)} KB`,
+);
+
+const homeHtmlBytes = await measureHomeHtml(DIST);
+check(
+  homeHtmlBytes <= HOME_HTML_BUDGET_BYTES,
+  `首页 HTML ${(homeHtmlBytes / 1024).toFixed(1)} KB ≤ ${(HOME_HTML_BUDGET_BYTES / 1024).toFixed(0)} KB`,
+);
+
+// CSS 也要有预算：底纹、动效与装饰都在 global.css 里，体积代价得可见
+const cssBudget = await measureCss(DIST);
+check(
+  cssBudget.bytes <= CSS_BUDGET_BYTES,
+  `CSS ${(cssBudget.bytes / 1024).toFixed(1)} KB ≤ 预算 ${(CSS_BUDGET_BYTES / 1024).toFixed(0)} KB`,
 );
 
 const indexHtml = await readFile(path.join(DIST, 'index.html'), 'utf8');
-check(Buffer.byteLength(indexHtml, 'utf8') <= 60 * 1024, `首页 HTML ${(Buffer.byteLength(indexHtml, 'utf8') / 1024).toFixed(1)} KB ≤ 60 KB`);
 
-// CSS 也要有预算：底纹、动效与装饰都在 global.css 里，体积代价得可见
-let cssBytes = 0;
-for (const file of (await walkFiles(DIST)).filter(file => file.endsWith('.css'))) {
-  cssBytes += (await readFile(file)).length;
-}
-check(
-  cssBytes <= CSS_BUDGET_BYTES,
-  `CSS ${(cssBytes / 1024).toFixed(1)} KB ≤ 预算 ${(CSS_BUDGET_BYTES / 1024).toFixed(0)} KB`,
-);
-
-// 反漂移：首页数字条上的两个数字必须与这里的常量一致。
+// 反漂移：首页数字条上的数字必须与这里的常量一致。
 // 否则「面板写着 4 KB、守卫实际允许 8 KB」这种事会悄悄发生 ——
 // 而那个面板存在的全部意义就是"它说的和检查的是同一件事"。
 check(
@@ -555,9 +559,9 @@ check(
   indexHtml.includes(`${PAIRS.length} 组`),
   `首页陈述的配色组数与守卫一致（${PAIRS.length} 组）`,
 );
-// 主题数同理：面板写"× 3 主题"，而守卫确实在算三套主题的对比度。
+// 主题数同理：面板写"× 5 主题"，而守卫确实在算五套主题的对比度。
 // 加一套主题却忘了改面板（或反过来）都会在这里红。
-const themeCount = Object.keys(themes).length;
+const themeCount = themes.size;
 check(
   indexHtml.includes(`× ${themeCount} 主题`),
   `首页陈述的主题数与守卫一致（× ${themeCount} 主题）`,

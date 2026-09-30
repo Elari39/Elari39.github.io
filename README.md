@@ -30,8 +30,9 @@
 构建期从内容集合算出来的）、**条目**（四张程序化封面的卡片）、**图版**（把各个条目的
 截图摊成一条横向走廊）与**三条自我约束**。
 
-站点本身就是个小工程：不引任何第三方运行时资源、仅两段主题脚本，并且带一套
-**构建产物守卫**与一套**浏览器级验收**。下面把这些都写清楚。
+站点本身就是个小工程：不引任何第三方运行时资源、客户端脚本只有两段（一段主题引导
++ 一段交互），并且带一套**构建产物守卫**、一条**体积与对比度的静态断言**，以及一套
+**浏览器级验收**。下面把这些都写清楚。
 
 ## 目录
 
@@ -53,8 +54,8 @@
 | --- | --- | --- |
 | 站点框架 | **Astro 7**（`output: static`） | 纯静态输出与 GitHub Pages 的托管模型天然对齐：不需要 SPA 的 404 回退技巧、没有客户端路由、首屏与 SEO 都更好 |
 | 内容 | **内容集合 + zod schema** | 每个项目是一份 Markdown；字段不全、亮点少于三条、仓库地址写错都会**构建失败**，而不是上线后才发现 |
-| 样式 | **Tailwind CSS 4**（`@theme inline`） | 设计 token 是运行时 CSS 变量，所以三套主题不需要三份工具类 |
-| 客户端 JS | 一段主题引导脚本 + 一段切换按钮脚本 | 内联后 gzip **≤ 4 KB**（实际值以本次守卫输出为准）；守卫脚本盯着这个预算 |
+| 样式 | **Tailwind CSS 4**（`@theme inline`） | 设计 token 是运行时 CSS 变量，所以每套主题不需要各自一份工具类 |
+| 客户端 JS | 一段主题引导脚本 + 一段交互脚本 | 交互脚本由 `BaseLayout` 统一引入（每页恰好两段、逐字节相同）；打包产物须小于 Astro 的 4096 字节内联阈值，否则页面平白多一个请求。内联后 gzip **≤ 4 KB**（实际值以本次守卫输出为准） |
 | 安全 | Astro 原生 `security.csp` + 一份手工登记的哈希 | GitHub Pages 不能自定义响应头，只能用 `<meta>` 形式的 CSP |
 | 部署 | GitHub Actions + `actions/deploy-pages` | 产物以 artifact 上传，不落 `gh-pages` 分支 |
 
@@ -86,11 +87,12 @@
    ├─ content/projects/*.md       # 四个条目
    ├─ data/site.ts                # 站点常量（站名、导航、自我约束）
    ├─ data/plates.ts              # 图版尺寸（生成文件，勿手工编辑）
-   ├─ layouts/BaseLayout.astro    # head / SEO / OG / JSON-LD / 主题引导
+   ├─ layouts/BaseLayout.astro    # head / SEO / OG / JSON-LD / 主题引导 / 交互脚本入口
    ├─ components/                 # Header / Footer / ProjectCard / Glyph / ThemeToggle
    │                              # + SigilPlate / Attestation / PlateRail / Toc
+   ├─ scripts/interactions.ts     # 全站唯一的客户端脚本（主题切换 / 视图过渡 …）
    ├─ pages/                      # index / about / 404 / projects/[slug]
-   └─ styles/global.css           # 三套主题的 token 与组件样式
+   └─ styles/global.css           # 各套主题的 token 与组件样式
 ```
 
 ## 本地开发
@@ -113,13 +115,14 @@ pnpm preview        # 拿 dist/ 起静态服务器
 检查盯着；CI 里 `verify` 不过就不发布。
 
 ```bash
-pnpm verify          # 类型检查 + build + guard + 静态反例 + 素材反例
+pnpm verify          # 类型检查 + build + guard + 体积/对比度断言 + 静态反例 + 素材反例
 pnpm guard           # 只跑构建产物守卫（需要先 build）
+pnpm assert:budgets  # 只跑体积与对比度断言（需要先 build）
 pnpm verify:browser  # 浏览器级验收（需要先起 pnpm preview）
 pnpm verify:browser:local # 自动启动预览、验收同一份 dist、清理自身服务
 ```
 
-### `pnpm guard` —— 对 `dist/` 的十七组核对
+### `pnpm guard` —— 对 `dist/` 的十九组核对
 
 | 组 | 检查什么 |
 | --- | --- |
@@ -136,13 +139,32 @@ pnpm verify:browser:local # 自动启动预览、验收同一份 dist、清理�
 | 图片尺寸 | 每个 `<img>` 都要声明 `width`/`height` —— 否则图版加载完成前占不住位置，会累计布局偏移 |
 | 跳转目标 | 每页都有 `id="main"`，skip link 指的确实是它 |
 | 装饰 SVG | 每个 `<svg>` 都要 `aria-hidden="true"` —— 装饰图形不该进可访问性树（需要语义的图形请用 `<img alt>`） |
-| 对比度 | 用 `global.css` 里的**真实 token** 算 WCAG 比值，三套主题各 9 对：8 对文字 ≥ 4.5:1，1 对大字号 / 装饰 ≥ 3:1；浏览器另测真实组件背景，另外核对画布色互不相同 |
-| 体积 | 客户端 JS（gzip，含内联）≤ 4 KB；首页 HTML ≤ 60 KB |
+| 对比度 | 用 `global.css` 里的**真实 token** 算 WCAG 比值，**每一套主题**各 9 对：8 对文字 ≥ 4.5:1，1 对大字号 / 装饰 ≥ 3:1；浏览器另测真实组件背景，另外核对画布色互不相同 |
+| 主题清单 | 主题 id 只有一处来源（`src/lib/theme.ts` 的 `THEME_IDS`），守卫与浏览器验收都从那里读；各套主题的 token 键集合必须一致；产物里出现的每个 `data-theme` 值都必须是已知主题 |
+| 动效契约 | `prefers-reduced-motion: reduce` 下必须有一条**显式**规则关掉视图过渡 —— base 层那条全局兜底只作用于 `*::before` / `*::after`，管不到位于顶层伪元素树的 `::view-transition-*` |
+| 体积 | 客户端 JS（gzip，含内联）≤ 4 KB；**没有外链 JS 文件**（打包产物必须仍在 Astro 的 4096 字节内联阈值内）；首页 HTML ≤ 60 KB |
 | CSS 预算 | 外链 CSS ≤ 48 KB —— 底纹、动效与装饰都在 `global.css` 里，体积代价得看得见 |
-| 反漂移 | 首页数字条上的两个数字必须与守卫里的常量一致（`4 KB`、`9 组`） |
+| 反漂移 | 首页数字条上的数字必须与守卫里的常量一致（`4 KB`、`9 组`、`× N 主题`） |
 
-最后两条是给首页那块「数字条」上锁的：面板存在的全部意义就是**它说的和检查的是同一件事**，
-所以守卫会反过来核对首页 HTML 里的数字，改了一边没改另一边就会红。
+「反漂移」那一条是给首页那块「数字条」上锁的：面板存在的全部意义就是
+**它说的和检查的是同一件事**，所以守卫会反过来核对首页 HTML 里的数字，
+改了一边没改另一边就会红。
+
+### `pnpm assert:budgets` —— 体积与对比度的静态断言
+
+CI 里那条「超出约束就拦截」的步骤，也是 `pnpm verify` 的一环。它只做两件事，
+但报告要能单独在 Actions 的步骤列表里看见：
+
+- 客户端 JS（gzip）、单段内联脚本的 raw 体积、外链 JS 文件数、CSS 与首页 HTML；
+- **每一套主题 × 9 对颜色**的 WCAG 比值，并给出最紧的一对与余量倍数。
+
+越界时它会输出 GitHub `::error::` 注解（在 PR 的文件视图上也能看到具体数值）、
+把一张 markdown 表格写进 job summary、并以非零退出 —— `deploy` job 依赖 `verify`，
+所以线上不会出现超预算的版本。
+
+**为什么不让它自己再算一遍**：体积与对比度的测量口径只有一处 ——
+`scripts/budget.mjs`，守卫和这条断言都从那里取。两套测量的下场一定是两套互相矛盾的数字，
+而这类检查存在的全部意义就是「它说的和实际检查的是同一件事」。
 
 ### `pnpm verify:browser` —— 文件级检查证明不了的事
 
@@ -164,6 +186,11 @@ CI 会运行同一套验收，失败阻止发布。路由从构建产物发现�
 - 点击主题切换按钮后按 **新粗野主义 → 羊皮纸 → 灰烬 → 新粗野主义** 循环，
   每一步都翻转 `data-theme`、写入 `localStorage`，**刷新后仍然保持**
   （刷新点停在中间那一套上，回来时再确认循环是闭合的）；
+- **切主题走的是原生视图过渡，而且能降级**：先断言浏览器提供
+  `document.startViewTransition`，再包一层计数证明站点**真的调用了它**
+  —— 只断言"API 存在"是很容易变成假守卫的写法；然后把 API 从原型上删掉再刷新，
+  切换与"记住选择"必须完全一样、且不产生任何控制台或 CSP 错误
+  （Safari / Firefox 与旧版 Chrome 走的就是这条路）；
 - 三套主题的 `getComputedStyle` 背景色确实互不相同，**且浅色下 `h1` 回到衬线栈**
   —— 后者挡住了"把 `--font-display` 写进 `:root`、结果三套主题都变粗黑"那类改法；
 - **新粗野主义里「token 覆盖不到」的那一半也真的生效**：条目卡与切换按钮的
@@ -178,7 +205,9 @@ CI 会运行同一套验收，失败阻止发布。路由从构建产物发现�
 - **`prefers-reduced-motion: reduce` 下动效整体让位**：每页都没有元素停在位移中间态、
   没有横向滚动、内容照常渲染。注意 base 层那条"把 animation-duration 压到 0.01ms"的
   全局兜底对 scroll-driven 动画**无效**（那类动画不看 duration），所以每条动效都另外包在
-  `(prefers-reduced-motion: no-preference)` 里。
+  `(prefers-reduced-motion: no-preference)` 里。视图过渡也一样：它位于**独立的顶层伪元素树**，
+  那条全局兜底同样管不到，所以 `global.css` 里另有一条显式规则把它关掉，
+  并且验收会确认 reduce 下切主题**照样生效、照样记住选择**（让位的只是那一段淡出动画）。
 
 它同时把每页的浅色 / 深色 / 新粗野主义 / 窄屏截图写到 `.assets-raw/verify/`，
 外加首页在新粗野主义下四个滚动位置、390px 与「禁用脚本」的一张预览图，供人眼复核。

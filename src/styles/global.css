@@ -413,6 +413,33 @@
   }
 }
 
+/* 主题切换的视图过渡（View Transitions API）
+   -----------------------------------------------------------------------------
+   切主题时浏览器把旧画面拍成一张快照、新的再拍一张，两张之间做交叉淡出。
+   默认是 0.25s 线性，这里改成与站内其它动效同一套缓动，切换看起来才是"同一只手"。
+
+   两个容易踩的点：
+   1. 这两个伪元素在**顶层**伪元素树里，不继承任何元素上的 transition，
+      只能用 animation-* 控制。
+   2. reduce 下必须显式关掉。base 层那条"把 animation-duration 压到 0.01ms"的兜底
+      只作用于 *::before / *::after，管不到视图过渡 —— 指望它等于没关。
+
+   只设置 duration / timing，不动 animation-name：交叉淡出本身是浏览器给的，
+   我们只是让它跟站内节奏一致。 */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: var(--dur-base);
+  animation-timing-function: var(--ease-ember);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}
+
 /* -----------------------------------------------------------------------------
    3. 组件
    全部是原生 CSS（不依赖 @apply），颜色一律走 var(--c-*)，

@@ -9,8 +9,8 @@
  * 循环顺序（新粗野主义 → 羊皮纸 → 灰烬）来自 src/lib/theme.ts 的 THEME_IDS，
  * 与默认值和引导脚本共用同一份清单，所以加了主题也不会漏掉任何一边。
  *
- * 这个 <script> 会被 Astro 打包成模块脚本（体积很小时内联），只注册点击事件，
- * 所以不需要同步执行，也不影响 CSP。
+ * 注意这里**没有** <script>：全站客户端脚本只能有一段（见 src/scripts/interactions.ts），
+ * 由 BaseLayout 统一引入。组件自带脚本会让首页多出第三段，守卫当场红。
  */
 ---
 
@@ -71,38 +71,3 @@
 
 {/* 三态是循环按钮，不是开关，所以用 aria-live 把结果念出来而不是 aria-pressed */}
 <span id="theme-live" class="sr-only" aria-live="polite"></span>
-
-<script>
-  import { THEME_STORAGE_KEY, nextTheme, themeLabel } from '../lib/theme';
-
-  const button = document.getElementById('theme-toggle');
-  const live = document.getElementById('theme-live');
-
-  /** 同步提示语与播报：按钮始终告诉用户「再点会变成什么」 */
-  function sync() {
-    const current = document.documentElement.dataset.theme;
-    const next = nextTheme(current);
-
-    button?.setAttribute('aria-label', `切换界面主题（当前：${themeLabel(current)}）`);
-    button?.setAttribute('title', `切换到：${themeLabel(next)}`);
-    if (live) live.textContent = `当前主题：${themeLabel(current)}`;
-  }
-
-  button?.addEventListener('click', () => {
-    const root = document.documentElement;
-    const next = nextTheme(root.dataset.theme);
-
-    root.dataset.theme = next;
-    root.dataset.themeSource = 'manual';
-
-    try {
-      localStorage.setItem(THEME_STORAGE_KEY, next);
-    } catch {
-      /* 存不下（隐私模式 / 被策略禁用）就只影响本次会话，不弹错 */
-    }
-
-    sync();
-  });
-
-  sync();
-</script>

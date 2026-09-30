@@ -76,6 +76,16 @@ const jsonLdBlocks = jsonLd ? (Array.isArray(jsonLd) ? jsonLd : [jsonLd]) : [];
         <script type="application/ld+json" set:html={JSON.stringify(block).replace(/</g, '\\u003c')}></script>
       ))
     }
+
+    {/*
+      全站唯一的交互脚本（第二个可执行脚本）。集中在这里引入而不是让组件各自带一段：
+      守卫要求每页恰好两段脚本、且各页脚本体逐字节相同，组件级的脚本两条都会破。
+      体积很小时 Astro 会把它内联进 HTML（超过 4096 字节才会改吐外链），
+      所以它和上面的引导脚本一样受同一套 CSP 哈希断言保护。
+    */}
+    <script>
+      import '../scripts/interactions';
+    </script>
   </head>
 
   <body class={accent ? `accent-${accent}` : undefined}>

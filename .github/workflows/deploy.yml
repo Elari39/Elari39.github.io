@@ -57,6 +57,15 @@ jobs:
       - name: 类型检查、构建、守卫与反例
         run: pnpm verify
 
+      # 体积与对比度的静态断言：独立成一步，好在 Actions 的步骤列表里直接看见
+      # 失败点（::error:: 注解会给出实测值）。它与守卫共用 scripts/budget.mjs 的
+      # 同一份口径，所以不会出现"两套数字互相矛盾"。这一步失败 → verify job 失败
+      # → deploy job（needs: verify）不执行，线上不会出现超预算的版本。
+      # pnpm verify 里已经跑过一次；这里再跑一次是刻意重复：作为门禁它必须有自己的
+      # 步骤名与日志，而不是藏在别人的输出里。
+      - name: 体积与对比度静态断言（JS ≤ 4 KB · WCAG 对比度）
+        run: pnpm assert:budgets
+
       - name: 发布图片体检
         run: pnpm assets:inspect
 

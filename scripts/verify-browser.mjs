@@ -747,6 +747,87 @@ try {
     `localStorage.removeItem('grimoire-theme'); document.documentElement.dataset.theme='brutal';`,
   );
 
+  /* ------------------------------------------- 主题切换的视图过渡（含降级） */
+
+  console.log("\u001b[1m主题切换的视图过渡\u001b[0m");
+
+  // 先证明这个浏览器确实提供了 API。少了这一步，下面的降级测试会退化成
+  // 「本来就走的降级分支」—— 两条断言都通过，但什么都没测到。
+  check(
+    await cdp.evaluate(`typeof document.startViewTransition === 'function'`),
+    "浏览器提供 document.startViewTransition（否则降级分支无从对照）",
+  );
+
+  // 不只看 API 在不在，要看站点**真的调了它**：包一层计数（原样转发参数、
+  // 立刻还原），再点一次切换按钮。只断言"API 存在"是很容易变成假守卫的写法。
+  const transition = await cdp.evaluate(`(async () => {
+  const original = Document.prototype.startViewTransition;
+  let calls = 0;
+  Document.prototype.startViewTransition = function (...args) {
+    calls += 1;
+    return original.apply(this, args);
+  };
+  try {
+    const before = document.documentElement.dataset.theme;
+    document.getElementById('theme-toggle').click();
+    await new Promise((resolve) => setTimeout(resolve, 600));
+    return { calls, before, after: document.documentElement.dataset.theme };
+  } finally {
+    Document.prototype.startViewTransition = original;
+  }
+})()`);
+  check(
+    transition.calls >= 1,
+    `切换主题真的走了一次视图过渡（startViewTransition 被调用 ${transition.calls} 次）`,
+  );
+  check(
+    transition.after !== transition.before,
+    `视图过渡之后主题确实换了（${transition.before} → ${transition.after}）`,
+  );
+
+  // 降级：把 API 从原型上删掉再刷新。Safari / Firefox 与旧版 Chrome 就是这条路 ——
+  // 它们只该少一段动画，主题切换与"记住选择"必须完全一样，而且不能报错
+  // （任何控制台 / CSP 错误都会在最后的汇总断言里被抓住）。
+  const noTransition = await cdp.send("Page.addScriptToEvaluateOnNewDocument", {
+    source: "delete Document.prototype.startViewTransition;",
+  });
+  try {
+    await navigate(`${BASE}/`);
+    await sleep(300);
+    const fallback = await cdp.evaluate(`(async () => {
+    const before = document.documentElement.dataset.theme;
+    const supported = typeof document.startViewTransition;
+    document.getElementById('theme-toggle').click();
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    return {
+      supported,
+      before,
+      after: document.documentElement.dataset.theme,
+      source: document.documentElement.dataset.themeSource,
+      stored: (() => { try { return localStorage.getItem('grimoire-theme'); } catch { return null; } })(),
+    };
+  })()`);
+    check(
+      fallback.supported === "undefined",
+      `降级分支确实生效（typeof startViewTransition = ${fallback.supported}）`,
+    );
+    check(
+      fallback.after !== fallback.before &&
+        fallback.source === "manual" &&
+        fallback.stored === fallback.after,
+      `没有视图过渡时切换照样生效并记住选择（${fallback.before} → ${fallback.after} / ${fallback.source} / ${fallback.stored}）`,
+    );
+  } finally {
+    await cdp.send("Page.removeScriptToEvaluateOnNewDocument", {
+      identifier: noTransition.identifier,
+    });
+  }
+
+  // 复位，后面的阶段从干净状态开始
+  await cdp.evaluate(
+    `localStorage.removeItem('grimoire-theme'); document.documentElement.dataset.theme='brutal';`,
+  );
+
   /* ------------------------- 动效契约：进场动画必须收敛到可见终态 */
 
   console.log("\u001b[1m动效契约（滚动进场）\u001b[0m");
@@ -818,6 +899,32 @@ try {
       );
     }
   }
+
+  // reduce 不只影响 CSS 动效，也影响主题切换：切肤那一下的交叉淡出必须让位，
+  // 但"换成哪套主题、并记住它"半分不能少。这里就把这件事测出来。
+  await navigate(`${BASE}/`);
+  await sleep(250);
+  const reduceSwitch = await cdp.evaluate(`(async () => {
+  localStorage.removeItem('grimoire-theme');
+  const before = document.documentElement.dataset.theme;
+  document.getElementById('theme-toggle').click();
+  await new Promise((resolve) => setTimeout(resolve, 400));
+  return {
+    before,
+    after: document.documentElement.dataset.theme,
+    source: document.documentElement.dataset.themeSource,
+    stored: (() => { try { return localStorage.getItem('grimoire-theme'); } catch { return null; } })(),
+    overflowX: document.documentElement.scrollWidth > window.innerWidth + 1,
+  };
+})()`);
+  check(
+    reduceSwitch.after !== reduceSwitch.before &&
+      reduceSwitch.source === "manual" &&
+      reduceSwitch.stored === reduceSwitch.after,
+    `reduce 下主题切换照常生效并记住选择（${reduceSwitch.before} → ${reduceSwitch.after} / ${reduceSwitch.source}）`,
+  );
+  check(!reduceSwitch.overflowX, "reduce 下切换主题不会撑出横向滚动");
+  await cdp.evaluate(`localStorage.removeItem('grimoire-theme')`);
 
   // 收尾：撤掉媒体模拟
   await cdp.send("Emulation.setEmulatedMedia", { media: "", features: [] });
