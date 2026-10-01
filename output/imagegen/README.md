@@ -32,6 +32,7 @@
 
 验收：`pnpm verify` 与 `pnpm verify:browser:local` 均通过。
 浏览器验收的点击助手已改为有界等待真实命中，避免主题视图过渡期间提前点击；焦点断言保持不变。
-实测客户端 JS gzip 1.50 KB、CSS 47.9 KB、首页 HTML 44.8 KB，九套主题对比度全部通过。
+图标阶段实测客户端 JS gzip 1.50 KB、CSS 47.9 KB、首页 HTML 44.8 KB，九套主题对比度全部通过。
+后续阅读体验优化的截图与验收见 [阅读与快速预览](../reading-preview/README.md)。
 已保存 [魔法阵主题预览](sigil-display.png) 与 [首页截图](home-updated.png)。
 选定图标的验收预览：[导航浅色 / 深色截图](navigation-selected.png)、[标签页图标尺寸](favicon-sizes.png)。

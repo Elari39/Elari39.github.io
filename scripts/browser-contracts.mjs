@@ -41,7 +41,7 @@ export function componentContrast() {
   const problems = [];
   let count = 0;
   for (const el of document.querySelectorAll(
-    ".badge,.chip,.attest-caption,.btn,.nav-link,.toc-link,.tagbar__tag,.tagbar__clear,.theme-opt,.text-muted,.text-muted-soft,.prose-grimoire a",
+    ".badge,.chip,.attest-caption,.btn,.nav-link,.toc-link,.tagbar__tag,.tagbar__clear,.theme-opt,.text-muted,.text-muted-soft,.prose-grimoire a,.reading-action,.preview__summary,.preview__title,.preview__h,.preview__list",
   )) {
     if (
       !el.checkVisibility({

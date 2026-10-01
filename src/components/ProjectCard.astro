@@ -87,40 +87,50 @@ const previewId = `preview-${project.slug}`;
     以及 ::backdrop 这些都由浏览器给 —— 我们只需要补两件事：打开，以及点背景关闭
     （原生 <dialog> 点背景并不会关）。
 
-    里面全部用 preview__* 类名，刻意**不复用** .entry-card / .btn 这些既有类：
+    里面使用 preview__* 与 reading-action，刻意**不复用** .entry-card / .btn 这些既有类：
     一是首页的卡片计数断言按 .entry-card 数（复用会让数量翻倍），
     二是粗野主义那块无层级的 `[data-theme='brutal'] .btn` 覆盖会误命中抽屉内部。
   */}
   <dialog class="preview" id={previewId} aria-labelledby={`${previewId}-title`}>
     {/*
-      tabindex="-1" + autofocus 是刻意的：showModal() 会把焦点给"第一个可聚焦后代"，
-      也就是底部的「关闭预览」按钮 —— 浏览器为了让它进入视口，会把抽屉**向下滚一截**，
-      于是抽屉一打开正好错过了自己的标题（实测：截图里看不到「条目 I · 就地预览」与项目名）。
-      把焦点交给顶部这个容器就能停在开头；容器带 tabindex="-1"，所以它不进 Tab 序列，
-      键盘用户按一下 Tab 仍然落在抽屉内部的第一个可操作元素上。
+      焦点先落在开头的容器，脚本仍会归零 dialog.scrollTop。
+      标题与唯一的关闭按钮吸附在顶部；滚到文末也不必再找关闭入口。
     */}
     <div class="preview__inner" tabindex="-1" autofocus>
-      <p class="label">条目 {entryNumber(index)} · 就地预览</p>
-      <h2 class="preview__title" id={`${previewId}-title`}>{project.title}</h2>
+      <header class="preview__head">
+        <div>
+          <p class="label">条目 {entryNumber(index)} · 快速预览</p>
+          <h2 class="preview__title" id={`${previewId}-title`}>{project.title}</h2>
+        </div>
+        <button type="button" class="reading-action" data-preview-close aria-label="关闭预览">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2" stroke-linecap="round" aria-hidden="true">
+            <path d="m6 6 12 12M18 6 6 18"></path>
+          </svg>
+          关闭
+        </button>
+      </header>
 
-      <h3 class="preview__h">架构</h3>
-      <pre class="preview__arch">{project.preview.architecture}</pre>
+      <div class="preview__body">
+        <p class="preview__summary">{project.tagline}</p>
+        <h3 class="preview__h" id={`${previewId}-architecture`}>架构速览</h3>
+        <pre class="preview__arch" tabindex="0" aria-labelledby={`${previewId}-architecture`}>{project.preview.architecture}</pre>
+        <p class="mt-2 text-xs text-muted sm:hidden">左右滑动查看完整架构图</p>
 
-      <h3 class="preview__h">实现难点</h3>
-      <ul class="preview__list">
-        {project.preview.challenges.map((item) => <li>{item}</li>)}
-      </ul>
+        <h3 class="preview__h">实现难点</h3>
+        <ul class="preview__list">
+          {project.preview.challenges.map((item) => <li>{item}</li>)}
+        </ul>
 
-      <h3 class="preview__h">心得</h3>
-      <ul class="preview__list">
-        {project.preview.lessons.map((item) => <li>{item}</li>)}
-      </ul>
+        <h3 class="preview__h">心得与取舍</h3>
+        <ul class="preview__list">
+          {project.preview.lessons.map((item) => <li>{item}</li>)}
+        </ul>
+      </div>
 
       <div class="preview__foot">
-        {/* 关闭按钮是 type="button" + 脚本调 close()，刻意不用 <form method="dialog">：
-            页面 CSP 里 form-action 是 'none'，而那是一条会被浏览器执行到的指令 ——
-            没必要为了省几行脚本去赌它不会拦下一个不触发导航的表单。 */}
-        <button type="button" class="btn" data-preview-close>关闭预览</button>
+        <a class="reading-action" href={project.links.repo} rel="noopener noreferrer">查看源码</a>
+        <a class="reading-action preview__read" href={href}>阅读全文 <span aria-hidden="true">→</span></a>
       </div>
     </div>
   </dialog>

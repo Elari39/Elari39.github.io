@@ -41,6 +41,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { componentContrast } from "./browser-contracts.mjs";
 import { verifyInteractionContracts } from "./interaction-contracts.mjs";
+import { verifyReadingContracts } from "./reading-contracts.mjs";
 import { readThemeIds, readThemeSource } from "./budget.mjs";
 import { files, entries, routeFor } from "./site-model.mjs";
 
@@ -1389,6 +1390,9 @@ try {
     `点击点 (${backdropProbe.x}, ${backdropProbe.y})，抽屉 rect=${backdropProbe.rect}，` +
       `视口 ${backdropProbe.viewport}，命中 ${backdropProbe.hitTag}（是抽屉本身：${backdropProbe.hitIsDialog}）`,
   );
+
+  await verifyReadingContracts({ cdp, check, navigate, base: BASE, themes: THEMES, routes: ROUTES, shots: SHOTS });
+  await navigate(`${BASE}/`);
 
   /* -------------------------- 卡片触感：按下与柔光（纯 CSS，不产生布局抖动） */
 

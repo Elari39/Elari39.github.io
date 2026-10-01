@@ -206,8 +206,8 @@ const cases = [
     "index.html",
     (s) =>
       s.replace(
-        '<pre class="preview__arch">',
-        '<pre class="preview__arch">被改掉的内容 ',
+        /(<pre class="preview__arch"[^>]*>)/,
+        "$1被改掉的内容 ",
       ),
     "架构图与 frontmatter 不一致",
   ],

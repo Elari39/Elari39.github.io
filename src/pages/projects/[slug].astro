@@ -2,6 +2,8 @@
 import { getCollection, render } from 'astro:content';
 
 import Glyph from '../../components/Glyph.astro';
+import BrandMark from '../../components/BrandMark.astro';
+import BackToEntries from '../../components/BackToEntries.astro';
 import Toc from '../../components/Toc.astro';
 import { SITE } from '../../data/site';
 import BaseLayout from '../../layouts/BaseLayout.astro';
@@ -43,7 +45,7 @@ const plates = data.gallery.map((plate) => ({
  */
 const tocItems = [
   { id: 'highlights', text: '为什么值得一看', depth: 2 },
-  { id: 'stack', text: '技术栈', depth: 2 },
+  { id: 'stack', text: '技术概览', depth: 2 },
   ...(plates.length > 0 ? [{ id: 'plates', text: '图版', depth: 2 }] : []),
   ...headings
     .filter((heading) => heading.depth >= 2 && heading.depth <= 3)
@@ -75,14 +77,14 @@ const jsonLd = {
   jsonLd={jsonLd}
 >
   <header class="entry-header relative overflow-hidden">
-    {/* 章节水印与角标都是装饰：整页的强调色来自 body 上的 accent-* 类 */}
+    {/* 章节水印是装饰；品牌标记与导航、页脚使用同一个来源。 */}
     <span class="entry-watermark" aria-hidden="true">{entryNumber(position)}</span>
-    <span class="rune-corner" aria-hidden="true">
-      <Glyph name="sigil" size={30} />
-    </span>
 
-    <div class="relative mx-auto max-w-3xl px-5 py-12">
-      <a href="/#entries" class="label no-underline hover:text-primary-ink">← 回到条目</a>
+    <div class="relative mx-auto max-w-5xl px-5 py-10">
+      <div class="flex items-center justify-between gap-4">
+        <BackToEntries />
+        <BrandMark size={30} />
+      </div>
 
       <div class="mt-5 flex items-start gap-4">
         <span class="glyph">
@@ -113,20 +115,13 @@ const jsonLd = {
     </div>
   </header>
 
-  {/* 正文列保持与 entry-header 一样的 max-w-3xl 居中（左边缘严格对齐），
-      目录放到它右侧的页边空白里，xl 以上才出现 —— 不为了塞下目录把正文挤窄。
-      外壳绝对定位 + h-full 是为了给 .toc 的 sticky 留出可吸附的高度。 */}
-  <div class="relative mx-auto max-w-3xl px-5 py-12">
-    <div class="absolute top-12 left-full ml-6 hidden h-full w-[12.5rem] xl:block">
-      <Toc items={tocItems} />
-    </div>
-
-    <details class="mobile-toc mb-8 xl:hidden">
-      <summary>本页目录</summary>
-      <Toc items={tocItems} showTitle={false} />
-    </details>
-
-    <div>
+  {/* 纯色书页承载长文，网格只留在页边；右侧目录在同一网格内吸附。 */}
+  <div class="reading-layout mx-auto max-w-5xl px-5 py-10">
+    <div class="reading-sheet">
+      <details class="mobile-toc mb-8 xl:hidden">
+        <summary>本页目录</summary>
+        <Toc items={tocItems} showTitle={false} />
+      </details>
       <p class="border-l-2 border-primary pl-4 text-lg text-ink">{data.summary}</p>
 
       <section id="highlights" class="mt-10">
@@ -144,7 +139,7 @@ const jsonLd = {
       </section>
 
       <section id="stack" class="mt-10">
-        <h2 class="text-xl">技术栈</h2>
+        <h2 class="text-xl">技术概览</h2>
         <div class="mt-4 flex flex-wrap gap-2">
           {data.stack.map((item) => <span class="chip">{item}</span>)}
         </div>
@@ -196,7 +191,7 @@ const jsonLd = {
               <span class="mt-1 block font-display text-lg text-ink">{previous.data.title}</span>
             </a>
           ) : (
-            <span />
+            <span class="hidden sm:block" aria-hidden="true" />
           )
         }
         {
@@ -211,6 +206,8 @@ const jsonLd = {
           )
         }
       </nav>
+      <div class="mt-8"><BackToEntries /></div>
     </div>
+    <aside class="hidden xl:block"><Toc items={tocItems} /></aside>
   </div>
 </BaseLayout>
