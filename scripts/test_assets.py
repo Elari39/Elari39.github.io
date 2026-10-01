@@ -16,6 +16,7 @@ class AssetsTests(unittest.TestCase):
         self.root = Path(self.tmp.name)
         self.public = self.root / 'public'
         self.public.mkdir()
+        (self.public / 'favicon.svg').write_bytes((assets.ROOT / 'public/favicon.svg').read_bytes())
         self.data = self.root / 'data'
         self.data.mkdir()
         (self.data / 'plates.ts').write_text('unchanged')
@@ -72,6 +73,25 @@ class AssetsTests(unittest.TestCase):
             assets.publish([(new, old), (self.root / 'missing', self.data / 'plates.ts')])
         self.assertEqual(b'original', old.read_bytes())
         self.assertEqual('unchanged', (self.data / 'plates.ts').read_text())
+
+    def test_icons_follow_svg_source(self):
+        source = self.public / 'favicon.svg'
+        source.write_text(source.read_text().replace('#f04e14', '#1234ef'))
+        with patch.object(assets, 'PUBLIC', self.public):
+            assets.build_icons()
+        with Image.open(self.public / 'apple-touch-icon.png') as image:
+            self.assertEqual((180, 180), image.size)
+            self.assertEqual((18, 52, 239), image.getpixel((90, 90)))
+        with Image.open(self.public / 'favicon.ico') as image:
+            self.assertEqual({(16, 16), (32, 32), (48, 48), (64, 64)}, image.ico.sizes())
+
+    def test_unsupported_icon_path_fails_explicitly(self):
+        source = self.public / 'favicon.svg'
+        source.write_text(source.read_text().replace('M32 26', 'm32 26'))
+        with patch.object(assets, 'PUBLIC', self.public):
+            with self.assertRaisesRegex(ValueError, '仅支持绝对'):
+                assets.build_icons()
+        self.assertFalse((self.public / 'favicon.ico').exists())
 
 
 if __name__ == '__main__':

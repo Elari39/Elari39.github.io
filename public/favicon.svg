@@ -1,6 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Ashen Witch's Grimoire">
-  <rect width="64" height="64" rx="14" fill="#181715" />
-  <path d="M32 8.5 55.5 32 32 55.5 8.5 32Z" fill="none" stroke="#e08d6d" stroke-width="2.6" stroke-linejoin="round" />
-  <path d="M32 21 43 32 32 43 21 32Z" fill="#e8a55a" />
-  <path d="M32 8.5v12.5M55.5 32H43M32 55.5V43M8.5 32H21" stroke="#e08d6d" stroke-width="2.2" stroke-linecap="round" />
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Ashen Witch's Grimoire · 星轨封印">
+  <rect width="64" height="64" rx="12" fill="#fffdf4" />
+  <path fill="#10121b" d="M27.6 8.4C17.7 10.2 10.2 17.7 8.4 27.6L11.6 27.1C13.1 19.1 19.1 13.1 27.1 11.6ZM36.4 8.4C46.3 10.2 53.8 17.7 55.6 27.6L52.4 27.1C50.9 19.1 44.9 13.1 36.9 11.6ZM55.6 36.4C53.8 46.3 46.3 53.8 36.4 55.6L36.9 52.4C44.9 50.9 50.9 44.9 52.4 36.9ZM27.6 55.6C17.7 53.8 10.2 46.3 8.4 36.4L11.6 36.9C13.1 44.9 19.1 50.9 27.1 52.4Z" />
+  <path fill="#10121b" d="M32 3C27.5 24 27.5 27.5 3 32C27.5 36.5 27.5 40 32 61C36.5 40 36.5 36.5 61 32C36.5 27.5 36.5 24 32 3Z" />
+  <path fill="#fffdf4" d="M32 23C34 27 37 30 40 32C37 34 34 37 32 41C30 37 27 34 24 32C27 30 30 27 32 23Z" />
+  <path fill="#f04e14" d="M32 26L36.5 32L32 37.5L27.5 32Z" />
 </svg>

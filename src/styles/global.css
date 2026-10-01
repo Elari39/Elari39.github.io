@@ -18,6 +18,9 @@
 
 @import 'tailwindcss';
 
+/* 设计候选与预览说明不是页面源码，避免把其中的文字当成工具类。 */
+@source not '../../output';
+
 /* dark: 变体绑定到 data-theme，而不是 Tailwind 默认的 .dark 类 */
 @custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
 
@@ -1413,10 +1416,7 @@
     transform: scaleX(1);
   }
 
-  /* ---- 序言区的印记：一枚仪表化的符文阵 ----
-     五个同心带（核心余烬 → 八芒星封缄 → 24 等分刻度环 → 四段符文弧
-     → 外圈发丝环与分度点环）由 SigilPlate.astro 算出来，
-     这里只管光与动。 */
+  /* ---- 序言区的印记：清晰的封缄、32 等分刻度与四象符文 ---- */
 
   /* 从印记中心发出的光。它替换掉了原来那块盖住整个序言区的软光斑 ——
      光要来自阵本身，而不是旁边一坨亮。 */
@@ -1447,13 +1447,30 @@
     max-width: 20rem;
     margin-inline: auto;
     aspect-ratio: 1;
-    color: var(--c-primary);
+    color: var(--c-primary-ink);
   }
 
   .hero-sigil svg {
     position: relative;
     width: 100%;
     height: auto;
+  }
+
+  .hero-sigil__field {
+    fill: var(--c-canvas);
+    opacity: 0.78;
+  }
+
+  .hero-sigil__seal {
+    color: var(--c-ink);
+  }
+
+  .hero-sigil__accent {
+    color: var(--c-primary);
+  }
+
+  .hero-sigil__flame {
+    fill: var(--c-on-primary);
   }
 
   /* 旋转层与核心都要绕 viewBox 的中心转，而不是各自的 bbox 中心 */
@@ -2107,7 +2124,7 @@
 }
 
 [data-theme='brutal'] .hero-sigil {
-  /* 印记全部用 currentColor 画的，所以整块变成纯黑线稿 */
+  /* 黑色主线搭配主题色余烬，保留粗野主义的实色轮廓。 */
   color: var(--c-hairline);
 }
 

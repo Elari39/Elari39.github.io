@@ -1,74 +1,43 @@
 ---
 /**
- * 序言区的印记：一枚「仪表化的符文阵」。
- *
- * 构图是尺规化的，五个同心带从里到外：
- *   核心余烬（径向光晕 + 实心菱形）→ 八芒星封缄 → 24 等分刻度环
- *   → 四段符文弧与象限记号 → 外圈发丝环与分度点环
- * 两个旋转层反向自转（140s / 96s），转速差让它在静止时是一个完整的阵、
- * 停留两秒能察觉它"活着"。
- *
- * 全部内联 SVG + CSS：没有图片、没有脚本，客户端 JS 仍然是 0。
- * 几何由下面的函数**算出来**而不是手写坐标 —— 24 段刻度合成一条 path，
- * 于是 24 个分度只占一个节点；等分数也只需要改一个常量。
- *
- * 整块是纯装饰，所以 aria-hidden —— 守卫脚本会强制页面上每个 <svg> 都有它。
+ * 尺规化的符文阵：外轨 → 四象符文 → 刻度 → 八芒封缄 → 余烬。
+ * 主线直接描边，避免渐变与多层 opacity 相乘后在浅色画布上消失。
+ * 全部是构建期几何与 CSS 动效，不增加客户端脚本或资源请求。
  */
-
 interface Props {
-  /**
-   * 线宽倍率。viewBox 是 200，实际渲染 144–288px，所以 1 单位的线在
-   * 288px 下是 1.44px、在 144px 下只有 0.72px —— 后者会被抗锯齿糊掉。
-   * 小尺寸的调用方（404 页，9rem）因此要把它调粗。
-   */
+  /** 404 的 144px 小图使用更粗的线。 */
   weight?: number;
 }
 
 const { weight = 1 } = Astro.props;
 
-/** 外圈发丝环与分度点环相对主线的粗细，保证层次不随 weight 走样 */
-const hairlineWidth = weight * 0.8;
-const dotWidth = weight * 1.5;
-
-/** 极坐标 → viewBox 坐标（圆心固定 100,100，0° 指向正上方） */
+/** 极坐标，圆心 100,100，0° 指向正上方。 */
 function point(radius: number, angleDeg: number): [number, number] {
   const rad = ((angleDeg - 90) * Math.PI) / 180;
   return [100 + radius * Math.cos(rad), 100 + radius * Math.sin(rad)];
 }
-
 const round = (value: number) => value.toFixed(2);
 
-/** 24 等分刻度环：长 7 / 短 3.5 交替，24 段合成一条 path */
-const TICK_COUNT = 24;
-const tickRing = Array.from({ length: TICK_COUNT }, (_, index) => {
-  const angle = (index * 360) / TICK_COUNT;
-  const inner = 54;
-  const outer = inner + (index % 2 === 0 ? 7 : 3.5);
-  const [x0, y0] = point(inner, angle);
-  const [x1, y1] = point(outer, angle);
+const tickRing = Array.from({ length: 32 }, (_, index) => {
+  const angle = (index * 360) / 32;
+  const [x0, y0] = point(57, angle);
+  const [x1, y1] = point(index % 4 === 0 ? 65 : index % 2 === 0 ? 62 : 60, angle);
   return `M${round(x0)} ${round(y0)}L${round(x1)} ${round(y1)}`;
 }).join('');
 
-/** 4 段 68° 符文弧：缺口 22° 正落在四个对角线上，象限记号就画在缺口里 */
-const ARC_RADIUS = 72;
-const ARC_SPAN = 68;
-const runeArcs = [0, 90, 180, 270]
-  .map((center) => {
-    const [x0, y0] = point(ARC_RADIUS, center - ARC_SPAN / 2);
-    const [x1, y1] = point(ARC_RADIUS, center + ARC_SPAN / 2);
-    return `M${round(x0)} ${round(y0)}A${ARC_RADIUS} ${ARC_RADIUS} 0 0 1 ${round(x1)} ${round(y1)}`;
-  })
-  .join('');
+/** 四段弧的缺口留给符文，让线条之间有明确的呼吸空间。 */
+const runeArcs = [0, 90, 180, 270].map((center) => {
+  const [x0, y0] = point(75, center - 34);
+  const [x1, y1] = point(75, center + 34);
+  return `M${round(x0)} ${round(y0)}A75 75 0 0 1 ${round(x1)} ${round(y1)}`;
+}).join('');
 
-/** 象限记号：一道径向长笔画 + 两道垂直短横，做成三段式的"符文" */
-const RUNE_MARK = 'M100 28V37M96.6 31.5h6.8M97.6 34.5h4.8';
-const RUNE_ANGLES = [45, 135, 225, 315];
+const RUNE_MARK = 'M100 20V31M96 23.5h8M97.5 27.5h5';
+const QUADRANTS = [45, 135, 225, 315];
 ---
 
 <div class="hero-sigil" aria-hidden="true">
-  {/* 从印记中心发出的光（原来那块盖住整个序言区的软光斑已经删掉）。 */}
   <span class="hero-sigil__aura"></span>
-
   <svg
     viewBox="0 0 200 200"
     width="200"
@@ -81,67 +50,43 @@ const RUNE_ANGLES = [45, 135, 225, 315];
     aria-hidden="true"
     focusable="false"
   >
-    <defs>
-      {/* 描边的方向性光源：左上亮、右下暗 */}
-      <linearGradient id="sigil-stroke" x1="18%" y1="0%" x2="82%" y2="100%">
-        <stop offset="0%" stop-color="currentColor" stop-opacity="0.95"></stop>
-        <stop offset="55%" stop-color="currentColor" stop-opacity="0.5"></stop>
-        <stop offset="100%" stop-color="currentColor" stop-opacity="0.26"></stop>
-      </linearGradient>
-      {/* 核心光晕：渐变本身就是平滑的，所以不需要 filter: blur，也就少一次重绘 */}
-      <radialGradient id="sigil-core" cx="50%" cy="50%" r="50%">
-        <stop offset="0%" stop-color="currentColor" stop-opacity="0.85"></stop>
-        <stop offset="38%" stop-color="currentColor" stop-opacity="0.28"></stop>
-        <stop offset="100%" stop-color="currentColor" stop-opacity="0"></stop>
-      </radialGradient>
-    </defs>
+    {/* 轻覆一层画布色，压住背景网格；中心封缄仍保持通透。 */}
+    <circle class="hero-sigil__field" cx="100" cy="100" r="86" stroke="none"></circle>
+    <circle cx="100" cy="100" r="86" opacity="0.46" stroke-width={weight * 0.8}></circle>
+    <circle cx="100" cy="100" r="94" opacity="0.55" stroke-width={weight * 1.6}
+      stroke-dasharray="0.1 24.51"></circle>
 
-    {/* 外圈：发丝环 + 24 个分度点。
-        圆点靠 dasharray + round linecap 得到 —— 24 个点只占一个节点。 */}
-    <circle
-      cx="100"
-      cy="100"
-      r="82"
-      stroke="url(#sigil-stroke)"
-      opacity="0.22"
-      stroke-width={hairlineWidth}></circle>
-    <circle
-      cx="100"
-      cy="100"
-      r="90"
-      stroke="url(#sigil-stroke)"
-      opacity="0.5"
-      stroke-width={dotWidth}
-      stroke-dasharray="0.1 23.46"></circle>
-
-    {/* 反向自转的两层 */}
-    <g class="hero-sigil__ticks" stroke="url(#sigil-stroke)">
-      <path d={tickRing} opacity="0.55"></path>
+    {/* 四个定位菱形保持静止，给反向旋转的环提供视觉参照。 */}
+    <g class="hero-sigil__accent" fill="currentColor" stroke="none">
+      {[0, 90, 180, 270].map((angle) => (
+        <path d="M100 9 103 14 100 19 97 14Z" transform={`rotate(${angle} 100 100)`} />
+      ))}
     </g>
 
-    <g class="hero-sigil__runes" stroke="url(#sigil-stroke)">
-      <path d={runeArcs} opacity="0.6"></path>
-      {
-        RUNE_ANGLES.map((angle) => (
-          <path d={RUNE_MARK} opacity="0.85" transform={`rotate(${angle} 100 100)`} />
-        ))
-      }
+    <g class="hero-sigil__ticks" opacity="0.72">
+      <path d={tickRing}></path>
     </g>
 
-    {/* 封缄：两个错开 45° 的正方形叠成八芒星，里面再嵌一圈内封缄 */}
-    <g class="hero-sigil__seal" stroke="url(#sigil-stroke)">
-      <path d="M100 60 140 100 100 140 60 100Z" opacity="0.7"></path>
-      <path d="M100 60 140 100 100 140 60 100Z" opacity="0.34" transform="rotate(45 100 100)"
-      ></path>
-      <path d="M100 74 126 100 100 126 74 100Z" opacity="0.55"></path>
+    <g class="hero-sigil__runes" stroke-width={weight * 1.15}>
+      <path d={runeArcs} opacity="0.85"></path>
+      {QUADRANTS.map((angle) => (
+        <path d={RUNE_MARK} transform={`rotate(${angle} 100 100)`} />
+      ))}
     </g>
 
-    {/* 核心：会呼吸的余烬 */}
-    <g class="hero-sigil__core">
-      <circle cx="100" cy="100" r="28" fill="url(#sigil-core)" opacity="0.5"></circle>
-      <circle cx="100" cy="100" r="12" fill="url(#sigil-core)" opacity="0.9"></circle>
-      <path d="M100 91 109 100 100 109 91 100Z" fill="currentColor" stroke="none" opacity="0.9"
-      ></path>
+    <g class="hero-sigil__seal">
+      <path d="M100 54 146 100 100 146 54 100Z" stroke-width={weight * 1.3}></path>
+      <path d="M100 54 146 100 100 146 54 100Z" opacity="0.6"
+        transform="rotate(45 100 100)"></path>
+      <circle cx="100" cy="100" r="26" opacity="0.8"></circle>
+      <path d="M100 68V73M132 100H127M100 132V127M68 100H73" opacity="0.7"></path>
+    </g>
+
+    {/* 实色余烬替代模糊黑点；焰心使用主题的强调色前景。 */}
+    <g class="hero-sigil__core hero-sigil__accent" stroke="none">
+      <path d="M101 80C103 91 115 94 113 104C112 112 106 117 99 117C90 117 85 111 86 103C87 97 92 95 92 90C96 92 97 95 97 98C103 93 98 88 101 80Z"
+        fill="currentColor"></path>
+      <path class="hero-sigil__flame" d="M100 99C101 104 106 105 104 110C102 114 96 113 95 109C95 106 98 104 100 99Z"></path>
     </g>
   </svg>
 </div>

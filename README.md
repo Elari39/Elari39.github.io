@@ -267,8 +267,10 @@ pnpm assets:inspect   # 图片体检
    `../ruiqiang-website/docs/screenshots/`（后者只取它 README 实拍的那三张 ——
    该仓库 `img/` 下的营业执照原图永不发布，本站也不复制）。
    加一个来源只需在 `scripts/prepare-assets.py` 的 `PLATE_SOURCES` 里加一行。
-2. **图标**：用 Pillow 画站点印记（深色底 + 余烬菱形 + 琥珀内芯），
-   生成 180×180 的 `apple-touch-icon.png` 与多尺寸 `favicon.ico`。
+2. **图标**：导航使用 `BrandMark.astro` 的「月牙书页」，随主题切换墨色与余烬色；
+   标签页使用「星轨封印」。其轮廓与颜色以 `public/favicon.svg` 为唯一来源，
+   Pillow 读取绝对 M/L/C/Z 路径，超采样生成 180×180 的 `apple-touch-icon.png`
+   与 16/32/48/64px 的 `favicon.ico`。SVG 的浅色底衬保证深浅标签栏里都清楚。
 3. **OG 卡片**：用无头 Chrome 渲染 `scripts/og-template.html` → `public/og.jpg`（1200×630）。
    存 JPEG 而不是 PNG：同样是这张扁平渐变卡片，PNG 要 **297 KB**、JPEG q85 只要 **~44 KB**
    （省 85%），而每一次分享预览都要付这份流量；q85 下文字边缘没有可见损失。

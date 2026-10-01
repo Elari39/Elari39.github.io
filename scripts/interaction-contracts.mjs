@@ -12,11 +12,18 @@ export async function verifyInteractionContracts({ cdp, check, navigate, base, t
     }
   }
   async function click(selector) {
-    const point = await cdp.evaluate(`(() => {
+    const locate = () => cdp.evaluate(`(() => {
       const el=document.querySelector(${JSON.stringify(selector)});
       const r=el.getBoundingClientRect(), x=r.x+r.width/2, y=r.y+r.height/2;
       return {x,y,hit:x>=0&&y>=0&&x<innerWidth&&y<innerHeight&&el.contains(document.elementFromPoint(x,y))};
     })()`);
+    // Snapshot capture can outlast the fixed 400ms settle window. Wait for a real
+    // hit instead of clicking the view-transition overlay; never repair the DOM.
+    let point = await locate();
+    for (let attempt = 0; !point.hit && attempt < 20; attempt++) {
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      point = await locate();
+    }
     check(point.hit, `真实点击目标可命中：${selector}`, JSON.stringify(point));
     if (!point.hit) return;
     for (const type of ["mousePressed", "mouseReleased"])

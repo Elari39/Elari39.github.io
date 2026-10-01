@@ -28,8 +28,8 @@
 产出：
   public/shots/ashen-courier/*.webp    —— 复用 AshenCourier 仓库里那批真实截图
   public/shots/ruiqiang-website/*.webp —— 复用 ruiqiang-website 已公开发布的那三张实拍
-  public/apple-touch-icon.png         —— Pillow 画出来的印记
-  public/favicon.ico                  —— 由同一枚印记生成多尺寸
+  public/apple-touch-icon.png         —— 从 favicon.svg 的星轨封印生成
+  public/favicon.ico                  —— 同一份 SVG 轮廓生成多尺寸
   public/og.jpg                       —— 用无头 Chrome 渲染 scripts/og-template.html，再存成 JPEG
   src/data/plates.ts                  —— 图版真实像素尺寸（喂给 <img> 的 width/height）
 """
@@ -38,13 +38,15 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
 import tempfile
+import xml.etree.ElementTree as ET
 from pathlib import Path
 
-from PIL import Image, ImageDraw, ImageStat
+from PIL import Image, ImageColor, ImageDraw, ImageStat
 
 ROOT = Path(__file__).resolve().parent.parent
 WORKSPACE = ROOT.parent  # F:\WorkSpace\Ashen-Witch
@@ -58,11 +60,6 @@ RUIQIANG_SHOTS = WORKSPACE / "ruiqiang-website" / "docs" / "screenshots"
 # 详情页正文列是 max-w-3xl（768px），1400px 足够 2x 清晰度又不会太肥
 PLATE_WIDTH = 1400
 WEBP_QUALITY = 80
-
-# 站点色板（与 src/styles/global.css 的深色主题一致）
-ASH = (18, 17, 16)
-EMBER = (224, 141, 109)
-AMBER = (232, 165, 90)
 
 CHROME_CANDIDATES = [
     *([Path(os.environ["CHROME_PATH"])] if os.environ.get("CHROME_PATH") else []),
@@ -179,51 +176,33 @@ def save_plate(source: Path, destination: Path) -> None:
 
 
 def draw_sigil(size: int, rounded: bool) -> Image.Image:
-    """站点印记：深色底 + 余烬菱形 + 琥珀内芯。超采样后缩小，边缘才干净。"""
-    scale = 8
-    edge = size * scale
+    """从 favicon.svg 读取星轨轮廓，超采样生成位图，避免 SVG / ICO 各画一份。"""
+    source = ET.parse(PUBLIC / "favicon.svg").getroot()
+    ns = "{http://www.w3.org/2000/svg}"
+    background = source.find(f"{ns}rect")
+    if background is None or source.get("viewBox") != "0 0 64 64":
+        raise ValueError("favicon.svg 必须包含 64×64 画布与背景矩形")
+    scale = size * 8 / 64
+    edge = size * 8
     image = Image.new("RGBA", (edge, edge), (0, 0, 0, 0))
     draw = ImageDraw.Draw(image)
-
-    if rounded:
-        draw.rounded_rectangle([0, 0, edge - 1, edge - 1], radius=int(edge * 0.22), fill=ASH + (255,))
-    else:
-        draw.rectangle([0, 0, edge, edge], fill=ASH + (255,))
-
-    center = edge / 2
-    outer = edge * 0.35
-    inner = edge * 0.165
-    stroke = max(1, int(edge * 0.042))
-
-    draw.line(
-        [
-            (center, center - outer),
-            (center + outer, center),
-            (center, center + outer),
-            (center - outer, center),
-            (center, center - outer),
-        ],
-        fill=EMBER + (255,),
-        width=stroke,
-        joint="curve",
-    )
-    draw.polygon(
-        [
-            (center, center - inner),
-            (center + inner, center),
-            (center, center + inner),
-            (center - inner, center),
-        ],
-        fill=AMBER + (255,),
-    )
-    for x1, y1, x2, y2 in (
-        (center, center - outer, center, center - inner),
-        (center + outer, center, center + inner, center),
-        (center, center + outer, center, center + inner),
-        (center - outer, center, center - inner, center),
-    ):
-        draw.line([(x1, y1), (x2, y2)], fill=EMBER + (255,), width=stroke)
-
+    fill = ImageColor.getrgb(background.attrib["fill"])
+    radius = float(background.get("rx", "0")) * scale if rounded else 0
+    draw.rounded_rectangle((0, 0, edge - 1, edge - 1), radius=radius, fill=fill)
+    # 此源文件只用绝对 M/L/C/Z 路径；遇到新语法必须显式失败，不能生成残缺图标。
+    for path in source.findall(f"{ns}path"):
+        data = path.attrib["d"]
+        if not re.fullmatch(r"[MLCZ0-9.,\s-]+", data):
+            raise ValueError("favicon.svg 的位图生成仅支持绝对 M/L/C/Z 路径")
+        tokens = iter(re.findall(r"[MLCZ]|-?\d+(?:\.\d+)?", data))
+        outline = ImageDraw.Outline()
+        for command in tokens:
+            count = {"M": 2, "L": 2, "C": 6, "Z": 0}.get(command)
+            if count is None:
+                raise ValueError("favicon.svg 的每段路径必须显式指定命令")
+            coords = tuple(float(next(tokens)) * scale for _ in range(count))
+            {"M": outline.move, "L": outline.line, "C": outline.curve, "Z": outline.close}[command](*coords)
+        draw.shape(outline, fill=ImageColor.getrgb(path.attrib["fill"]))
     return image.resize((size, size), Image.LANCZOS)
 
 
@@ -232,7 +211,7 @@ def build_icons() -> None:
     # iOS 会自己套圆角，所以这里给一张不透明的整块方图
     draw_sigil(180, rounded=False).convert("RGB").save(touch, "PNG", optimize=True)
     ico = PUBLIC / "favicon.ico"
-    draw_sigil(64, rounded=True).save(ico, sizes=[(16, 16), (32, 32), (48, 48)])
+    draw_sigil(64, rounded=True).save(ico, sizes=[(16, 16), (32, 32), (48, 48), (64, 64)])
     log(f"图标：{touch.name} / {ico.name}")
 
 

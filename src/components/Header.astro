@@ -1,6 +1,6 @@
 ---
 import { SITE } from '../data/site';
-import Glyph from './Glyph.astro';
+import BrandMark from './BrandMark.astro';
 import ThemeMenu from './ThemeMenu.astro';
 
 const path = Astro.url.pathname;
@@ -17,7 +17,7 @@ function isCurrent(href: string): boolean {
   <div class="header-inner mx-auto flex max-w-5xl items-center gap-3 px-5 py-3">
     <a href="/" class="flex items-center gap-3 no-underline">
       <span class="text-primary">
-        <Glyph name="sigil" size={26} />
+        <BrandMark size={26} />
       </span>
       <span class="flex flex-col leading-tight">
         <span class="font-display text-[1.0625rem] text-ink">{SITE.title}</span>

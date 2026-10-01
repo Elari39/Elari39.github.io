@@ -11,7 +11,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     {/* 同一枚印记，尺寸收小当作装饰 —— 纯装饰所以整块 aria-hidden */}
     <div class="mt-6 max-w-[9rem] text-muted" aria-hidden="true">
       {/* 这里只有 9rem（144px），viewBox 会缩到 0.72 倍 —— 所以把线加粗，
-          否则 1 单位的线只剩 0.72px，24 等分刻度会被抗锯齿糊掉 */}
+          否则 1 单位的线只剩 0.72px，刻度会被抗锯齿糊掉 */}
       <SigilPlate weight={1.7} />
     </div>
 

@@ -1,0 +1,20 @@
+---
+/** 选定的 03「月牙书页」：按候选轮廓重绘，26px 下仍保留书脊留白。 */
+interface Props {
+  size?: number;
+}
+const { size = 26 } = Astro.props;
+---
+
+<svg
+  viewBox="0 0 64 64"
+  width={size}
+  height={size}
+  fill="var(--c-ink)"
+  aria-hidden="true"
+  focusable="false"
+>
+  <path d="M23 2C9 6 2 18 2 32C2 49 15 62 32 62C49 62 62 49 62 32C62 23 59 17 55 13C60 26 56 37 47 44C37 53 23 50 16 43C6 32 8 15 23 2Z"></path>
+  <path d="M15 22C21 22 26 25 31 30V46C26 40 21 37 15 37ZM33 30C38 25 43 22 49 22V37C43 37 38 40 33 46Z"></path>
+  <path d="M32 9 36.7 16.5 32 24.3 27.3 16.5Z" fill="var(--c-primary)"></path>
+</svg>
