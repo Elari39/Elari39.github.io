@@ -21,6 +21,27 @@ export async function verifyReadingContracts({ cdp, check, navigate, base, theme
     })()`);
     check(reading.brand && !reading.oldMark, `${route.path} 阅读页与页脚统一新品牌图标`, JSON.stringify(reading));
     check(reading.back && reading.paper && !reading.overflow, `${route.path} 页首/页末返回入口与纯色书页可用`, JSON.stringify(reading));
+
+    /* 进度余烬线：它由滚动时间线驱动，所以只能真滚一遍再读计算值 ——
+       "CSS 里写了 animation-timeline"并不等于它真的动了（那正是这条契约的意义）。 */
+    const progressAt = () => cdp.evaluate(`(() => {
+      const bar=document.querySelector('.reading-progress');
+      return bar?getComputedStyle(bar).transform:null;
+    })()`);
+    const progressTop = await progressAt();
+    await cdp.evaluate(`window.scrollTo({top:0,behavior:'instant'})`);
+    await settle();
+    const progressStart = await progressAt();
+    await cdp.evaluate(`window.scrollTo({top:document.documentElement.scrollHeight,behavior:'instant'})`);
+    await settle();
+    const progressEnd = await progressAt();
+    await cdp.evaluate(`window.scrollTo({top:0,behavior:'instant'})`);
+    await settle();
+    check(
+      Boolean(progressTop) && progressTop !== progressEnd,
+      `${route.path} 进度线随滚动推进（${progressStart} → ${progressEnd}）`,
+      `first=${progressTop}`,
+    );
     if (route.path.includes("notes-of-ashen")) {
       await cdp.screenshot(path.join(shots, "reading-desktop.png"));
       await cdp.evaluate(`window.scrollTo({top:document.documentElement.scrollHeight,behavior:'instant'})`);
@@ -28,6 +49,68 @@ export async function verifyReadingContracts({ cdp, check, navigate, base, theme
       await cdp.screenshot(path.join(shots, "reading-footer.png"));
     }
   }
+
+  /* 封面纹样：三种强调色必须真的是三种图案，而不是"三种颜色的同一张封面"。
+     读的是 .cover **元素自己**的计算背景图 —— 纹样画在元素上，所以这里断言的是
+     "每个封面确实带上了自己那套纹样，且三套互不相同"。只断言"CSS 里写了三行"
+     等于什么都没断言：纹样这次就是靠这条查出 `background` 被压成简写后整条失效的。
+     卡片数与强调色种类数不相等（四张卡只有三套强调色），所以按**图案去重后**计数。 */
+  await navigate(`${base}/`);
+  await cdp.evaluate(`document.documentElement.dataset.theme='brutal'`);
+  await settle();
+  const motifs = await cdp.evaluate(`(() => {
+    const covers=[...document.querySelectorAll('.entry-card .cover')];
+    const motif=el=>getComputedStyle(el).getPropertyValue('--cover-motif').trim();
+    const image=el=>getComputedStyle(el).backgroundImage;
+    const gradients=el=>image(el).split('gradient(').length-1;
+    return {count:covers.length,
+      classes:covers.map(c=>c.className),
+      motifs:covers.map(motif),
+      gradients:covers.map(gradients),
+      images:covers.map(image)};
+  })()`);
+  const distinct = new Set(motifs.motifs);
+  check(
+    motifs.count >= 3 &&
+      distinct.size >= 3 &&
+      [...distinct].every((value) => value.includes('gradient')) &&
+      motifs.gradients.every((count) => count >= 1) &&
+      new Set(motifs.images).size === distinct.size,
+    `首页 ${motifs.count} 张卡片有 ${distinct.size} 种封面纹样，且各自真的画在封面上`,
+    JSON.stringify({ classes: motifs.classes, gradients: motifs.gradients }),
+  );
+
+  /* 主题图鉴：九套主题各有一格，且每一格的样品块用的确实是**它自己**那套 token
+     （读 data-theme 子树的背景，而不是页面当前主题的背景）。 */
+  await navigate(`${base}/grimoire/`);
+  await cdp.evaluate(`document.documentElement.dataset.theme='brutal'`);
+  await settle();
+  const atlas = await cdp.evaluate(`(() => {
+    const cells=[...document.querySelectorAll('.theme-atlas__cell')];
+    const swatches=[...document.querySelectorAll('.theme-atlas__swatch')];
+    return {
+      cells:cells.length,
+      ids:swatches.map(s=>s.getAttribute('data-theme')),
+      images:swatches.map(s=>getComputedStyle(s).backgroundImage),
+      h1:document.querySelectorAll('h1').length,
+      panel:[...document.querySelectorAll('[data-theme-opt]')].length,
+    };
+  })()`);
+  check(
+    atlas.cells === themes.length && atlas.ids.length === themes.length && themes.every((id) => atlas.ids.includes(id)),
+    `/grimoire/ 图鉴覆盖全部 ${themes.length} 套主题`,
+    JSON.stringify(atlas.ids),
+  );
+  check(
+    new Set(atlas.images).size === themes.length && atlas.images.every((image) => image !== 'none'),
+    '/grimoire/ 每格样品块读的是各自主题的 token（背景互不相同）',
+    JSON.stringify(atlas.images.map((image) => image.slice(0, 40))),
+  );
+  check(
+    atlas.h1 === 1 && atlas.panel === themes.length,
+    `/grimoire/ 恰好一个 h1、主题面板的 ${themes.length} 个选项仍在`,
+    JSON.stringify({ h1: atlas.h1, panel: atlas.panel }),
+  );
 
   for (const [width, height] of [[1440, 900], [390, 844], [568, 320]]) {
     await viewport(width, height);

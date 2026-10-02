@@ -1,0 +1,24 @@
+---
+/**
+ * 主题图鉴里的一格预览。
+ *
+ * 画法与主题面板里那枚 1rem 的色块**相同**（`linear-gradient(135deg, …)`），
+ * 只是放大成一块样品：它读 `var(--c-canvas)` / `var(--c-primary)` / `var(--bw)` /
+ * `var(--r-card)`，而 `data-theme="<id>"` 让那一套主题的 token 块对这个元素生效 ——
+ * 所以这里**一个十六进制都没有**，改了主题色也不会剩下一格旧颜色。
+ *
+ * 类名刻意**不叫** `theme-opt__swatch`：守卫靠那个类名数"每页面板里的色块数
+ * 必须等于主题数"，图鉴页再放九枚同名的就会当场把那条检查翻倍。所以这里用的是
+ * 自己的类，布局也与面板不同（样品块而不是 1rem 圆点）。
+ */
+interface Props {
+  /** 主题 id，会写进 data-theme，让那一套 token 对这个元素生效 */
+  id: string;
+  /** 渲染用的标签：样品块是块级元素，卡片标题里要行内元素 */
+  as?: 'span' | 'div';
+}
+
+const { id, as: Tag = 'span' } = Astro.props;
+---
+
+<Tag class="theme-atlas__swatch" data-theme={id} aria-hidden="true" />

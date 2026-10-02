@@ -1,0 +1,100 @@
+---
+import ThemePreview from '../components/ThemePreview.astro';
+import { SITE } from '../data/site';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { DEFAULT_THEME, THEME_IDS, THEME_LABELS } from '../lib/theme';
+
+/**
+ * 主题图鉴：把"九套主题"这件事从右上角那个小面板里拿出来，摊成一页给人看。
+ *
+ * 三件刻意的取舍：
+ *   1. 主题顺序**只有一个来源**（src/lib/theme.ts 的 THEME_IDS）——
+ *      这里不抄数组、不写字面量，加一套主题这一页就自动多一格。
+ *   2. 每格的样品色块是嵌进去的 `data-theme="<id>"`，于是那一套的 token 对这个
+ *      元素生效，颜色直接从 global.css 来（零十六进制重复，也就不会漂移）。
+ *   3. 这一页**不提供切换**：切主题的入口仍然是各页右上角那个面板。多一个方式
+ *      就等于多一段脚本、多一份状态，而全站只允许两段脚本（见 BaseLayout）。
+ *      所以这里只说明"怎么切"，不自己再做一遍。
+ */
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'CollectionPage',
+  name: `${SITE.title} · 主题图鉴`,
+  description: SITE.description,
+  url: `${SITE.url}/grimoire/`,
+  inLanguage: SITE.lang,
+  author: {
+    '@type': 'Person',
+    name: SITE.author.handle,
+    url: SITE.author.github,
+  },
+};
+
+/** 每格的三行说明。写死在这里而不是塞进 theme.ts：它是**这一页的文案**，
+ *  与"主题清单"这种契约数据不是一回事。 */
+const NOTES: Record<string, string> = {
+  brutal: '纸白画布 · 纯黑粗边 · 模糊半径为 0 的硬阴影 · 全方角',
+  light: '暖奶油底 · 珊瑚主色 · 圆角与柔光，继承自 AshenCourier 的设计语言',
+  dark: '暖灰褐的暗面板 · 珊瑚余烬 · 卡片边缘透出一圈柔光',
+  cyber: '近黑磷光绿 · CRT 扫描线 · 等宽标题，全方角',
+  swiss: '纯白画布 · 发丝线 · 单一红色强调，靠字号与留白建立层级',
+  ink: '绢本灰底 · 浓墨描边 · 朱砂印章，标题落到中文衬线',
+  archive: '深靛蓝连夜灯 · 黄铜强调 · 小圆角与卡片外那圈柔光',
+  sunset: '深紫罗兰 · 品红与青 · 几何无衬线标题带一层很淡的辉光',
+  riso: '亮黄纸 · 电光蓝 · 粗黑描边，卡片带一道错位套印的硬阴影',
+};
+---
+
+<BaseLayout
+  title="主题图鉴"
+  description="灰烬女巫的魔典用的九套主题：每一套的色板、形状与标题字体，以及它们各自想说什么。"
+  jsonLd={jsonLd}
+>
+  <div class="mx-auto max-w-5xl px-5 py-14">
+    <p class="label">图鉴 · Atlas</p>
+    <h1 class="mt-3 text-3xl sm:text-4xl">九套主题</h1>
+    <p class="mt-4 max-w-2xl text-lg text-body">
+      这一本是同一份内容、九套长相：色板、形状（圆角与描边宽度）与标题字体是三个<strong
+        class="text-ink">各自独立</strong
+      >的通道，所以每一次切换换掉的不只是颜色。下面每一格都嵌在那套主题里渲染 —— 你看到的颜色就是它自己的
+      token。
+    </p>
+    <p class="mt-3 max-w-2xl text-sm text-muted">
+      想换：点右上角那枚色块，选一套即可。选择只存在你自己的浏览器里（<code>localStorage</code>），
+      没有账号、没有服务端、也不会告诉任何第三方。默认那套是 {THEME_LABELS[DEFAULT_THEME]}，无脚本时看到的也是它。
+    </p>
+
+    <ul class="theme-atlas mt-10" aria-label={`${THEME_IDS.length} 套主题的预览`}>
+      {
+        THEME_IDS.map((id) => (
+          <li class="theme-atlas__cell">
+            <ThemePreview id={id} />
+            <div class="theme-atlas__meta">
+              <p class="label">{id}</p>
+              <h2 class="theme-atlas__name font-display text-xl">
+                {THEME_LABELS[id]}
+              </h2>
+              <p class="mt-2 text-sm text-muted">{NOTES[id]}</p>
+              <p class="mt-4 text-lg text-ink">
+                <span class="font-display">灰烬女巫的魔典</span>
+                <span class="ml-2 text-sm text-muted">Aa 0123</span>
+              </p>
+            </div>
+          </li>
+        ))
+      }
+    </ul>
+
+    <div class="mt-12 rounded-card border border-hairline bg-surface p-6">
+      <h2 class="font-display text-lg text-ink">为什么是九套</h2>
+      <p class="mt-2 text-sm text-muted">
+        前三套与 <span class="text-body">AshenCourier</span> 共用同一套设计语汇，所以这个站点与它展示的项目看起来像同一个作者做的；
+        后面几套各自是一种语言。每条主题都必须通过同一组对比度检查——
+        正文与标记 4.5:1、大字号与装饰 3:1，共 {THEME_IDS.length} 套 × 9 对，改任何一个颜色都会被守卫算一遍。
+      </p>
+      <div class="mt-5">
+        <a class="btn" href="/about/">这一页是怎么搭出来的</a>
+      </div>
+    </div>
+  </div>
+</BaseLayout>

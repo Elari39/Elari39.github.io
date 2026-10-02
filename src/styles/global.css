@@ -737,6 +737,47 @@
   }
 }
 
+/* 长页进度线：滚动驱动，只动 transform（合成层），不参与布局 */
+@keyframes read-progress {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+/* 404 的钝响：错位层只有几像素的横向抖动，幅度小到读起来不受影响 */
+@keyframes glitch-nudge {
+  0%,
+  100% {
+    transform: translate(2px, 0);
+  }
+  50% {
+    transform: translate(-2px, 0);
+  }
+}
+
+/* 印记的刻度环与封缄在滚动中「活过来」：透明度与描边的显影，
+   **不动位置也不动尺寸** —— 位移会让这一块在滚动时抖，而它就在首屏。 */
+@keyframes sigil-wake {
+  from {
+    opacity: 0.35;
+  }
+  to {
+    opacity: 0.72;
+  }
+}
+
+@keyframes seal-wake {
+  from {
+    opacity: 0.45;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 /* 主题切换的视图过渡（View Transitions API）
    -----------------------------------------------------------------------------
    切主题时浏览器把旧画面拍成一张快照、新的再拍一张，两张之间做交叉淡出。
@@ -762,6 +803,33 @@
   ::view-transition-new(*) {
     animation: none !important;
   }
+}
+
+/* -----------------------------------------------------------------------------
+   2.6 跨文档视图过渡（整页转场）
+   -----------------------------------------------------------------------------
+   站内的页面跳转也是两张快照之间的交叉淡出，与「切主题」是同一只手的动作。
+   这是**纯 CSS**：@view-transition 由浏览器实现，不需要 ClientRouter（那是 JS 路由，
+   会破"每页恰好两段脚本"与"没有客户端框架运行时"这两条不变量）。
+   只升级同源跳转（navigation: auto 的定义如此），跨站链接照常是普通导航。
+
+   进度线（.reading-progress）单独给一个名字，于是它在详情页之间**保持同一张快照**：
+   效果是"进度线被重置"而不是整条淡出，不会每次翻页都灭一下。
+
+   reduce 下必须显式关掉：animation: none 那条在下面 base 层的 reduce 块里（守卫
+   budget.mjs 的 closesViewTransitionUnderReducedMotion 盯着它，别删）。 */
+@view-transition {
+  navigation: auto;
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: var(--dur-slow);
+  animation-timing-function: var(--ease-ember);
+}
+
+::view-transition-group(progress) {
+  animation: none;
 }
 
 /* -----------------------------------------------------------------------------
@@ -800,6 +868,29 @@
 
   /* 余烬分隔线 */
 
+  /* 404 的「钝响」：两行完全相同的字叠出一点色差，靠 --c-primary / --c-teal 上色，
+     所以九套主题各响各的。代码里只有一份文本 —— 复制一份出来做"故障层"会让
+     读屏读到两遍 404。装饰性的位移在动效区，reduce 下完全不跑。 */
+  .glitch {
+    position: relative;
+  }
+
+  .glitch::after {
+    content: attr(data-text);
+    position: absolute;
+    inset: 0;
+    color: var(--c-primary);
+    text-shadow: 2px 0 var(--c-teal);
+    opacity: 0.32;
+    pointer-events: none;
+    user-select: none;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .glitch::after {
+      animation: glitch-nudge 4.2s steps(2, end) infinite;
+    }
+  }
 
   .chip {
     display: inline-flex;
@@ -1009,6 +1100,54 @@
     flex: none;
   }
 
+  /* ---- 主题图鉴（/grimoire/）：九套主题各占一格，样品块嵌在那套主题里渲染 ----
+     色块画法与面板里那枚 1rem 的小点相同，只是放大成一块样品；形状读运行时
+     token（--r-card / --bw），所以方角的主题在这里也是方角，不必逐套写覆盖。
+     类名不是 theme-opt__swatch：守卫按那个类名数面板色块，同名会让首页与图鉴页
+     的计数当场翻倍（见 scripts/audit-site.mjs 的色块检查）。 */
+  .theme-atlas {
+    display: grid;
+    gap: 1.25rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  @media (min-width: 40rem) {
+    .theme-atlas {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (min-width: 64rem) {
+    .theme-atlas {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  .theme-atlas__cell {
+    overflow: hidden;
+    border: var(--bw) solid var(--c-hairline);
+    border-radius: var(--r-card);
+    background: var(--c-card);
+  }
+
+  /* 样品块：1rem 也不给，就是这一格的全部颜色 */
+  .theme-atlas__swatch {
+    display: block;
+    height: 5.5rem;
+    border-bottom: var(--bw) solid var(--c-hairline);
+    background: linear-gradient(135deg, var(--c-primary) 0 50%, var(--c-canvas) 50% 100%);
+  }
+
+  .theme-atlas__meta {
+    padding: 1rem 1.1rem 1.2rem;
+  }
+
+  .theme-atlas__name {
+    margin-top: 0.15rem;
+  }
+
   /* ---- 标签过滤条：纯静态列表 + 极少量 JS 只切 hidden ----
      服务端渲染出来时它带 hidden，由脚本去掉：没有 JS 的访客看到的是一条完整的
      条目列表，而不是一排点了没反应的按钮。 */
@@ -1208,6 +1347,22 @@
     background: var(--c-canvas);
     font-size: 1.0625rem;
     line-height: 1.85;
+  }
+
+  /* ---- 长页的进度余烬线 ----
+     只出现在详情页（那一页才有 .reading-sheet）。形状与色带在这里，动效在 2.5 节：
+     scaleX 由滚动时间线驱动，不支持 animation-timeline 的浏览器看到的就是一条
+     铺满的静止细线 —— 与"停在中间态"相比，那是一个合理的终态。
+     颜色只出现在装饰性的细线上，不承载任何文字，因此不参与对比度契约。 */
+  .reading-progress {
+    position: fixed;
+    inset: 0 0 auto 0;
+    z-index: 40;
+    height: 3px;
+    pointer-events: none;
+    background: linear-gradient(90deg, var(--c-primary), var(--c-teal));
+    /* 在详情页之间保持同一张快照：翻页时它被重置而不是整条淡出 */
+    view-transition-name: progress;
   }
 
   /* 「条目」卡片：书页的质感 —— 发丝描边 + 悬停抬起 + 顶部一道强调色 */
@@ -1448,6 +1603,27 @@
         animation-timeline: scroll(root);
         animation-range: 0 56px;
       }
+
+      /* 详情页的进度线：从滚动 0 到「文档高度 - 视口高度」走完，与页面长度无关。
+         transform-origin 写在 base 规则里，这里只补时间线。
+         与页头投影共用同一个 @supports 外壳：一份外壳就够，多包一层等于把这份
+         规则在产物里写两遍（Tailwind 的 Lightning CSS 会为不支持的浏览器补回退）。
+
+         animation-timeline 单独一行、**不并进 animation 简写**：并进去以后
+         Lightning CSS 会把它压成 `animation:linear both read-progress scroll(root)`，
+         而 Chrome 在简写里解析不了 scroll()/view() 这个值 —— 整条简写被丢弃，
+         计算值退回 `animation-name:none`，进度线永远停在原地。
+         （实测：单独写 animation-timeline 能生效，压成简写就整条失效；
+         站点里那三处老动效恰好都是 `animation: <name> <时长> …` 的写法，
+         所以这个坑只在新增的滚动时间线上出现过。） */
+      .reading-progress {
+        transform-origin: left center;
+        animation-name: read-progress;
+        animation-duration: 1s;
+        animation-timing-function: linear;
+        animation-fill-mode: both;
+        animation-timeline: scroll(root);
+      }
     }
   }
 
@@ -1553,6 +1729,28 @@
     }
   }
 
+  /* 印记随滚动「显影」：刻度环与封缄从淡到实。三个约束：
+     1. from 态本身就是可看的（刻度 0.35、封缄 0.45）——
+        滚动时间线在页面不足一屏时范围会塌成 0，`both` 会把进度钉在 0%，
+        所以起点绝不能是"看不见"；验收里那条"不落在中间态"也是这个道理。
+     2. 只在 48rem 以上跑：窄屏印记在正文下方，页面高度不保证能滚。
+     3. 只动 opacity，不动 transform —— 旋转已经占了 transform（见上面那条）。 */
+  @media (prefers-reduced-motion: no-preference) and (min-width: 48rem) {
+    @supports (animation-timeline: scroll()) {
+      .hero-sigil__ticks {
+        animation: sigil-wake linear both;
+        animation-timeline: scroll(root);
+        animation-range: 0 420px;
+      }
+
+      .hero-sigil__seal {
+        animation: seal-wake linear both;
+        animation-timeline: scroll(root);
+        animation-range: 80px 500px;
+      }
+    }
+  }
+
   /* hover 只把光晕提亮一档，而不是给整棵子树加 filter：
      子树里有持续运行的动画，加 filter 等于每帧都要重绘一遍滤镜。 */
   @media (hover: hover) and (pointer: fine) {
@@ -1631,6 +1829,14 @@
     -webkit-mask-image: linear-gradient(90deg, #000, transparent 72%);
   }
 
+  /* 三种强调色各有一种**图案**，而不只是三种颜色：封面的纹样由 --cover-motif 承载，
+     写在 .cover 自己身上，于是同一个元素上的 ::before 继承到它（自定义属性会继承）。
+     纹样用 --entry-accent 上色，所以九套主题各自成立，没有一处 per-theme 覆盖。
+
+     这三条刻意**不放在 @layer components 里**，而是写在文件末尾（第 9 节）：
+     粗野主义给 .cover::before 换过一副底纹，那条是无层级规则、与这里的特异性相同，
+     会盖掉同一层里的这三条。放进末尾的无层级规则里，粗野主义就只是"底色不同、
+     纹样照旧"—— 这正是想要的。 */
   /* 封面上的罗马数字水印：与详情页头部的水印是同一套"章节"语言 */
   .cover-numeral {
     position: absolute;
@@ -2426,6 +2632,48 @@
 [data-theme='riso'] :is(.btn, .entry-card, .attest, .plate) {
   /* 错位套印：阴影不带模糊，偏移量比粗野主义更小 —— 是"没对齐"而不是"压上去" */
   box-shadow: 4px 4px 0 var(--c-teal);
+}
+
+/* -----------------------------------------------------------------------------
+   9. 封面纹样：三种强调色 = 三种图案
+   -----------------------------------------------------------------------------
+   这三条必须**无层级**（无层级规则永远盖过分层规则），而且必须写
+   `.cover--coral.cover--coral` 这样把类名写两遍：特异性。粗野主义有一条无层级的
+   `[data-theme='brutal'] .cover`（0,2,0），用的是 `background:` 简写，会把
+   background-image 一起重置；`.cover--coral` 只有（0,1,0），无层级也救不了它
+   （无层级只压过分层规则，同层同属性还是比特异性）。同一个类写两遍就拿到
+   （0,2,0），与它打平、再靠源序取胜 —— 这是全站唯一一处这样的技巧，别"顺手简化"。
+   其余主题那条 `.cover` 在 @layer components 里（0,1,0），本来就压不过这两条。
+
+   纹样画在 .cover 元素自己的背景上，而不是 ::before：伪元素上那份色晕是 @layer
+   里的 `.cover::before` 与粗野主义那份无层级覆盖共用的属性，元素背景与它互不争抢，
+   省掉一轮特异性算计。色晕那一层因此也就不必在这里再写一遍 —— 粗野主义本来就是
+   平涂的强调色封面，其余主题的色晕由 @layer 里那条（或它的 color-mix 版本）负责。 */
+.cover--coral {
+  --cover-motif: repeating-linear-gradient(
+    60deg,
+    var(--entry-accent, var(--c-primary)) 0 1px,
+    transparent 1px 9px
+  );
+}
+
+.cover--teal {
+  --cover-motif: radial-gradient(var(--entry-accent, var(--c-primary)) 1px, transparent 1.4px);
+  background-size: 10px 10px;
+}
+
+.cover--amber {
+  --cover-motif: repeating-radial-gradient(
+    circle at 50% 118%,
+    transparent 0 13px,
+    var(--c-ember-soft) 13px 15px
+  );
+}
+
+.cover--coral.cover--coral,
+.cover--teal.cover--teal,
+.cover--amber.cover--amber {
+  background-image: var(--cover-motif);
 }
 
 /* Mobile navigation remains legible without a scripted menu. */

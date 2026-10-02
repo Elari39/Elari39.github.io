@@ -31,6 +31,11 @@
 每张卡片能就地打开一个「快速预览」抽屉）、**图版**（把各个条目的
 截图摊成一条横向走廊）与**三条自我约束**。
 
+站上还有一页 <https://elari39.github.io/grimoire/> —— **主题图鉴**：九套主题各占一格，
+每一格的样品块嵌在那套主题里渲染（色板、形状、标题字形都是那一套的）。
+它不提供切换（切换仍然只在右上角那个面板里），因此**没有多出第二段脚本**，
+体量也只有约 0.6 KB 的栅格规则。
+
 站点本身就是个小工程：不引任何第三方运行时资源、客户端脚本只有两段（一段主题引导
 + 一段交互），并且带一套**构建产物守卫**、一条**体积与对比度的静态断言**，以及一套
 **浏览器级验收**。下面把这些都写清楚。
@@ -83,19 +88,20 @@
 │  ├─ shots/<slug>/*.webp         # 条目图版（复用各项目仓库里已公开发布的截图）
 │  ├─ favicon.svg / favicon.ico / apple-touch-icon.png / og.jpg
 │  └─ robots.txt
-└─ src/
-   ├─ content.config.ts           # 条目 schema（zod）
-   ├─ content/projects/*.md       # 四个条目
-   ├─ data/site.ts                # 站点常量（站名、导航、自我约束）
-   ├─ data/plates.ts              # 图版尺寸（生成文件，勿手工编辑）
-   ├─ layouts/BaseLayout.astro    # head / SEO / OG / JSON-LD / 主题引导 / 交互脚本入口
-   ├─ components/                 # Header / Footer / ProjectCard / Glyph / ThemeMenu
-   │                              # + SigilPlate / Attestation / PlateRail / Toc
-   ├─ lib/theme.ts                # 主题清单（THEME_IDS，第 0 项即默认）+ 引导脚本
-   ├─ lib/tags.ts                 # 首页标签过滤的词汇表（只收被 ≥2 个条目共用的标签）
-   ├─ scripts/interactions.ts     # 全站唯一的客户端脚本（主题面板 / 视图过渡 / 标签过滤）
-   ├─ pages/                      # index / about / 404 / projects/[slug]
-   └─ styles/global.css           # 各套主题的 token 与组件样式
+├─ src/
+│  ├─ content.config.ts           # 条目 schema（zod）
+│  ├─ content/projects/*.md       # 四个条目
+│  ├─ data/site.ts                # 站点常量（站名、导航、自我约束）
+│  ├─ data/plates.ts              # 图版尺寸（生成文件，勿手工编辑）
+│  ├─ layouts/BaseLayout.astro    # head / SEO / OG / JSON-LD / 主题引导 / 交互脚本入口
+│  ├─ components/                 # Header / Footer / ProjectCard / Glyph / ThemeMenu
+│  │                              # + SigilPlate / Attestation / PlateRail / Toc
+│  │                              # + ThemePreview（主题图鉴里的样品块）
+│  ├─ lib/theme.ts                # 主题清单（THEME_IDS，第 0 项即默认）+ 引导脚本
+│  ├─ lib/tags.ts                 # 首页标签过滤的词汇表（只收被 ≥2 个条目共用的标签）
+│  ├─ scripts/interactions.ts     # 全站唯一的客户端脚本（主题面板 / 视图过渡 / 标签过滤）
+│  ├─ pages/                      # index / about / grimoire / 404 / projects/[slug]
+│  └─ styles/global.css           # 各套主题的 token 与组件样式
 ```
 
 ## 本地开发
@@ -391,6 +397,43 @@ DOM 里 <title> 就是这四个字，没有任何文章链接；
 内联成字面量的圆角，token 管不到它们），sunset 的标题辉光与 riso 的套印阴影也各有一条
 —— 见 `global.css` 第 1b 与第 8 节。
 
+### 后加的那些「个性」，以及它们各自的字节账
+
+装饰性做加法时，唯一真正受限的是 **CSS 48 KB**（默认主题与三套老主题的形状覆盖是
+逐类的无层级规则，无法靠 token 消掉）。所以后加的每一项都按同一条规矩来：
+**数据与形状只有一个来源，逐个主题的覆盖一概不写。** 加完这一批之后 CSS 用掉
+47.6 KB —— 余量不到 0.4 KB，**再加装饰之前先跑 `pnpm assert:budgets` 看实际值**，
+别凭估计。
+
+- **主题图鉴（`/grimoire/`）**：把九套主题摊成一页。每一格的样品块就是
+  `[data-theme="<id>"]` 的一小块，颜色由那套主题自己的 token 画出来 —— 页面里
+  一个十六进制都没有，加一套主题这一页自动多一格。它**不提供切换**（切换仍然是
+  右上角那个面板），所以没有多出第二段脚本，体量只有约 600 字节的栅格规则。
+  类名刻意不叫 `theme-opt__swatch`：守卫按那个类名数"每页面板里的色块数"，同名会让
+  首页与图鉴页的计数当场翻倍。
+- **条目封面各有一套纹样**：`--cover-motif` 由 `.cover--coral/teal/amber` 给出，
+  纹样画在 `.cover` **元素自己**的背景上（不是 `::before`——那个属性被粗野主义一条
+  无层级的 `[data-theme='brutal'] .cover`（0,2,0）用 `background:` 简写重置过，
+  `.cover--x::before` 的（0,1,1）根本压不过它）。修饰类因此写成
+  `.cover--coral.cover--coral` 拿到同级的（0,2,0），再靠源序取胜 ——
+  这是这一页里唯一一处"把类名写两遍"的特异性技巧，注释里写明了原因；
+  纹样用 `--entry-accent` 上色，九套主题各自成立。
+- **详情页的进度余烬线**：纯 CSS 的滚动时间线，零 JS、零滚动监听，并且与页头投影
+  **共用同一个 `@supports` 外壳**（多包一层等于让产物把同一份规则写两遍）。
+  它的 `animation-*` 刻意**逐条列出、不并进简写**：并成
+  `animation: … scroll(root)` 之后 Lightning CSS 会把它压成简写，而 Chrome 在
+  简写里解析不了 `scroll()`/`view()`，整条声明被丢弃、计算值退回
+  `animation-name:none` —— 进度线会一直停在原地。这个坑由"真滚一遍读计算值"那条
+  断言当场指出（`animation-timeline` 单独写就正常）。
+- **印记的显影**：首屏那枚印记的刻度环与封缄随滚动从淡到实，只动 `opacity` ——
+  `transform` 已经被自转占掉了。起始态本身可读（刻度 0.35）：滚动范围在页面不足
+  一屏时会塌成 0，而 `both` 会把进度钉在起点，所以起点不能是"看不见"。
+- **跨文档转场**：站内跳转走原生 `@view-transition`（纯 CSS，不引 ClientRouter，
+  也就不破"每页恰好两段脚本"）。进度线有自己的 `view-transition-name`，翻页时它是
+  "被重置"而不是整条淡出。`prefers-reduced-motion: reduce` 下那条
+  `::view-transition-* { animation: none }` 同样是显式的，守卫盯着它。
+
+
 ### 形状与质感：运行时 token，而不是逐类覆盖
 
 `@theme inline` 会把 token 的**值**内联进工具类（产物里是
@@ -555,6 +598,14 @@ MIT。本站自身是 MIT；被展示的四个项目各自另有许可 —— `A
 
 浏览器除主题面板（每套主题逐个选中、键盘、Esc 与点外部关闭）、视图过渡及其降级、
 标签过滤及其无 JS 降级、CSP、无 JS、动画与 reduced-motion 契约外，还检查精确 HTTP 状态、所有阶段的网络和控制台错误、真实组件背景的文字对比度、键盘目录和图版、无效主题值及不可用存储。截图及 `result.json` 位于 `.assets-raw/verify/`（全部主题 × 各页面），预览日志为 `.assets-raw/preview.log`。任何失败阻止发布。
+
+后加的那些装饰各有一条**只看计算值**的契约，因为"CSS 里写了"什么都证明不了：
+
+- 详情页的进度线真滚一遍再读 `transform`：起点与终点必须不同（滚动时间线真的在驱动它）；
+- 首页四张卡片的 `.cover::before` 计算背景图必须两两不同（三种强调色是三种图案）；
+- `/grimoire/` 的九格样品块各自读 `data-theme` 子树的背景，九张背景图必须互不相同，
+  且该页仍然只有一个 `<h1>`、面板的选项一个不少。
+
 
 每套主题的截图都是**用 `<html data-theme>` 直接渲染出来的**，不是靠注入脚本 ——
 站点的 CSP 只放行登记过哈希的内联脚本，任何临时注入的 `<script>` 都会被静默拦掉，

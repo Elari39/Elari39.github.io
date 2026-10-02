@@ -16,9 +16,9 @@ const previewId = `preview-${project.slug}`;
 ---
 
 <article class={`entry-card accent-${project.accent} overflow-hidden`}>
-  {/* 程序化封面：accent 渐变 + 方格 + 章节水印。纯 CSS，不请求任何图片。
+  {/* 程序化封面：accent 渐变 + 该强调色自己的纹样 + 章节水印。纯 CSS，不请求任何图片。
       整块是装饰，所以 aria-hidden。 */}
-  <div class="cover" aria-hidden="true">
+  <div class={`cover cover--${project.accent}`} aria-hidden="true">
     <span class="cover-numeral">{entryNumber(index)}</span>
   </div>
 

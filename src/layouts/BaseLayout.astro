@@ -15,9 +15,19 @@ interface Props {
   accent?: 'coral' | 'teal' | 'amber';
   jsonLd?: Record<string, unknown> | Record<string, unknown>[];
   noindex?: boolean;
+  /** 长页（条目详情）才渲染顶部那道滚动进度线 */
+  progress?: boolean;
 }
 
-const { title, description = SITE.description, ogType = 'website', accent, jsonLd, noindex = false } = Astro.props;
+const {
+  title,
+  description = SITE.description,
+  ogType = 'website',
+  accent,
+  jsonLd,
+  noindex = false,
+  progress = false,
+} = Astro.props;
 
 const pageTitle = title ? `${title} · ${SITE.title}` : `${SITE.title} · ${SITE.subtitle}`;
 const canonical = new URL(noindex ? '/404.html' : Astro.url.pathname, SITE.url).href;
@@ -94,6 +104,11 @@ const jsonLdBlocks = jsonLd ? (Array.isArray(jsonLd) ? jsonLd : [jsonLd]) : [];
 
   <body class={accent ? `accent-${accent}` : undefined}>
     <a class="skip-link" href="#main">跳到主要内容</a>
+    {/*
+      长页的进度线：纯装饰、纯 CSS（滚动时间线驱动，零 JS）。
+      aria-hidden 是因为它不承载任何信息 —— 读屏读到"进度条"反而多一个噪音。
+    */}
+    {progress && <div class="reading-progress" aria-hidden="true"></div>}
     <Header />
     <main id="main">
       <slot />

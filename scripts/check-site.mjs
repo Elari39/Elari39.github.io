@@ -169,7 +169,12 @@ for (const entry of published) {
 /* --- 3. 逐页检查 --- */
 section('页面：SEO / 链接 / 可访问性 / CSP');
 
-const routes = ['/', '/about/', ...published.map((entry) => `/projects/${entry.slug}/`)];
+const routes = [
+  '/',
+  '/about/',
+  '/grimoire/',
+  ...published.map((entry) => `/projects/${entry.slug}/`),
+];
 
 /** 按需读取任一目标页的 id 集合，用于核对 #锚点 */
 const idCache = new Map();
