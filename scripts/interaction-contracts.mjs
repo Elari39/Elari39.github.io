@@ -123,9 +123,14 @@ export async function verifyInteractionContracts({ cdp, check, navigate, base, t
   for (const route of routes) {
     await navigate(`${base}${route.path}`);
     const enabled = await cdp.evaluate(`({trigger:document.getElementById('theme-toggle').checkVisibility(),
-      previews:[...document.querySelectorAll('[data-preview]')].map(e=>e.checkVisibility())})`);
+      previews:[...document.querySelectorAll('[data-preview]')].map(e=>e.checkVisibility()),
+      zooms:[...document.querySelectorAll('[data-zoom]')].map(e=>({visible:e.checkVisibility(),href:e.getAttribute('href'),src:e.querySelector('img')?.getAttribute('src')}))})`);
     check(enabled.trigger && enabled.previews.every(Boolean) && (route.path !== "/" || enabled.previews.length > 0),
       `回归：${route.path} 脚本启用后控件真实可见`, JSON.stringify(enabled));
+    // 图版触发器不是"脚本启用后才出现"的控件：它就是个指向原图的链接，
+    // href 必须与缩略图同源 —— 这就是没有 JS 时的回退路径。
+    check(enabled.zooms.every((zoom) => zoom.visible && zoom.href === zoom.src),
+      `回归：${route.path} 图版入口在脚本启用后可见且指向同一张原图`, JSON.stringify(enabled.zooms));
     await cdp.send("Emulation.setScriptExecutionDisabled", { value: true });
     try {
       await navigate(`${base}${route.path}`);
@@ -134,11 +139,19 @@ export async function verifyInteractionContracts({ cdp, check, navigate, base, t
         menuHidden:document.getElementById('theme-menu').hidden,
         triggerVisible:document.getElementById('theme-toggle').checkVisibility(),
         previews:[...document.querySelectorAll('[data-preview]')].map(e=>({hidden:e.hidden,visible:e.checkVisibility()})),
+        zooms:[...document.querySelectorAll('[data-zoom]')].map(e=>({visible:e.checkVisibility(),href:e.getAttribute('href'),src:e.querySelector('img')?.getAttribute('src')})),
+        viewerOpen:document.getElementById('plate-viewer')?.open??null,
         heading:!!document.querySelector('h1')?.textContent.trim(),
         links:[...document.querySelectorAll('.entry-card a.btn-primary')].map(e=>({visible:e.checkVisibility(),href:e.getAttribute('href')}))
       })`);
       check(disabled.menuHidden && !disabled.triggerVisible && disabled.previews.length === enabled.previews.length && disabled.previews.every(e=>e.hidden&&!e.visible),
         `回归：${route.path} 禁用脚本时主题与预览控件存在但隐藏`, JSON.stringify(disabled));
+      // 少了脚本，图版仍然是"能点开的"（跳到原图），只是没有那个浮悬窗；
+      // 没有图版的页面连浮悬窗都不渲染，所以这里只要求它"没有自己开着"。
+      check(disabled.zooms.length === enabled.zooms.length &&
+        disabled.zooms.every((zoom) => zoom.visible && zoom.href === zoom.src) &&
+        disabled.viewerOpen !== true,
+        `回归：${route.path} 无 JS 时图版入口仍可用、浮悬窗不开`, JSON.stringify({ zooms: disabled.zooms.length, viewerOpen: disabled.viewerOpen }));
       check(disabled.theme === themes[0] && disabled.source === null && disabled.heading && (route.path !== "/" ||
         (disabled.links.length === enabled.previews.length && disabled.links.every(e=>e.visible&&e.href.startsWith('/projects/')))),
         `回归：${route.path} 无 JS 默认主题、正文和详情入口保留`, JSON.stringify(disabled));

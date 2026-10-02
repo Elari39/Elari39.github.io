@@ -21,15 +21,27 @@ const { items } = Astro.props;
         const size = PLATE_SIZES[item.src.replace(/^\//, '')];
         return (
           <figure class="rail-item">
-            <img
-              class="plate"
-              src={item.src}
-              alt={item.alt}
-              loading="lazy"
-              decoding="async"
-              width={size?.width}
-              height={size?.height}
-            />
+            {/*
+              走廊里是裁切过的预览（object-fit: cover），点开才看得到完整原图 ——
+              由全站那个图版浮悬窗负责（见 PlateViewer.astro）。href 保留，
+              无 JS 时它就是一个指向原图的普通链接。
+            */}
+            <a
+              href={item.src}
+              data-zoom="plate-viewer"
+              aria-haspopup="dialog"
+              aria-label={`放大查看：${item.alt}`}
+            >
+              <img
+                class="plate"
+                src={item.src}
+                alt={item.alt}
+                loading="lazy"
+                decoding="async"
+                width={size?.width}
+                height={size?.height}
+              />
+            </a>
             <figcaption class="mt-3 text-sm text-muted">
               {item.caption ?? item.alt}
               <span aria-hidden="true"> · </span>

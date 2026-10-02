@@ -4,6 +4,7 @@ import { getCollection, render } from 'astro:content';
 import Glyph from '../../components/Glyph.astro';
 import BrandMark from '../../components/BrandMark.astro';
 import BackToEntries from '../../components/BackToEntries.astro';
+import PlateViewer from '../../components/PlateViewer.astro';
 import Toc from '../../components/Toc.astro';
 import { SITE } from '../../data/site';
 import BaseLayout from '../../layouts/BaseLayout.astro';
@@ -153,7 +154,17 @@ const jsonLd = {
             <div class="mt-5 space-y-8">
               {plates.map((plate) => (
                 <figure class={`plate-figure plate-width-${plate.size?.width}`}>
-                  <a href={plate.src} aria-label={`查看原图：${plate.alt}`}>
+                  {/*
+                    点图版弹浮悬窗（PlateViewer）；脚本用 preventDefault 拦下这次导航。
+                    href 保留着指向同一张原图 —— 没有 JS 的访客点它仍然能看到原图，
+                    只是回到「整页跳走、靠后退回来」那个老行为，而不是点了没反应。
+                  */}
+                  <a
+                    href={plate.src}
+                    data-zoom="plate-viewer"
+                    aria-haspopup="dialog"
+                    aria-label={`放大查看：${plate.alt}`}
+                  >
                   <img
                     class="plate"
                     src={plate.src}
@@ -170,6 +181,7 @@ const jsonLd = {
                 </figure>
               ))}
             </div>
+            <PlateViewer />
           </section>
         )
       }

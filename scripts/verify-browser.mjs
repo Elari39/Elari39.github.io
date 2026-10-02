@@ -1236,8 +1236,10 @@ try {
   await sleep(350);
 
   const dialogs = await cdp.evaluate(`(() => {
-  const buttons = [...document.querySelectorAll('[data-preview]')];
-  const all = [...document.querySelectorAll('dialog.preview')];
+  // 卡片抽屉的计数只看 .entry-card 子树：图版浮悬窗共用 .preview 的造型
+  // （CSS 预算只剩几百字节，不另写一套），按整页数会把它也算成一个抽屉。
+  const buttons = [...document.querySelectorAll('.entry-card [data-preview]')];
+  const all = [...document.querySelectorAll('.entry-card dialog.preview')];
   const first = buttons.length ? document.getElementById(buttons[0].getAttribute('data-preview')) : null;
   return {
     buttons: buttons.length,
@@ -1248,12 +1250,15 @@ try {
     archChars: first?.querySelector('.preview__arch')?.textContent?.trim().length ?? 0,
     items: first?.querySelectorAll('.preview__list li').length ?? 0,
     titleChars: first?.querySelector('h2')?.textContent?.trim().length ?? 0,
-    h1Inside: all.reduce((sum, dialog) => sum + dialog.querySelectorAll('h1').length, 0),
+    h1Inside: [...document.querySelectorAll('dialog')].reduce((sum, dialog) => sum + dialog.querySelectorAll('h1').length, 0),
     cards: document.querySelectorAll('.entry-card').length,
+    viewer: document.querySelectorAll('dialog.plate-viewer').length,
+    zoom: document.querySelectorAll('[data-zoom]').length,
+    plates: document.querySelectorAll('img.plate').length,
   };
 })()`);
   check(
-    dialogs.buttons === 4 && dialogs.dialogs === 4 && dialogs.buttons === dialogs.cards,
+    dialogs.buttons === dialogs.cards && dialogs.dialogs === dialogs.cards,
     `卡片各有一个预览按钮与抽屉（按钮 ${dialogs.buttons} / 抽屉 ${dialogs.dialogs} / 卡片 ${dialogs.cards}）`,
   );
   check(dialogs.reachesDialog, "预览按钮的 data-preview 指得到抽屉");
@@ -1263,6 +1268,12 @@ try {
   check(dialogs.items >= 4, `难点与心得共 ${dialogs.items} 条（每类至少两条）`);
   check(dialogs.titleChars > 0, "抽屉里有标题");
   check(dialogs.h1Inside === 0, "抽屉里没有 h1（每页只能有一个）");
+  // 浮悬窗自己不存图片（打开时才填），所以静态那一侧只能数结构；
+  // "点开之后真的换成了那张图"由 scripts/reading-contracts.mjs 验收。
+  check(
+    dialogs.viewer === 1 && dialogs.zoom === dialogs.plates,
+    `首页有且只有一个图版浮悬窗，且每张图版都能点开（浮悬窗 ${dialogs.viewer} / 触发器 ${dialogs.zoom} / 图版 ${dialogs.plates}）`,
+  );
 
   // 打开
   await cdp.evaluate(`document.querySelector('[data-preview]').click()`);

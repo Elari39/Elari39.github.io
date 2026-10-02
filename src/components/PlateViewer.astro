@@ -1,0 +1,59 @@
+---
+/**
+ * 图版浮悬窗：点任意一张图版就地放大，带关闭按钮与上一张 / 下一张。
+ *
+ * 它**自己不存图片**：静态 HTML 里没有 <img>，内容由被点的缩略图在打开时填进来
+ * （见 src/scripts/interactions.ts 的 showPlate）。这样既不复制一份图版标记、
+ * 也不预加载任何图片、更不新增网络请求 —— 同一张缩略图的 URL 只在打开那一刻加载。
+ *
+ * 造型整个复用卡片抽屉的 `.preview*` 与 `.reading-action`：CSS 预算只剩几百字节，
+ * 而浮悬窗该有的东西（焦点陷阱、Esc 关闭、背景 inert、::backdrop、锁背景滚动、
+ * --r-card / --bw 塑形）在那套底座里已经全有了。`plate-viewer` 只负责一件事：
+ * 把那张纸放宽到接近视口，让原图真的比页面上那张大（见 global.css）。
+ *
+ * 每页最多渲染一次，且只在有图版的页面（首页图版走廊 / 有 gallery 的条目详情页）。
+ * 触发器用 `data-zoom` 而**不是** `data-preview`：后者在禁用脚本时必须是隐藏的，
+ * 而图版触发器必须无 JS 也能用（它就是个指向原图的普通链接）。
+ */
+---
+
+<dialog class="preview plate-viewer" id="plate-viewer" aria-labelledby="plate-viewer-title">
+  <div class="preview__inner" tabindex="-1" autofocus>
+    <header class="preview__head">
+      <div>
+        <p class="label">图版原图</p>
+        <h2 class="preview__title" id="plate-viewer-title">图版原图</h2>
+      </div>
+      <button type="button" class="reading-action" data-preview-close aria-label="关闭原图">
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          aria-hidden="true"
+        >
+          <path d="m6 6 12 12M18 6 6 18"></path>
+        </svg>
+        关闭
+      </button>
+    </header>
+
+    <div class="preview__body">
+      {/* 图片槽：由脚本填入与缩略图同源、同尺寸的 <img>（声明尺寸照抄，避免跳版） */}
+      <div class="plate-figure" data-zoom-slot></div>
+    </div>
+
+    <div class="preview__foot">
+      <button type="button" class="reading-action" data-zoom-step="-1" aria-label="上一张">
+        ← 上一张
+      </button>
+      <p class="label" id="plate-viewer-n" aria-live="polite"></p>
+      <button type="button" class="reading-action" data-zoom-step="1" aria-label="下一张">
+        下一张 →
+      </button>
+    </div>
+  </div>
+</dialog>

@@ -453,9 +453,13 @@ export async function audit(root, dist) {
   /* 卡片的「就地预览」抽屉：每张卡片一个、id 唯一、按钮指得到它，
      而且内容**真的来自 frontmatter** —— 这一条挡的是"抽屉做出来了但里面是占位文字"。
      比较前把空白压平：YAML 的块标量会带换行与缩进，渲染进 <pre> 后又原样保留，
-     两边形状不同、内容相同。 */
+     两边形状不同、内容相同。
+
+     这里必须收窄到 #entries 子树：图版浮悬窗复用 .preview 的造型（CSS 预算只剩
+     几百字节，不另写一套），若按整页数 dialogs，首页会因此多数出一个"抽屉"，
+     这条计数就再也不是它想表达的那件事了。 */
   const norm = (value) => String(value ?? "").replace(/\s+/g, " ").trim();
-  /** 在某个节点的子树里找匹配的节点（home.nodes 是拍平的，没有父指针） */
+  /** 在某个节点的子树里找匹配的节点（nodes 是拍平的，没有父指针） */
   const within = (node, predicate) => {
     const found = [];
     const visit = (current) => {
@@ -467,7 +471,14 @@ export async function audit(root, dist) {
     return found;
   };
 
-  const dialogs = home.nodes.filter((node) => hasClass(node, "preview"));
+  const entriesSection = home.nodes.find((node) => attr(node, "id") === "entries");
+  check(Boolean(entriesSection), "首页缺少条目列表（#entries）");
+  const cardsInEntries = (predicate) =>
+    entriesSection ? within(entriesSection, predicate) : [];
+
+  const dialogs = cardsInEntries(
+    (node) => node.tagName === "dialog" && hasClass(node, "preview"),
+  );
   check(
     dialogs.length === published.length,
     `首页预览抽屉数 ${dialogs.length} ≠ 已发布条目数 ${published.length}`,
@@ -476,7 +487,7 @@ export async function audit(root, dist) {
   check(previewIds.every(Boolean), "预览抽屉缺少 id");
   check(new Set(previewIds).size === previewIds.length, "预览抽屉的 id 重复");
 
-  const openers = home.nodes.filter((node) => attr(node, "data-preview") !== undefined);
+  const openers = cardsInEntries((node) => attr(node, "data-preview") !== undefined);
   check(openers.every((node) => attr(node, 'hidden') !== undefined), '预览按钮在服务端渲染时应带 hidden');
   check(openers.length === published.length, "预览按钮数与已发布条目数不符");
   for (const opener of openers) {
@@ -520,6 +531,72 @@ export async function audit(root, dist) {
       `${slug} 的预览缺少关闭按钮`,
     );
   });
+
+  /* 图版浮悬窗：**每张图版都要能点开**，窗口本身也要有完整的开关与翻页入口。
+     它自己不存图片（打开时由被点的缩略图填进来），所以静态这一侧只能核对结构；
+     "点开之后真的换成了那张图"由浏览器验收负责。
+     触发器还必须保留指向同一张原图的 href —— 那是没有 JS 时的回退路径。 */
+  for (const [route, page] of pages) {
+    const triggers = page.nodes.filter((node) => attr(node, "data-zoom") !== undefined);
+    if (triggers.length === 0) continue;
+
+    const viewers = page.nodes.filter(
+      (node) => node.tagName === "dialog" && hasClass(node, "plate-viewer"),
+    );
+    check(viewers.length === 1, `${route} 图版浮悬窗应当恰好一个（实际 ${viewers.length} 个）`);
+    const [viewer] = viewers;
+
+    const plates = page.nodes.filter(
+      (node) => node.tagName === "img" && hasClass(node, "plate"),
+    );
+    check(
+      triggers.length === plates.length,
+      `${route} 每张图版都要能点开（触发器 ${triggers.length} / 图版 ${plates.length}）`,
+    );
+
+    for (const trigger of triggers) {
+      const thumb = within(trigger, (node) => node.tagName === "img")[0];
+      check(
+        Boolean(thumb) && attr(trigger, "href") === attr(thumb, "src"),
+        `${route} 图版触发器无 JS 时要指向同一张原图`,
+      );
+      check(
+        attr(trigger, "aria-haspopup") === "dialog",
+        `${route} 图版触发器缺少 aria-haspopup=dialog`,
+      );
+      check(Boolean(attr(trigger, "aria-label")), `${route} 图版触发器没有可访问名称`);
+      check(
+        attr(trigger, "data-zoom") === attr(viewer, "id"),
+        `${route} 图版触发器指向的浮悬窗不存在：${attr(trigger, "data-zoom")}`,
+      );
+    }
+
+    if (!viewer) continue;
+    check(
+      within(viewer, (node) => node.tagName === "h1").length === 0,
+      `${route} 图版浮悬窗里有 h1`,
+    );
+    check(
+      within(viewer, (node) => attr(node, "data-zoom-slot") !== undefined).length === 1,
+      `${route} 图版浮悬窗缺少图片槽`,
+    );
+    check(
+      within(viewer, (node) => attr(node, "data-preview-close") !== undefined).length === 1,
+      `${route} 图版浮悬窗缺少关闭按钮`,
+    );
+    const steps = within(viewer, (node) => attr(node, "data-zoom-step") !== undefined)
+      .map((node) => attr(node, "data-zoom-step"))
+      .sort();
+    check(
+      JSON.stringify(steps) === '["-1","1"]',
+      `${route} 图版浮悬窗的上/下一张不完整（实际 ${JSON.stringify(steps)}）`,
+    );
+    const label = attr(viewer, "aria-labelledby");
+    check(
+      Boolean(label) && page.nodes.some((node) => attr(node, "id") === label),
+      `${route} 图版浮悬窗的 aria-labelledby 指不到标题`,
+    );
+  }
 
   const locs = [];
   for (const file of inventory.filter((f) => /sitemap.*\.xml$/.test(f)))

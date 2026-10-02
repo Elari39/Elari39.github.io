@@ -128,9 +128,47 @@ function applyFilter(): void {
   }
 }
 
+/* --------------------------------------------------------- 图版浮悬窗 */
+
+// 每页最多一个浮悬窗，且它自己不存图片：内容由被点的缩略图填进来（不复制标记、
+// 不预加载图片、不新增请求）。触发器只在有图版的页面存在，所以这里全都按
+// 「元素可能在也可能不在」写 —— 没有图版的页面上 thumbs 是空数组、viewer 是 null。
+const viewer = document.getElementById('plate-viewer');
+const thumbs = [...document.querySelectorAll('[data-zoom]')];
+let plateAt = 0;
+
+/**
+ * 把第 index 张图版装进浮悬窗，并同步标题与「n / N」计数（越界回绕）。
+ */
+function showPlate(index: number): void {
+  plateAt = (index + thumbs.length) % thumbs.length;
+  const thumb = thumbs[plateAt]?.querySelector('img');
+  const slot = viewer?.querySelector('[data-zoom-slot]');
+  if (!thumb || !slot) return;
+
+  const plate = new Image();
+  plate.className = 'plate';
+  plate.src = thumb.getAttribute('src') ?? '';
+  plate.alt = thumb.alt;
+  // 宽高必须读**属性**：img.width / img.height 在渲染后返回的是布局尺寸，
+  // 照抄过去会让浮悬窗里的图带着一个"页面上那张缩略图有多宽"的属性 —— 跳版。
+  const width = thumb.getAttribute('width');
+  const height = thumb.getAttribute('height');
+  if (width && height) {
+    plate.width = Number(width);
+    plate.height = Number(height);
+  }
+  slot.replaceChildren(plate);
+
+  const title = document.getElementById('plate-viewer-title');
+  if (title) title.textContent = thumb.alt;
+  const counter = document.getElementById('plate-viewer-n');
+  if (counter) counter.textContent = `${plateAt + 1} / ${thumbs.length}`;
+}
+
 /* ------------------------------------------------------- 事件（一次委托） */
 
-// 一个 document 级监听处理四件事：选主题、切标签、开关预览抽屉、
+// 一个 document 级监听处理五件事：选主题、切标签、开关预览抽屉、开关图版浮悬窗、
 // 以及"点面板外面收起面板"。逐个元素绑定会在每次渲染后重复注册，
 // 也会让体积随组件数增长。
 document.addEventListener('click', (event) => {
@@ -192,10 +230,42 @@ document.addEventListener('click', (event) => {
     return;
   }
 
+  // 图版浮悬窗。它带 .preview，所以上面的「点背景关闭」与下面的关闭按钮都直接适用；
+  // 这里只补两件抽屉没有的事：把被点的那张图装进去（preventDefault 拦掉 href 导航 ——
+  // 无 JS 时那个 href 仍然是可用的回退），以及在窗口内翻页。
+  const zoom = target.closest('[data-zoom]');
+  if (zoom) {
+    event.preventDefault();
+    showPlate(thumbs.indexOf(zoom));
+    if (viewer instanceof HTMLDialogElement) {
+      viewer.showModal();
+      viewer.scrollTop = 0;
+    }
+    return;
+  }
+
+  const step = target.closest('[data-zoom-step]');
+  if (step && viewer instanceof HTMLDialogElement) {
+    showPlate(plateAt + Number(step.getAttribute('data-zoom-step')));
+    viewer.scrollTop = 0;
+    return;
+  }
+
 });
 
 document.addEventListener('keydown', (event) => {
   if (event.key === 'Escape') closeMenu();
+
+  // 浮悬窗里的左右方向键。只在窗口开着时生效 —— 模态下背景是 inert 的，
+  // 不会和首页图版走廊自己的方向键滚动打架。
+  if (
+    viewer instanceof HTMLDialogElement &&
+    viewer.open &&
+    (event.key === 'ArrowLeft' || event.key === 'ArrowRight')
+  ) {
+    showPlate(plateAt + (event.key === 'ArrowRight' ? 1 : -1));
+    viewer.scrollTop = 0;
+  }
 });
 
 /* ------------------------------------------------------------------ 初始化 */

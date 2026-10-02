@@ -3,6 +3,7 @@ import { getCollection } from 'astro:content';
 
 import Attestation from '../components/Attestation.astro';
 import PlateRail from '../components/PlateRail.astro';
+import PlateViewer from '../components/PlateViewer.astro';
 import ProjectCard from '../components/ProjectCard.astro';
 import SigilPlate from '../components/SigilPlate.astro';
 import { SITE } from '../data/site';
@@ -180,6 +181,8 @@ const jsonLd = [
           <div class="mt-4">
             <PlateRail items={plates} />
           </div>
+          {/* 走廊里的图（以及详情页的图版）共用一个浮悬窗，每页只渲染这一个 */}
+          <PlateViewer />
         </div>
       </section>
     )

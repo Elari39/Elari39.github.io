@@ -1235,6 +1235,22 @@
     background: rgb(0 0 0 / 55%);
   }
 
+  /* ---- 图版浮悬窗：同一张纸，只是更宽 ----
+     它带 class="preview plate-viewer"，上面那套抽屉的造型（焦点、Esc、遮罩、
+     锁背景滚动、--r-card / --bw 塑形）一条不落地继承过来，这里只改两件事：
+     ① 纸放宽到接近视口 —— 不然「放大看原图」看到的比页面上那张还小；
+     ② 图片按自己的真实像素渲染（width: auto）+ 只缩不放，窄图居中。
+     必须写在 .preview 之后：两者特异性相同（0,1,0），靠源序取胜。 */
+  .plate-viewer {
+    width: min(90rem, calc(100% - 2rem));
+  }
+
+  .plate-viewer .plate {
+    width: auto;
+    max-width: 100%;
+    margin-inline: auto;
+  }
+
   /* 打开抽屉时我们主动把焦点交给这个容器（见 ProjectCard.astro 的说明），
      而 Chrome 会把这次程序化聚焦当成"需要可见指示"，于是站内那条
      `:focus-visible { outline: 2px solid var(--c-primary) }` 会在整个抽屉内容外面

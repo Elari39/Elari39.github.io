@@ -217,6 +217,40 @@ const cases = [
     (s) => nthReplace(s, /<li>[^<]{0,40}<\/li>/, 0, "<li>换掉了</li>"),
     "的预览缺少",
   ],
+  // 图版浮悬窗：每张图版都要能点开，而且无 JS 时那条回退链接必须指向同一张原图。
+  // 这一条挡的是"图能点开了，但没 JS 的人点下去看到的是另一张图 / 404"。
+  [
+    "图版触发器与缩略图不是同一张",
+    "projects/ruiqiang-website/index.html",
+    (s) =>
+      s.replace(
+        'href="/shots/ruiqiang-website/desktop-home.webp" data-zoom',
+        'href="/shots/ruiqiang-website/mobile-home.webp" data-zoom',
+      ),
+    "图版触发器无 JS 时要指向同一张原图",
+  ],
+  [
+    "图版触发器缺 aria-haspopup",
+    "projects/ruiqiang-website/index.html",
+    (s) =>
+      s.replace(
+        ' data-zoom="plate-viewer" aria-haspopup="dialog"',
+        ' data-zoom="plate-viewer"',
+      ),
+    "图版触发器缺少 aria-haspopup",
+  ],
+  [
+    "图版浮悬窗缺少关闭按钮",
+    "projects/ruiqiang-website/index.html",
+    (s) => s.replace(' data-preview-close aria-label="关闭原图"', ' aria-label="关闭原图"'),
+    "图版浮悬窗缺少关闭按钮",
+  ],
+  [
+    "图版浮悬窗缺少上一张",
+    "projects/ruiqiang-website/index.html",
+    (s) => s.replace(' data-zoom-step="-1"', ""),
+    "上/下一张不完整",
+  ],
 ];
 for (const [name, file, mutate, expected] of cases)
   test(name, async () => {
