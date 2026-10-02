@@ -1,6 +1,7 @@
 import { defineCollection } from "astro:content";
 import { glob } from "astro/loaders";
 import { z } from "astro/zod";
+import { tagsSchema } from "./lib/tags-schema";
 
 /**
  * 「条目」内容集合。
@@ -15,14 +16,12 @@ import { z } from "astro/zod";
  *   - 至少三条亮点 —— 首页卡片按前三条渲染，少于三条会空一块
  */
 const httpsUrl = z
-  .string()
   .url()
   .refine((value) => new URL(value).protocol === "https:", {
     message: "链接必须以 https:// 开头",
   });
 
 const repoUrl = z
-  .string()
   .url()
   .refine(
     (value) => {
@@ -83,7 +82,7 @@ const projects = defineCollection({
      * 被 ≥2 个条目共用的标签，只属于一个条目的标签筛出来就是它自己）。
      * 归一化（小写、去重、排序）见 src/lib/tags.ts。
      */
-    tags: z.array(z.string().min(1)).min(2),
+    tags: tagsSchema,
     highlights: z.array(z.string().min(1)).min(3),
     /**
      * 卡片「快速预览」抽屉里的三段内容。

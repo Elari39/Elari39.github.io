@@ -80,7 +80,8 @@
 ├─ .github/workflows/deploy.yml   # verify（检查）→ deploy（发布），两步分开
 ├─ astro.config.mjs               # site / trailingSlash / CSP / 关闭 Shiki
 ├─ scripts/
-│  ├─ check-site.mjs              # 构建产物守卫：把站点的承诺逐条核对
+│  ├─ check-site.mjs              # 守卫 CLI：路径、报告与退出码
+│  ├─ audit-site.mjs              # 统一产物检查（parse5），不再并行维护正则 HTML 检查
 │  ├─ verify-browser.mjs          # 浏览器级验收：CSP 是否真放行、主题切换是否真生效
 │  ├─ prepare-assets.py           # 素材流水线（Pillow + 无头 Chrome）
 │  └─ og-template.html            # OG 卡片模板（渲染成 public/og.jpg）
@@ -131,12 +132,17 @@ pnpm verify:browser  # 浏览器级验收（需要先起 pnpm preview）
 pnpm verify:browser:local # 自动启动预览、验收同一份 dist、清理自身服务
 ```
 
-### `pnpm guard` —— 对 `dist/` 的二十一组核对
+### `pnpm guard` —— 对 `dist/` 的完整核对
+
+`check-site.mjs` 只负责命令行入口，所有判定集中在 `audit-site.mjs`。
+HTML 使用 parse5 解析，注释里的示例标签不会被当作实际元素；所有产出页都参加检查，
+包括主题图鉴与 404。体积、主题 token、对比度及 reduced-motion 检查仍调用 `budget.mjs`。
+守卫输出失败详情或通过摘要，逐项数值报告由 `pnpm assert:budgets` 提供。
 
 | 组 | 检查什么 |
 | --- | --- |
 | 结构 | 该有的页面与文件一个不少（含 `404.html`、`robots.txt`、`sitemap-index.xml`、图标与 OG 图） |
-| SEO | 每页都有唯一的 `<title>`、description、canonical、`og:image`，且 canonical 必须等于本站地址 |
+| SEO | 每页都有唯一的 `<title>`、description、canonical、`og:image`；canonical 必须等于本站地址，OG 图片必须真实存在（包含 404 页） |
 | 链接 | 站内链接与本地资源在 `dist/` 里确实存在 —— 图版路径写错会当场暴露；HTML 声明尺寸还须与图片真实像素一致 |
 | 锚点 | 每个 `#锚点`（含 `/#entries` 这种跨页写法）都要在目标页里真的存在对应的 `id` —— 详情页目录完全靠它 |
 | 唯一 id | 同一页里 `id` 不得重复 —— 重复会让锚点跳到第一个，也会让印记里的 SVG 渐变引用错元素 |
@@ -150,7 +156,7 @@ pnpm verify:browser:local # 自动启动预览、验收同一份 dist、清理�
 | 装饰 SVG | 每个 `<svg>` 都要 `aria-hidden="true"` —— 装饰图形不该进可访问性树（需要语义的图形请用 `<img alt>`） |
 | 对比度 | 用 `global.css` 里的**真实 token** 算 WCAG 比值，**每一套主题**各 9 对：8 对文字 ≥ 4.5:1，1 对大字号 / 装饰 ≥ 3:1；浏览器另测真实组件背景，另外核对画布色互不相同 |
 | 主题清单 | 主题 id 只有一处来源（`src/lib/theme.ts` 的 `THEME_IDS`），守卫与浏览器验收都从那里读；各套主题的 token 键集合必须一致；产物里出现的每个 `data-theme` 值都必须是已知主题；每页的面板都要**给每一套主题**留出预览色块 |
-| 标签过滤 | 卡片上的 `data-tags` 与过滤条按钮必须自洽：每个标签至少被两个条目共用、按钮显示的计数等于带该标签的条目数、`data-tags` 已归一化（小写/去重/排序）、过滤条在服务端渲染时**带 `hidden`**（无 JS 时整条不出现）、卡片顺序与条目顺序一致 |
+| 标签过滤 | 每个已发布条目至少有两个共用标签（草稿不贡献计数）；过滤条只显示共用标签。卡片 `data-tags` 必须与 frontmatter 归一化后的值一致，按钮计数准确，过滤条在服务端渲染时**带 `hidden`**，卡片顺序与条目顺序一致 |
 | 预览抽屉 | 每张卡片一个 `<dialog>`、id 唯一、按钮的 `data-preview` 指得到它、按钮有可访问名称与 `aria-haspopup="dialog"`、抽屉里**没有 `<h1>`**、有且只有一个关闭按钮；而且抽屉里的架构图与难点/心得必须**与 frontmatter 逐字一致**（挡的是"抽屉做出来了但里面是占位文字"）。这些计数只看 **`#entries` 子树** —— 图版浮悬窗共用 `.preview` 的造型，按整页数会把它也算成一个抽屉 |
 | 图版浮悬窗 | 有图版的页面（首页 + 有 gallery 的条目页）恰好一个浮悬窗；**每张图版都能点开**（`data-zoom` 触发器数 == `img.plate` 数）；触发器的 `href` 必须与它包着的那张缩略图**同源**（没有 JS 时的回退就是它）；触发器有 `aria-haspopup="dialog"` 与可访问名称；窗内有且只有一个图片槽、一个关闭按钮、`data-zoom-step` 恰好 `-1`/`1`，且 `aria-labelledby` 指得到标题 |
 | 动效契约 | `prefers-reduced-motion: reduce` 下必须有一条**显式**规则关掉视图过渡 —— base 层那条全局兜底只作用于 `*::before` / `*::after`，管不到位于顶层伪元素树的 `::view-transition-*` |
@@ -331,7 +337,7 @@ DOM 里 <title> 就是这四个字，没有任何文章链接；
 | `glyph` | `book` \| `link` \| `lock` \| `sigil` \| `github` | 卡片上的内联 SVG 标记 |
 | `order` | 正整数，**互不重复** | 首页顺序（守卫会查重复） |
 | `stack` | string[] | 技术栈标签 |
-| `tags` | string[]，**≥ 2 个** | 首页标签过滤的策展标签：小写短词，且要与别的条目**共用** |
+| `tags` | string[]，归一化后**≥ 2 个不同标签** | 去首尾空白、小写、去重、排序；拒绝空白标签与内部空白。每个已发布条目至少有两个标签与其他已发布条目共用，可另带独有标签；过滤条不以独有标签补位 |
 | `highlights` | string[]，**≥ 3 条** | 首页卡片取前三条，详情页全部展开 |
 | `preview` | `{ architecture, challenges[≥2], lessons[≥2] }` | 卡片「快速预览」抽屉的三段内容：架构图是等宽 ASCII（正文那张的浓缩版），难点与心得各至少两条 |
 | `links.repo` | 必须以 `https://github.com/Elari39/` 开头 | 仓库地址 |
@@ -352,6 +358,8 @@ DOM 里 <title> 就是这四个字，没有任何文章链接；
 `localStorage`。主题清单只有一处定义（`src/lib/theme.ts` 的 `THEME_IDS`，
 **第 0 项就是默认主题**），默认值、引导脚本接受的合法值与面板里的排列顺序都从它生成 ——
 守卫与浏览器验收也**从那个文件读**主题清单，而不是各自再抄一份数组。
+读取使用已有 TypeScript 解析器，只认实际导出的字面量数组，忽略数组内注释和注释里的假声明；
+无法识别、含重复项或非法 id 时门禁失败。
 
 > 默认主题没有用 `prefers-color-scheme` 去猜。它写在 HTML 上，引导脚本只在
 > 访客手动选过之后才覆盖它（sync，早于首屏绘制）——所以脚本没跑、被 CSP 拦掉
@@ -471,13 +479,11 @@ DOM 里 <title> 就是这四个字，没有任何文章链接；
 - **亮青过不了对比度。** 新粗野主义常见的亮青对白底只有约 3:1，够不到 4.5 的门槛，
   所以这里的 teal 是压暗过的 `#0a6169`；同理按钮上是黑字压橙底而不是白字。
   这两处都是守卫的对比度检查挡回来的。
-- **默认值只有一个来源。** 这套 token 写在 `:root`（基础层），
-  另两套是 `[data-theme='light']` / `[data-theme='dark']` 上的覆盖 ——
-  包括显示字体：衬线栈的唯一来源是 `@theme inline` 的 `--font-display`，
-  所以浅 / 深什么都不用写就仍是衬线，粗野主义只在一条 `[data-theme='brutal']`
-  规则里换成粗黑栈。要是把字体并进 `:root`，就得把衬线栈复制到另外两套里去。
-- **整个站点都不再跟随系统偏好。** `prefers-color-scheme` 只剩「浏览器地址栏配色」
-  那一条 `<meta>` 还在用；两套浅 / 深是用户自己选的，默认也不是猜出来的。
+- **默认值只有一个来源。** 新粗野主义的 token 由 `:root` 与
+  `[data-theme='brutal']` 共用一块定义，其余八套通过各自的主题块覆盖。
+  显示字体与形状依各主题的运行时 token 或已有无层级规则生效，浅色与深色保留衬线栈。
+- **整个站点都不跟随系统偏好。** 九套主题由用户手动选择；地址栏的 `theme-color`
+  固定为默认主题画布色，没有 `prefers-color-scheme` 分支。
 
 `--brutal-shadow` / `--brutal-shadow-sm` 与 `--c-hairline-strong` / `--c-grid` /
 `--c-ember-soft` 同属**纯装饰 token**：只用于阴影、描边与网格，从不承载文字，
@@ -546,6 +552,11 @@ DOM 里 <title> 就是这四个字，没有任何文章链接；
 触发器用 `data-zoom` 而**不是** `data-preview`：后者在禁用脚本时必须是隐藏的
 （那是一条守卫），而图版触发器必须无 JS 也能用 —— 它的 `href` 仍然指向同一张原图，
 少了脚本只是回到"点开原图、后退回来"的老路径，而不是点了没反应。
+
+只有无修饰键的主键点击会打开浮悬窗；Ctrl / Meta / Shift / Alt 与中键保留浏览器的
+原生链接操作。关闭背景时同时核对点击坐标，弹窗内部的边框和滚动条预留区域不会误触关闭。
+`scripts/modal-contracts.mjs` 用真实鼠标输入检查这些路径、焦点归还与 React / Vue 筛选结果；
+Ctrl、Shift、中键还验证浏览器确实打开原图的新标签页或窗口。
 
 `scripts/reading-contracts.mjs` 验证四篇阅读页的新标记与返回入口，四个预览在
 桌面、手机竖屏、横屏下滚动到底部后的关闭、标题可见、完整阅读入口、背景滚动锁、

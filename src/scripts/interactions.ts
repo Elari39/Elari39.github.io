@@ -148,15 +148,11 @@ function showPlate(index: number): void {
 
   const plate = new Image();
   plate.className = 'plate';
-  plate.src = thumb.getAttribute('src') ?? '';
-  plate.alt = thumb.alt;
   // 宽高必须读**属性**：img.width / img.height 在渲染后返回的是布局尺寸，
   // 照抄过去会让浮悬窗里的图带着一个"页面上那张缩略图有多宽"的属性 —— 跳版。
-  const width = thumb.getAttribute('width');
-  const height = thumb.getAttribute('height');
-  if (width && height) {
-    plate.width = Number(width);
-    plate.height = Number(height);
+  for (const key of ['src', 'alt', 'width', 'height']) {
+    const value = thumb.getAttribute(key);
+    if (value !== null) plate.setAttribute(key, value);
   }
   slot.replaceChildren(plate);
 
@@ -223,10 +219,10 @@ document.addEventListener('click', (event) => {
     return;
   }
 
-  // 点抽屉的背景关闭：命中背景时事件目标就是 <dialog> 本身（内容都在 .preview__inner 里）。
-  // 原生 <dialog> 并不会因为点背景而关闭，这是要自己补的第二处。
+  // 背景与窗口的边框、滚动条预留区都会命中 dialog，只有边界外的点击才关闭。
   if (target instanceof HTMLDialogElement && target.classList.contains('preview')) {
-    target.close();
+    const { left, right, top, bottom } = target.getBoundingClientRect();
+    if (event.clientX < left || event.clientX > right || event.clientY < top || event.clientY > bottom) target.close();
     return;
   }
 
@@ -235,6 +231,8 @@ document.addEventListener('click', (event) => {
   // 无 JS 时那个 href 仍然是可用的回退），以及在窗口内翻页。
   const zoom = target.closest('[data-zoom]');
   if (zoom) {
+    // 保留另开标签页、窗口和下载等浏览器原生链接操作。
+    if (event.button || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
     event.preventDefault();
     showPlate(thumbs.indexOf(zoom));
     if (viewer instanceof HTMLDialogElement) {

@@ -4,6 +4,7 @@ import { cp, mkdtemp, readFile, writeFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { randomBytes } from "node:crypto";
+import { spawnSync } from "node:child_process";
 import { audit } from "./audit-site.mjs";
 
 const root = process.cwd();
@@ -20,6 +21,30 @@ function nthReplace(source, pattern, index, replacement) {
 test("真实构建基线通过", async () =>
   assert.deepEqual(await audit(root, path.join(root, "dist")), []));
 const cases = [
+  [
+    "404 的 OG 图片必须存在",
+    "404.html",
+    (s) => s.replace(/(property="og:image" content=")[^"]+/, '$1https://elari39.github.io/missing-og.jpg'),
+    "og:image 缺失资源",
+  ],
+  [
+    "robots 指向错误的 sitemap",
+    "robots.txt",
+    (s) => s.replace('sitemap-index.xml', 'wrong.xml'),
+    "robots.txt 未指向本站 sitemap",
+  ],
+  [
+    "sitemap 缺少主题图鉴",
+    "sitemap-0.xml",
+    (s) => s.replace(/<url>\s*<loc>https:\/\/elari39\.github\.io\/grimoire\/<\/loc>[\s\S]*?<\/url>/, ''),
+    "sitemap 缺少正常页面",
+  ],
+  [
+    "卡片标签不能与 frontmatter 漂移",
+    "index.html",
+    (s) => nthReplace(s, /data-tags="[^"]*"/, 0, 'data-tags="go react"'),
+    "卡片标签与 frontmatter 不一致",
+  ],
   [
     "主题选择器缺少无 JS 降级",
     "about/index.html",
@@ -271,3 +296,78 @@ for (const [name, file, mutate, expected] of cases)
       await rm(fixture, { recursive: true, force: true });
     }
   });
+
+async function fixtureFor(t, withSource = false) {
+  const fixture = await mkdtemp(path.join(tmpdir(), 'grimoire-audit-'));
+  t.after(async () => {
+    assert.equal(path.dirname(fixture), path.resolve(tmpdir()));
+    assert.ok(path.basename(fixture).startsWith('grimoire-audit-'));
+    await rm(fixture, { recursive: true, force: true });
+  });
+  const dist = path.join(fixture, 'dist');
+  await cp(path.join(root, 'dist'), dist, { recursive: true });
+  if (withSource) await cp(path.join(root, 'src'), path.join(fixture, 'src'), { recursive: true });
+  return { root: withSource ? fixture : root, dist };
+}
+
+test('合法 HTML 注释不会被 CLI 当作标签或脚本检查', async (t) => {
+  const fixture = await fixtureFor(t);
+  const home = path.join(fixture.dist, 'index.html');
+  await writeFile(home, (await readFile(home, 'utf8')).replace('</body>',
+    '<!-- <img src="/missing.png" style="display:none"><h1>示例</h1><script>example()</script> --></body>'));
+  assert.deepEqual(await audit(fixture.root, fixture.dist), []);
+  const result = spawnSync(process.execPath, ['scripts/check-site.mjs', '--dist', fixture.dist],
+    { cwd: root, encoding: 'utf8', windowsHide: true });
+  assert.equal(result.status, 0, result.stdout + result.stderr);
+});
+
+for (const file of ['index.html', '404.html', 'robots.txt', 'sitemap-index.xml',
+  'favicon.svg', 'favicon.ico', 'apple-touch-icon.png', 'og.jpg', 'grimoire/index.html']) {
+  test(`守卫迁移后仍拒绝缺少 ${file}`, async (t) => {
+    const fixture = await fixtureFor(t);
+    await rm(path.join(fixture.dist, file));
+    const errors = await audit(fixture.root, fixture.dist);
+    const expected = file === 'grimoire/index.html' ? '缺少页面 /grimoire/' : `缺少必需文件 ${file}`;
+    assert.ok(errors.includes(expected), errors.join('\n'));
+  });
+}
+
+for (const [name, mutate, expected] of [
+  ['缺少装饰 token', (s) => s.replace(/--c-glow:[^;]+;/, ''), '主题 token 键集合不一致'],
+  ['重复画布色', (s) => s.replace('--c-canvas: #faf9f5;', '--c-canvas: #fffdf4;'), '主题画布色必须互不相同'],
+  ['对比度不达标', (s) => s.replace('--c-body: #1a1a1a;', '--c-body: #fffdf4;'), '对比度不达标'],
+  ['删除 reduced-motion 视图过渡规则', (s) => s.replace(/::view-transition-(?:group|old|new)\([^)]*\)/g, '.unused-transition'), 'reduce 下必须显式关闭视图过渡'],
+]) {
+  test(`守卫迁移后仍拒绝${name}`, async (t) => {
+    const fixture = await fixtureFor(t, true);
+    const file = path.join(fixture.root, 'src/styles/global.css');
+    const original = await readFile(file, 'utf8'), changed = mutate(original);
+    assert.notEqual(changed, original);
+    await writeFile(file, changed);
+    const errors = await audit(fixture.root, fixture.dist);
+    assert.ok(errors.some((error) => error.includes(expected)), errors.join('\n'));
+  });
+}
+
+test('每个已发布条目至少有两个共用标签，草稿不能贡献计数', async (t) => {
+  const fixture = await fixtureFor(t, true);
+  const file = path.join(fixture.root, 'src/content/projects/ruiqiang-website.md');
+  const original = await readFile(file, 'utf8');
+  await writeFile(file, original.replace('  - "react"', '  - "unique-review-tag"'));
+  await writeFile(path.join(fixture.root, 'src/content/projects/review-draft.md'),
+    original.replace('draft: false', 'draft: true').replace('  - "react"', '  - "unique-review-tag"'));
+  const errors = await audit(fixture.root, fixture.dist);
+  assert.ok(errors.includes('ruiqiang-website 至少需要两个共用标签'), errors.join('\n'));
+});
+
+test('CLI 缺少 dist 或参数时给出诊断与失败退出码', async (t) => {
+  const fixture = await fixtureFor(t);
+  const missing = path.join(fixture.dist, 'does-not-exist');
+  assert.deepEqual(await audit(root, missing), ['没有 dist/ —— 先跑 pnpm build']);
+  for (const [args, expected] of [[['--dist', missing], '先跑 pnpm build'], [['--dist'], '--dist 需要一个构建目录']]) {
+    const result = spawnSync(process.execPath, ['scripts/check-site.mjs', ...args],
+      { cwd: root, encoding: 'utf8', windowsHide: true });
+    assert.equal(result.status, 1);
+    assert.ok(result.stderr.includes(expected), result.stderr);
+  }
+});

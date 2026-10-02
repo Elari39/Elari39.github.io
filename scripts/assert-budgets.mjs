@@ -155,7 +155,7 @@ export async function evaluateBudgets({
 
   const matrix = contrastMatrix(tokens);
   let tightest = null;
-  for (const [themeId, themeTokens] of tokens) {
+  for (const themeId of tokens.keys()) {
     const rows = matrix.filter((row) => row.theme === themeId);
     const worst = rows
       .filter((row) => row.ratio !== null)

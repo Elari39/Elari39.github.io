@@ -42,6 +42,7 @@ import { fileURLToPath } from "node:url";
 import { componentContrast } from "./browser-contracts.mjs";
 import { verifyInteractionContracts } from "./interaction-contracts.mjs";
 import { verifyReadingContracts } from "./reading-contracts.mjs";
+import { verifyModalContracts } from "./modal-contracts.mjs";
 import { readThemeIds, readThemeSource } from "./budget.mjs";
 import { files, entries, routeFor } from "./site-model.mjs";
 
@@ -1403,6 +1404,7 @@ try {
   );
 
   await verifyReadingContracts({ cdp, check, navigate, base: BASE, themes: THEMES, routes: ROUTES, shots: SHOTS });
+  await verifyModalContracts({ cdp, check, navigate, base: BASE });
   await navigate(`${BASE}/`);
 
   /* -------------------------- 卡片触感：按下与柔光（纯 CSS，不产生布局抖动） */

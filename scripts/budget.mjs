@@ -14,6 +14,7 @@
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { gzipSync } from 'node:zlib';
+import ts from 'typescript';
 import { document as parseDocument, attr, text, routeFor } from './site-model.mjs';
 
 /** 客户端 JS 预算（gzip 后：全部外链脚本之和 + 最大页面内联脚本之和） */
@@ -67,9 +68,23 @@ export const PAIRS = [
  * 而不是各自抄一份数组 —— 抄一份就意味着「加了主题但某处漏改」只会在线上暴露。
  */
 export function readThemeIds(themeSource) {
-  const match = /export\s+const\s+THEME_IDS[^=]*=\s*\[([^\]]*)\]/.exec(themeSource);
-  if (!match) return [];
-  return [...match[1].matchAll(/['"`]([a-z0-9-]+)['"`]/g)].map((item) => item[1]);
+  const source = ts.createSourceFile('theme.ts', themeSource, ts.ScriptTarget.Latest, true);
+  if (source.parseDiagnostics.length) return [];
+  const declarations = source.statements
+    .filter((statement) => ts.isVariableStatement(statement) &&
+      statement.modifiers?.some((modifier) => modifier.kind === ts.SyntaxKind.ExportKeyword))
+    .flatMap((statement) => [...statement.declarationList.declarations])
+    .filter((declaration) => ts.isIdentifier(declaration.name) && declaration.name.text === 'THEME_IDS');
+  if (declarations.length !== 1) return [];
+  let value = declarations[0].initializer;
+  while (value && (ts.isAsExpression(value) || ts.isSatisfiesExpression(value) || ts.isParenthesizedExpression(value))) {
+    value = value.expression;
+  }
+  if (!value || !ts.isArrayLiteralExpression(value)) return [];
+  if (!value.elements.every((item) =>
+    (ts.isStringLiteral(item) || ts.isNoSubstitutionTemplateLiteral(item)) && /^[a-z0-9-]+$/.test(item.text))) return [];
+  const ids = value.elements.map((item) => item.text);
+  return new Set(ids).size === ids.length ? ids : [];
 }
 
 /** 默认主题 = THEME_IDS 的第 0 项 */
@@ -256,23 +271,6 @@ async function walk(dir) {
     else found.push(full);
   }
   return found.sort();
-}
-
-/** 找出所有 <script> 元素的内容（不含 src 的才算内联） */
-export function inlineScripts(html) {
-  const found = [];
-  const regex = /<script\b([^>]*)>([\s\S]*?)<\/script>/gi;
-  for (const match of html.matchAll(regex)) {
-    const attrs = match[1] ?? '';
-    if (/\bsrc\s*=/i.test(attrs)) continue;
-    found.push({ attrs, body: match[2] ?? '' });
-  }
-  return found;
-}
-
-/** 页面里可执行脚本的正文（JSON-LD 是数据块，不算） */
-export function executableScripts(html) {
-  return inlineScripts(html).filter((script) => !/application\/ld\+json/i.test(script.attrs));
 }
 
 /** 单段分别 gzip 后求和；共享给使用 HTML 解析器的逐页结构守卫。 */

@@ -50,6 +50,32 @@ test("没有声明时返回空数组（而不是抛错或猜一个）", () => {
   assert.deepEqual(readThemeIds("export const OTHER = ['x'];"), []);
 });
 
+test("主题清单忽略数组内注释、注释中的假声明与普通字符串", () => {
+  const source = [
+    "/* export const THEME_IDS = ['retired']; */",
+    "const description = \"export const THEME_IDS = ['fake'];\";",
+    "export const THEME_IDS: readonly string[] = [",
+    "  'brutal', // 'retired-line'",
+    "  /* 'retired-block' */ `light`,",
+    '  "dark",',
+    "] as const;",
+  ].join("\n");
+  assert.deepEqual(readThemeIds(source), ["brutal", "light", "dark"]);
+});
+
+test("主题清单只接受唯一导出的合法字面量数组", () => {
+  for (const source of [
+    "const THEME_IDS = ['brutal', 'light'];",
+    "export const THEME_IDS = makeThemes();",
+    "export const THEME_IDS = ['brutal', ...others];",
+    "export const THEME_IDS = ['brutal', `theme-${id}`];",
+    "export const THEME_IDS = ['brutal', 'brutal'];",
+    "export const THEME_IDS = ['brutal', 'bad id'];",
+    "export const THEME_IDS = ['brutal']; export const THEME_IDS = ['light'];",
+    "export const THEME_IDS = ['brutal'",
+  ]) assert.deepEqual(readThemeIds(source), [], source);
+});
+
 /* ------------------------------------------------------- CSS 块的提取 */
 
 test("只认顶层块：@layer / @media 里的嵌套主题块不算数", () => {

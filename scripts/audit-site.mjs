@@ -6,6 +6,7 @@ import postcss from "postcss";
 import valueParser from "postcss-value-parser";
 import { imageSize } from "image-size";
 import { readThemeIds, measureScriptBodies, measureJs, measureCss, measureHomeHtml,
+  readThemeTokens, contrastMatrix, closesViewTransitionUnderReducedMotion,
   JS_BUDGET_BYTES, CSS_BUDGET_BYTES, HOME_HTML_BUDGET_BYTES, INLINE_SCRIPT_RAW_LIMIT, PAIRS } from "./budget.mjs";
 import {
   SITE,
@@ -25,14 +26,19 @@ export async function audit(root, dist) {
   const check = (condition, message) => {
     if (!condition) errors.push(message);
   };
+  if (!existsSync(dist)) return ["没有 dist/ —— 先跑 pnpm build"];
   const inventory = await files(dist);
+  for (const file of ["index.html", "404.html", "robots.txt", "sitemap-index.xml",
+    "favicon.svg", "favicon.ico", "apple-touch-icon.png", "og.jpg"]) {
+    check(inventory.includes(path.join(dist, file)), `缺少必需文件 ${file}`);
+  }
   const pages = new Map(
     await Promise.all(
       inventory
         .filter((f) => f.endsWith(".html"))
         .map(async (file) => {
           const html = await readFile(file, "utf8");
-          return [routeFor(file, dist), { html, nodes: document(html) }];
+          return [routeFor(file, dist), { nodes: document(html) }];
         }),
     ),
   );
@@ -43,6 +49,7 @@ export async function audit(root, dist) {
   const expected = [
     "/",
     "/about/",
+    "/grimoire/",
     ...published.map((p) => `/projects/${p.slug}/`),
   ];
   for (const route of [...expected, "/404.html"])
@@ -104,7 +111,7 @@ export async function audit(root, dist) {
       check(false, `${label} 无效资源 ${raw}`);
     }
   }
-  for (const [route, { html, nodes }] of pages) {
+  for (const [route, { nodes }] of pages) {
     const base = new URL(route, SITE),
       select = (tag) => nodes.filter((n) => n.tagName === tag);
     const metas = (name) =>
@@ -128,16 +135,14 @@ export async function audit(root, dist) {
       canonical.length === 1 && attr(canonical[0], "href") === base.href,
       `${route} canonical 错误`,
     );
-    /* 同 check-site.mjs：只要求是本站的绝对地址，不写死文件名 ——
-       "换个图片格式就要改守卫"会让守卫挡住自己。 */
+    // 包含 404 在内，每页的分享图都必须是本站的实际产物。
+    const ogImages = select("meta").filter((n) => attr(n, "property") === "og:image");
+    const ogImage = attr(ogImages[0], "content") ?? "";
     check(
-      select("meta").some(
-        (n) =>
-          attr(n, "property") === "og:image" &&
-          (attr(n, "content") ?? "").startsWith(`${SITE}/`),
-      ),
+      ogImages.length === 1 && ogImage.startsWith(`${SITE}/`),
       `${route} og:image 错误`,
     );
+    if (ogImage) await resource(ogImage, base, `${route} og:image`);
     check(
       select("meta").some(
         (n) => attr(n, "property") === "og:image:type" && attr(n, "content") === "image/jpeg",
@@ -352,6 +357,19 @@ export async function audit(root, dist) {
         .join(" "),
     );
   const themeIds = readThemeIds(await readFile(path.join(root, "src/lib/theme.ts"), "utf8"));
+  // 迁移旧 CLI 独有的主题和动效检查，测量仍只调用 budget.mjs。
+  const sourceCss = await readFile(path.join(root, "src/styles/global.css"), "utf8");
+  const { tokens, problems } = readThemeTokens(sourceCss, themeIds);
+  errors.push(...problems);
+  const keySets = [...tokens.values()].map((values) => Object.keys(values).sort().join(","));
+  check(keySets.length > 0 && keySets.every((keys) => keys === keySets[0]), "主题 token 键集合不一致");
+  const canvases = [...tokens.values()].map((values) => values.canvas);
+  check(canvases.length > 0 && canvases.every(Boolean) && new Set(canvases).size === canvases.length,
+    "主题画布色必须互不相同");
+  for (const row of contrastMatrix(tokens)) {
+    check(row.ok, `主题 ${row.theme} ${row.label} 对比度不达标（${row.ratio ?? "缺少 token"}，需 ≥ ${row.minimum}）`);
+  }
+  check(closesViewTransitionUnderReducedMotion(sourceCss), "reduce 下必须显式关闭视图过渡");
   const captions = [
     `${published.length} 条已发布条目 · 全部通过 schema 校验`,
     "0 次第三方请求 · 字体与图标都是自己的",
@@ -424,6 +442,19 @@ export async function audit(root, dist) {
     return new Set(parts);
   });
   const tagButtons = home.nodes.filter((node) => hasClass(node, "tagbar__tag"));
+  const contentTags = published.map((entry) => {
+    const tags = Array.isArray(entry.tags) ? entry.tags : [];
+    check(tags.every((tag) => typeof tag === "string" && /^\S+$/.test(tag.trim())),
+      `${entry.slug} 标签为空或内部含空白`);
+    return [...new Set(tags.filter((tag) => typeof tag === "string").map((tag) => tag.trim().toLowerCase()))].sort();
+  });
+  published.forEach((entry, index) => {
+    const tags = contentTags[index];
+    check(tags.length >= 2, `${entry.slug} 至少需要两个不同标签`);
+    check(attr(tagged[index], "data-tags") === tags.join(" "), `${entry.slug} 卡片标签与 frontmatter 不一致`);
+    const shared = tags.filter((tag) => contentTags.filter((group) => group.includes(tag)).length >= 2);
+    check(shared.length >= 2, `${entry.slug} 至少需要两个共用标签`);
+  });
   check(tagButtons.length > 0, "首页没有标签过滤按钮");
   for (const button of tagButtons) {
     const tag = attr(button, "data-tag");
@@ -598,6 +629,12 @@ export async function audit(root, dist) {
     );
   }
 
+  const robotsPath = path.join(dist, "robots.txt");
+  if (inventory.includes(robotsPath)) {
+    const robots = await readFile(robotsPath, "utf8");
+    check(robots.split(/\r?\n/).some((line) => line.trim() === `Sitemap: ${SITE}/sitemap-index.xml`),
+      "robots.txt 未指向本站 sitemap 索引");
+  }
   const locs = [];
   for (const file of inventory.filter((f) => /sitemap.*\.xml$/.test(f)))
     locs.push(

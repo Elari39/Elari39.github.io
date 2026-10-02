@@ -9,6 +9,7 @@ accent: "amber"
 glyph: "lock"
 order: 3
 tags:
+  - "vue"
   - "go"
   - "typescript"
   - "桌面端"

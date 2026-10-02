@@ -9,6 +9,7 @@ accent: "coral"
 glyph: "sigil"
 order: 4
 tags:
+  - "react"
   - "typescript"
   - "前端"
   - "静态站"
