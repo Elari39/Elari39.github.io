@@ -4,45 +4,32 @@
 
 **灰烬女巫的魔典** —— 把做过的项目，写成一本可以翻的魔典。
 
-四个自建项目的条目库，部署在 <https://elari39.github.io/>。
+[线上网站](https://elari39.github.io/) · [主题图鉴](https://elari39.github.io/grimoire/) · [源码仓库](https://github.com/Elari39/Elari39.github.io)
 
-[![Astro](https://img.shields.io/badge/Astro-7-BC52EE?logo=astro&logoColor=white)](https://astro.build)
-![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-06B6D4?logo=tailwindcss&logoColor=white)
-![GitHub Pages](https://img.shields.io/badge/GitHub_Pages-deployed-222222?logo=githubpages&logoColor=white)
+[![Deploy](https://github.com/Elari39/Elari39.github.io/actions/workflows/deploy.yml/badge.svg)](https://github.com/Elari39/Elari39.github.io/actions/workflows/deploy.yml)
 
 </div>
 
----
-
 ## 这个站点是什么
 
-一本静态的「项目魔典」：每个项目是一条**条目**，结构化字段写在 frontmatter，
-长文叙述写在正文，构建期渲染成纯静态 HTML。目前收录四条：
+一个由 Astro 构建的静态项目条目库。每个项目使用一份带 schema 校验的 Markdown，记录功能、架构、实现难点与取舍；页面在构建时生成，不依赖数据库或客户端框架运行时。
 
-| 条目 | 项目 | 形态 | 线上 |
-| --- | --- | --- | --- |
-| I | **Notes of Ashen** | 前后端分离的个人博客系统（Go + go-zero + MySQL / Redis + React 18） | <https://blog.miku831.fun/> |
-| II | **AshenCourier** | 匿名可用的短链服务（Go 1.27 标准库 + PostgreSQL 18 + Redis 8 + Vue 3） | <https://shorten.miku831.fun/> |
-| III | **CryptoWitch** | 本地文档保险箱（Go + Wails v3 + Argon2id / AES-256-GCM） | 仅仓库（无 Release） |
-| IV | **Ruiqiang Website** | 重庆锐强建筑劳务有限公司官网：纯静态、零后端的 Next.js 企业官网（Next 16 + React 19 + Tailwind 4，自动化测试守合规） | <https://ruiqiang-jianzhu.netlify.app/> |
+本站是五个独立仓库中的展示站，其余四个项目各自维护代码和部署流程：
 
-首页是五段：**序言**（左文字右印记）、**数字条**（四条可核对的事实，其中条目数是
-构建期从内容集合算出来的）、**条目**（标签过滤条 + 四张程序化封面的卡片，
-每张卡片能就地打开一个「快速预览」抽屉）、**图版**（把各个条目的
-截图摊成一条横向走廊）与**三条自我约束**。
+| 项目 | 形态与当前技术栈 | 入口 |
+| --- | --- | --- |
+| **AshenGrimoire** | Astro 7、Tailwind CSS 4、GitHub Pages | [网站](https://elari39.github.io/) · [仓库](https://github.com/Elari39/Elari39.github.io) |
+| **Notes of Ashen** | Go 1.27、go-zero、MySQL / Redis、React 18；个人博客，支持可选搜索、AI 写作和 RAG | [博客](https://blog.miku831.fun/) · [仓库](https://github.com/Elari39/Notes-of-Ashen) · [条目](https://elari39.github.io/projects/notes-of-ashen/) |
+| **AshenCourier** | Go 1.27、PostgreSQL 18、Redis 8、Vue 3；匿名短链与异步点击统计 | [短链服务](https://shorten.miku831.fun/) · [仓库](https://github.com/Elari39/AshenCourier) · [条目](https://elari39.github.io/projects/ashen-courier/) |
+| **CryptoWitch** | Go 1.25、Wails v3、Vue 3；构建期加密的 Windows 文档保险箱 | [源码与构建说明](https://github.com/Elari39/CryptoWitch) · [条目](https://elari39.github.io/projects/cryptowitch/) |
+| **Ruiqiang Website** | Next.js 16、React 19、Tailwind CSS 4；静态生成的企业官网，使用 Next 运行时托管 | [官网](https://ruiqiang-jianzhu.netlify.app/) · [仓库](https://github.com/Elari39/ruiqiang-website) · [条目](https://elari39.github.io/projects/ruiqiang-website/) |
 
-站上还有一页 <https://elari39.github.io/grimoire/> —— **主题图鉴**：九套主题各占一格，
-每一格的样品块嵌在那套主题里渲染（色板、形状、标题字形都是那一套的）。
-它不提供切换（切换仍然只在右上角那个面板里），因此**没有多出第二段脚本**，
-体量也只有约 0.6 KB 的栅格规则。
+四个项目不是本站的构建依赖。条目是人工维护的工程记录，不会自动跟随相邻仓库版本更新；具体启动命令和最新能力以各项目 README、源码与锁文件为准。
 
-站点本身就是个小工程：不引任何第三方运行时资源、客户端脚本只有两段（一段主题引导
-+ 一段交互），并且带一套**构建产物守卫**、一条**体积与对比度的静态断言**，以及一套
-**浏览器级验收**。下面把这些都写清楚。
+首页包含序言、构建期统计、标签过滤、项目卡片与快速预览、图版走廊和站点约束。详情页提供正文目录、前后条目导航和图版浮悬窗；主题图鉴在同一页展示九套主题样品。
 
 ## 目录
 
-- [这个站点是什么](#这个站点是什么)
 - [技术选型](#技术选型)
 - [目录结构](#目录结构)
 - [本地开发](#本地开发)
@@ -56,600 +43,249 @@
 
 ## 技术选型
 
-| 层 | 选型 | 为什么 |
-| --- | --- | --- |
-| 站点框架 | **Astro 7**（`output: static`） | 纯静态输出与 GitHub Pages 的托管模型天然对齐：不需要 SPA 的 404 回退技巧、没有客户端路由、首屏与 SEO 都更好 |
-| 内容 | **内容集合 + zod schema** | 每个项目是一份 Markdown；字段不全、亮点少于三条、仓库地址写错都会**构建失败**，而不是上线后才发现 |
-| 样式 | **Tailwind CSS 4**（`@theme inline`） | 设计 token 是运行时 CSS 变量，所以每套主题不需要各自一份工具类 |
-| 客户端 JS | 一段主题引导脚本 + 一段交互脚本 | 交互脚本由 `BaseLayout` 统一引入（每页恰好两段、逐字节相同）；打包产物须小于 Astro 的 4096 字节内联阈值，否则页面平白多一个请求。内联后 gzip **≤ 4 KB**（实际值以本次守卫输出为准） |
-| 安全 | Astro 原生 `security.csp` + 一份手工登记的哈希 | GitHub Pages 不能自定义响应头，只能用 `<meta>` 形式的 CSP |
-| 部署 | GitHub Actions + `actions/deploy-pages` | 产物以 artifact 上传，不落 `gh-pages` 分支 |
+| 层 | 实现 |
+| --- | --- |
+| 页面 | Astro 7 静态输出，目录路由统一使用尾斜杠 |
+| 内容 | 内容集合、`astro/loaders` 与 Zod；构建期验证 frontmatter |
+| 样式 | Tailwind CSS 4、CSS 运行时 token、系统字体栈与内联 SVG |
+| 交互 | 同步主题引导 + 共用交互脚本；原生 `<details>`、`<dialog>` 与渐进增强 |
+| 图片 | Pillow 预处理为 WebP；原生 `<img>` 声明真实宽高 |
+| 安全 | Astro CSP meta；主题引导哈希由同一份脚本文本计算并显式登记 |
+| 验收 | 构建产物守卫、预算与对比度断言、故障反例、Chrome / CDP 浏览器契约 |
+| 发布 | GitHub Actions 验收并上传同一份 `dist`，`actions/deploy-pages` 发布 |
 
-**已经考虑并否决的方案：**
-
-- **纯 Vite + Vue 3 SPA**：与 AshenCourier / CryptoWitch 的栈一致，但 SPA 在 Pages 上
-  需要 `404.html` 回退技巧，首屏与 SEO 都更差，对内容型站点是过度设计。
-- **零构建手写 HTML**：省掉依赖，但承受不了条目增长，也拿不到 schema 校验。
-- **`astro:assets` / `sharp`**：图片优化很香，但那个原生依赖换机器时最容易装不上。
-  这里改用 Pillow 预压 + 原生 `<img>`，代价是素材要手工跑一次脚本（见下）。
+页面恰好包含两段**可执行脚本**，所有路由的脚本体逐字节相同。JSON-LD 是数据块，不计入可执行脚本数量及 JS 预算。没有客户端路由器、第三方字体、CDN、分析脚本或远程运行时资源。
 
 ## 目录结构
 
 ```text
-.
-├─ .github/workflows/deploy.yml   # verify（检查）→ deploy（发布），两步分开
-├─ astro.config.mjs               # site / trailingSlash / CSP / 关闭 Shiki
-├─ scripts/
-│  ├─ check-site.mjs              # 构建产物守卫：把站点的承诺逐条核对
-│  ├─ verify-browser.mjs          # 浏览器级验收：CSP 是否真放行、主题切换是否真生效
-│  ├─ prepare-assets.py           # 素材流水线（Pillow + 无头 Chrome）
-│  └─ og-template.html            # OG 卡片模板（渲染成 public/og.jpg）
-├─ public/
-│  ├─ shots/<slug>/*.webp         # 条目图版（复用各项目仓库里已公开发布的截图）
-│  ├─ favicon.svg / favicon.ico / apple-touch-icon.png / og.jpg
-│  └─ robots.txt
-├─ src/
-│  ├─ content.config.ts           # 条目 schema（zod）
-│  ├─ content/projects/*.md       # 四个条目
-│  ├─ data/site.ts                # 站点常量（站名、导航、自我约束）
-│  ├─ data/plates.ts              # 图版尺寸（生成文件，勿手工编辑）
-│  ├─ layouts/BaseLayout.astro    # head / SEO / OG / JSON-LD / 主题引导 / 交互脚本入口
-│  ├─ components/                 # Header / Footer / ProjectCard / Glyph / ThemeMenu
-│  │                              # + SigilPlate / Attestation / PlateRail / Toc
-│  │                              # + PlateViewer（图版浮悬窗）/ ThemePreview（主题图鉴里的样品块）
-│  ├─ lib/theme.ts                # 主题清单（THEME_IDS，第 0 项即默认）+ 引导脚本
-│  ├─ lib/tags.ts                 # 首页标签过滤的词汇表（只收被 ≥2 个条目共用的标签）
-│  ├─ scripts/interactions.ts     # 全站唯一的客户端脚本（主题面板 / 视图过渡 / 标签过滤 / 图版浮悬窗）
-│  ├─ pages/                      # index / about / grimoire / 404 / projects/[slug]
-│  └─ styles/global.css           # 各套主题的 token 与组件样式
+.github/workflows/deploy.yml    验收 → 上传 Pages artifact → 发布
+astro.config.mjs               正式域名、尾斜杠、外链 CSS、CSP、关闭 Shiki
+src/
+  content.config.ts            项目 schema
+  content/projects/*.md        四个项目条目，文件名决定路由
+  data/site.ts                 站名、导航、自我约束与首页数字文案
+  data/plates.ts               生成的图版尺寸，勿手工维护
+  layouts/BaseLayout.astro     head、SEO、JSON-LD、两个脚本的统一入口
+  lib/theme.ts                 THEME_IDS、默认主题、标签与引导脚本
+  lib/csp.ts                   CSP 指令与主题引导哈希
+  lib/tags.ts                  标签归一化、计数与筛选词表
+  lib/entry.ts                 项目视图类型、状态标签与序号
+  components/                 卡片、品牌、主题面板、目录、图版等
+  pages/                      首页、about、grimoire、404、projects/[slug]
+  pages/plate-sizes.css.ts     构建生成图片宽度上限 CSS，避免行内 style
+  scripts/interactions.ts     全站共用交互入口
+  styles/global.css           主题 token、组件、阅读布局与动效
+scripts/
+  site-model.mjs              HTML / YAML 解析及文件、路由模型
+  check-site.mjs              构建产物守卫入口
+  audit-site.mjs              结构化产物检查
+  budget.mjs                  体积与对比度的唯一测量口径
+  assert-budgets.mjs           独立预算断言与 CI 报告
+  verify-browser.mjs          浏览器验收入口
+  browser-contracts.mjs       浏览器通用契约
+  interaction-contracts.mjs   交互及无 JS 回退
+  reading-contracts.mjs       阅读、预览与图版契约
+  run-browser.mjs             启动预览、验收、清理自身服务
+  prepare-assets.py           图版 / 图标 / OG 素材流水线
+  *.test.mjs / test_assets.py 守卫与素材故障反例
+public/                       已提交图版、图标、og.jpg、robots.txt
+output/                       设计候选与阅读预览记录，不参与 Tailwind 扫描
 ```
 
 ## 本地开发
 
+要求 Node.js **≥ 22.12**（CI 使用 24）、pnpm **12.5.1**（`package.json` 固定）。完整静态验证还需要 Python 和 Pillow；CI 使用 Python 3.13。浏览器验收及 OG 重新生成需要本机 Chrome / Chromium / Edge，可用 `CHROME_PATH` 指定。
+
 ```bash
-pnpm install
-pnpm dev            # http://localhost:4321
-pnpm build
-pnpm preview        # 拿 dist/ 起静态服务器
+pnpm install --frozen-lockfile
+python -m pip install -r scripts/requirements-assets.txt
+pnpm dev                  # http://localhost:4321
 ```
 
-环境要求：Node ≥ 22.12（CI 用 24）、pnpm（版本由 `packageManager` 字段钉住）。
-静态验收的素材反例需要 Python + Pillow：`python -m pip install -r scripts/requirements-assets.txt`。
-浏览器验收需要 Chrome / Edge，支持 Windows / Linux，并可通过 `CHROME_PATH` 显式指定。
-只有重新生成素材才需要相邻项目的公开截图；日常构建与 CI 不依赖相邻仓库。
+```bash
+pnpm build                # 输出 dist/
+pnpm preview              # 预览已经构建的 dist/
+```
+
+普通开发、构建与 CI 只读取本站已提交素材，不需要克隆另外四个项目。只有运行 `pnpm assets` 重新生成素材时才需要配置的相邻截图来源。
 
 ## 质量守卫
 
-这个仓库的规矩是：**能被检查的承诺才算承诺**。所以对外说的每一句话基本都有一条
-检查盯着；CI 里 `verify` 不过就不发布。
+[AGENTS.md](AGENTS.md) 将维护规范指向本 README。修改后使用以下入口，不能只凭开发服务器能打开页面就判断生产 CSP 或交互已通过。
 
 ```bash
-pnpm verify          # 类型检查 + build + guard + 体积/对比度断言 + 静态反例 + 素材反例
-pnpm guard           # 只跑构建产物守卫（需要先 build）
-pnpm assert:budgets  # 只跑体积与对比度断言（需要先 build）
-pnpm verify:browser  # 浏览器级验收（需要先起 pnpm preview）
-pnpm verify:browser:local # 自动启动预览、验收同一份 dist、清理自身服务
+pnpm verify                # astro sync + tsc + astro check + build
+                           # + guard + assert:budgets + test:guard + test:assets
+pnpm verify:browser:local  # 验收上述 dist；自动用 127.0.0.1:4322 起预览并清理
 ```
 
-### `pnpm guard` —— 对 `dist/` 的二十一组核对
+需要分开运行时：
 
-| 组 | 检查什么 |
+```bash
+pnpm check                 # 仅类型与 Astro 检查
+pnpm guard                 # 需要先 build
+pnpm assert:budgets        # 需要先 build
+pnpm test:guard            # 读取真实 dist，在临时副本中注入故障
+pnpm test:assets           # Python 素材反例，使用临时目录
+pnpm assets:inspect        # 仅检查正式发布图片，不重新生成
+```
+
+也可在一个终端运行 `pnpm preview --port 4321`，另一个终端运行 `pnpm verify:browser`。这是两个独立进程；自动管理预览时优先使用 `verify:browser:local`。
+
+### 体积与对比度预算
+
+所有测量和阈值均来自 [scripts/budget.mjs](scripts/budget.mjs)，`guard`、独立断言和反例共用，不在其他脚本重新实现。
+
+| 指标 | 契约 |
 | --- | --- |
-| 结构 | 该有的页面与文件一个不少（含 `404.html`、`robots.txt`、`sitemap-index.xml`、图标与 OG 图） |
-| SEO | 每页都有唯一的 `<title>`、description、canonical、`og:image`，且 canonical 必须等于本站地址 |
-| 链接 | 站内链接与本地资源在 `dist/` 里确实存在 —— 图版路径写错会当场暴露；HTML 声明尺寸还须与图片真实像素一致 |
-| 锚点 | 每个 `#锚点`（含 `/#entries` 这种跨页写法）都要在目标页里真的存在对应的 `id` —— 详情页目录完全靠它 |
-| 唯一 id | 同一页里 `id` 不得重复 —— 重复会让锚点跳到第一个，也会让印记里的 SVG 渐变引用错元素 |
-| 图版 | 每个 `<img class="plate">` 都能在 `plates.ts` 里查到尺寸（否则会跳版） |
-| CSP | 生产构建里有 CSP；**页面上每个内联脚本的哈希都在策略里**；没有 `unsafe-inline` |
-| 零外链 | `img` / `script` / `link` / `iframe` 里不得出现第三方地址 |
-| 内联样式 | 页面里不得有 `style="..."` 属性（`style-src` 没有 `unsafe-inline`） |
-| 可访问性 | 恰好一个 `<h1>`、`lang="zh-CN"`、有 skip link、图片都有 `alt` |
-| 图片尺寸 | 每个 `<img>` 都要声明 `width`/`height` —— 否则图版加载完成前占不住位置，会累计布局偏移 |
-| 跳转目标 | 每页都有 `id="main"`，skip link 指的确实是它 |
-| 装饰 SVG | 每个 `<svg>` 都要 `aria-hidden="true"` —— 装饰图形不该进可访问性树（需要语义的图形请用 `<img alt>`） |
-| 对比度 | 用 `global.css` 里的**真实 token** 算 WCAG 比值，**每一套主题**各 9 对：8 对文字 ≥ 4.5:1，1 对大字号 / 装饰 ≥ 3:1；浏览器另测真实组件背景，另外核对画布色互不相同 |
-| 主题清单 | 主题 id 只有一处来源（`src/lib/theme.ts` 的 `THEME_IDS`），守卫与浏览器验收都从那里读；各套主题的 token 键集合必须一致；产物里出现的每个 `data-theme` 值都必须是已知主题；每页的面板都要**给每一套主题**留出预览色块 |
-| 标签过滤 | 卡片上的 `data-tags` 与过滤条按钮必须自洽：每个标签至少被两个条目共用、按钮显示的计数等于带该标签的条目数、`data-tags` 已归一化（小写/去重/排序）、过滤条在服务端渲染时**带 `hidden`**（无 JS 时整条不出现）、卡片顺序与条目顺序一致 |
-| 预览抽屉 | 每张卡片一个 `<dialog>`、id 唯一、按钮的 `data-preview` 指得到它、按钮有可访问名称与 `aria-haspopup="dialog"`、抽屉里**没有 `<h1>`**、有且只有一个关闭按钮；而且抽屉里的架构图与难点/心得必须**与 frontmatter 逐字一致**（挡的是"抽屉做出来了但里面是占位文字"）。这些计数只看 **`#entries` 子树** —— 图版浮悬窗共用 `.preview` 的造型，按整页数会把它也算成一个抽屉 |
-| 图版浮悬窗 | 有图版的页面（首页 + 有 gallery 的条目页）恰好一个浮悬窗；**每张图版都能点开**（`data-zoom` 触发器数 == `img.plate` 数）；触发器的 `href` 必须与它包着的那张缩略图**同源**（没有 JS 时的回退就是它）；触发器有 `aria-haspopup="dialog"` 与可访问名称；窗内有且只有一个图片槽、一个关闭按钮、`data-zoom-step` 恰好 `-1`/`1`，且 `aria-labelledby` 指得到标题 |
-| 动效契约 | `prefers-reduced-motion: reduce` 下必须有一条**显式**规则关掉视图过渡 —— base 层那条全局兜底只作用于 `*::before` / `*::after`，管不到位于顶层伪元素树的 `::view-transition-*` |
-| 体积 | 客户端 JS（gzip，含内联）≤ 4 KB；**没有外链 JS 文件**（打包产物必须仍在 Astro 的 4096 字节内联阈值内）；首页 HTML ≤ 60 KB |
-| CSS 预算 | 外链 CSS ≤ 48 KB —— 底纹、动效与装饰都在 `global.css` 里，体积代价得看得见 |
-| 反漂移 | 首页数字条上的数字必须与守卫里的常量一致（`4 KB`、`9 组`、`× N 主题`） |
+| 客户端 JS gzip | ≤ 4096 字节；全部外链脚本各计一次 + 各 HTML 页面内联 gzip 的最大值 |
+| 单段可执行内联脚本 raw | **< 4096 字节**，等于阈值也失败 |
+| 外链 JS | 必须为 0，保证 Astro 仍内联共用交互脚本 |
+| CSS raw | `dist` 中所有 CSS 总和 ≤ 48 × 1024 字节 |
+| 首页 HTML | UTF-8 字节 ≤ 60 × 1024 |
+| 主题对比度 | 每套 9 对颜色：8 对文字 ≥ 4.5:1，1 对大字号 / 装饰 ≥ 3:1 |
 
-「反漂移」那一条是给首页那块「数字条」上锁的：面板存在的全部意义就是
-**它说的和检查的是同一件事**，所以守卫会反过来核对首页 HTML 里的数字，
-改了一边没改另一边就会红。
+不要在文档中维护上次构建的剩余字节数。加交互、主题或装饰前先运行 `pnpm assert:budgets` 看实际余量；首页数字条必须与预算、颜色对数、主题清单及已发布条目数一致。
 
-### `pnpm assert:budgets` —— 体积与对比度的静态断言
+### 静态产物检查
 
-CI 里那条「超出约束就拦截」的步骤，也是 `pnpm verify` 的一环。它只做两件事，
-但报告要能单独在 Actions 的步骤列表里看见：
+`check-site.mjs` 与 `audit-site.mjs` 覆盖以下约束，包括 404：
 
-- 客户端 JS（gzip）、单段内联脚本的 raw 体积、外链 JS 文件数、CSS 与首页 HTML；
-- **每一套主题 × 9 对颜色**的 WCAG 比值，并给出最紧的一对与余量倍数。
+- 页面和资源齐备，title / description / canonical / OG / JSON-LD 合法；站内链接与跨页锚点存在，id 不重复，sitemap 不收录 404。
+- 每页一个 `<h1>`，`lang="zh-CN"`，skip link 指向 `#main`；图片有 alt 与真实 width / height，装饰 SVG 带 `aria-hidden="true"`。
+- 没有行内 `style` 属性、第三方资源或 CSP `unsafe-inline`；每段可执行内联脚本的哈希都被放行。
+- 两段脚本在各页逐字节一致；全部主题 id 合法、token 键集合一致，面板为每套主题提供预览色块。
+- 条目 order 唯一、字段完备；标签归一化、共享与计数一致；卡片顺序、详情和预览内容对应 frontmatter。
+- 每张卡片一个原生预览 dialog，标题用 `<h2>`、关闭入口唯一；抽屉计数只看 `#entries` / `.entry-card` 子树。
+- 有图版的页面恰好一个浮悬窗；触发链接与缩略图匹配，翻页、图片槽、标题与关闭标记齐备。
+- `prefers-reduced-motion: reduce` 下显式关闭 `::view-transition-*` 动画；体积、颜色及首页数字通过统一断言。
 
-越界时它会输出 GitHub `::error::` 注解（在 PR 的文件视图上也能看到具体数值）、
-把一张 markdown 表格写进 job summary、并以非零退出 —— `deploy` job 依赖 `verify`，
-所以线上不会出现超预算的版本。
+`test:guard` 在临时构建副本中制造故障，覆盖缺资源、伪同源地址、重复标题、错误锚点 / 图片尺寸、CSP、JSON-LD、非首页 JS 超限、UTF-8 字节边界及浮悬窗结构等。测试需断言预期错误，不能把任意异常当作拦截成功。
 
-**为什么不让它自己再算一遍**：体积与对比度的测量口径只有一处 ——
-`scripts/budget.mjs`，守卫和这条断言都从那里取。两套测量的下场一定是两套互相矛盾的数字，
-而这类检查存在的全部意义就是「它说的和实际检查的是同一件事」。
+### 浏览器行为与证据
 
-### `pnpm verify:browser` —— 文件级检查证明不了的事
+无头 Chrome / CDP 验收生产构建，检查真实 HTTP 状态、CSP 执行、全部阶段的网络与控制台错误，以及：
 
-无头 Chrome + CDP 把页面真跑一遍（Node 自带 `WebSocket` 与 `fetch`，不引客户端依赖）。
-CI 会运行同一套验收，失败阻止发布。路由从构建产物发现，覆盖 404；命令或加载超时直接失败。
-它回答的是守卫脚本回答不了的问题：
+- 默认主题、手动选择、刷新持久化、无效存储值与存储不可用；默认 `brutal` 直接写入 HTML。
+- 主题面板的键盘操作、Esc 与点击外部关闭；主题切换的视图过渡及不支持 API 时的回退。
+- 标签多选的并集筛选、清空与状态播报；无 JS 时主题入口、标签条、快速预览入口保持隐藏。
+- 原生预览和图版模态的标题可见、初始滚动归零、背景锁定、关闭及焦点归还；图版翻页回绕且只缩不放。
+- 无 JS 时正文、详情链接与图版原图链接可用；没有图片的页面不渲染空浮悬窗。
+- 各主题真实组件背景的对比度、形状和字体；多视口下的导航、阅读目录和横向溢出。
+- 滚动进场、阅读进度线及减少动态效果模式下的可见终态。
 
-- 内联主题引导脚本在 CSP 之下**确实被执行**了。判据是 `data-themeSource` ——
-  它只由那段脚本写、服务端 HTML 里没有：默认主题现在是直接渲染在 `<html>` 上的，
-  脚本就算被拦掉属性也照样在，只看 `data-theme` 会变成假守卫；
-- **没选过主题时落到默认主题**：脚本清掉 `localStorage` 再刷新，断言
-  `data-theme="brutal"` 且来源是 `default`；
-- **把脚本整个禁用**（`Emulation.setScriptExecutionDisabled`）后重新加载：`<html>` 上
-  仍是服务端渲染的 `data-theme="brutal"`（`data-themeSource` 为空 —— 正好反证了
-  它不是脚本写的），画布与**形状**都是粗野主义。这一条才是"默认值写在 HTML 上、
-  而不是用 CSS 猜"的真正理由：只把 token 放进 `:root` 的话，无 JS 时会得到
-  "粗野主义的颜色 + 上一套的圆角与柔光"这种没人设计过的半成品；
-- 页面上**没有 CSP 违规、没有控制台报错、没有资源加载失败**；
-- **主题面板真的能用**：触发器是原生 `<summary>`（面板默认收起、点一下展开、再点收起）、
-  面板里的选项与 `THEME_IDS` 一一对应且每套都有预览色块；逐个点过全部主题，每一步都断言
-  「主题生效 + 记为手动选择 + 写入 `localStorage` + 选中态**唯一** + 面板自动收起」，
-  刷新后仍停在最后选的那一套；键盘走一遍 Enter 展开 → Tab 落到第一个选项 → Enter 选中；
-  Esc 与点击面板外部都能收起（这两处原生 `<details>` 并不支持，正是脚本补的缺口）。
-  Enter 选择与 Esc 关闭后，面板内的焦点回到触发器；点外部标签按钮则保留按钮焦点并正常筛选。
-  667×375、568×320 横屏下逐套主题验证面板不越界、滚轮能内部滚动、末项可点击，
-  并从未滚动状态用 Tab 到达末项、确认它完整可见，再用 Enter 选择并检查焦点归位。
-  这一步同时证明「引导脚本与 `THEME_IDS` 是同步的」—— 两边不一致，刷新就会掉回默认主题；
-- **切主题走的是原生视图过渡，而且能降级**：先断言浏览器提供
-  `document.startViewTransition`，再包一层计数证明站点**真的调用了它**
-  —— 只断言"API 存在"是很容易变成假守卫的写法；然后把 API 从原型上删掉再刷新，
-  切换与"记住选择"必须完全一样、且不产生任何控制台或 CSP 错误
-  （Safari / Firefox 与旧版 Chrome 走的就是这条路）；
-- **标签过滤真的筛得动**：点一个标签后留下的每一张卡片都确实带这个标签（且不是全留也不是全没）、
-  两个标签可同时选中（并集只会更宽）、清空后所有卡片回来、状态文字报出筛出的条数、
-  键盘 Enter 也能切；**把脚本整个禁用后过滤条保持隐藏** —— 渐进增强的方向是"少了功能"，
-  而不是"多了一排点了没反应的按钮"（那一条同时先断言按钮确实渲染出来了，避免空集上的假通过）；
-- **就地预览抽屉是原生模态**：`showModal()` 之后 `:modal` 成立、焦点被移进抽屉内部、
-  背景遮罩算出来了、**抽屉停在开头且标题可见**（焦点默认落在底部的关闭按钮上时，
-  浏览器会为了让按钮可见而下滚抽屉 —— 一打开就错过自己的标题，这一条是看截图才发现的）；
-  三条关闭路径 ——「关闭预览」按钮、Esc（原生）、点背景（原生 `<dialog>` 并不会因为点背景而关，
-  由脚本补上）—— 各测一次；再换主题断言抽屉的底色 / 文字色 / 圆角跟着变
-  （证明它读的是主题变量，而不是写死的颜色）；
-- **图版浮悬窗**（`/` 与有 gallery 的条目页，1440 / 390 / 568 三种视口）：点图即弹出原生模态、
-  焦点进窗、停在开头，**窗里就是点的那张**（`src` 与触发器的 `href` 一致、标题是它的 `alt`、
-  原图真的解码且**只缩不放**）、窗口不出视口、背景滚动锁定、计数 `1 / N`；
-  「上一张 / 下一张」与 ←/→ 方向键真的换图并在两端**回绕**；
-  三条关闭路径各测一次，且每次都要**把焦点还给点的那张图**；
-  换主题断言窗口的底色 / 文字色 / 方角跟着变，并在窗口开着时再跑一遍组件对比度。
-  没有图版的页面反过来断言"没有触发器也没有浮悬窗"，避免这一节在空集上假通过；
-- **卡片的触感是纯 CSS 且不抖动**：粗野主义下真按下去，`transform` 必须是 `translate(3px,3px)`、
-  `box-shadow` 必须变成 `none`，同时**布局盒尺寸与后一张卡片的位置一动不动**；
-  暗色下按下时边缘必须透出一圈**模糊半径 > 0** 的柔光（与粗野主义的"模糊半径恒为 0"形成对照）。
-  这一节还顺带踩出一个坑：站点在 `html` 上设了 `scroll-behavior: smooth`，
-  `scrollIntoView` 变成一段动画 —— 在动画途中量坐标再派发鼠标事件，指针会落到**另一张卡片**上，
-  看起来像"CSS 伪类没生效"；所以滚动用 `behavior: 'instant'`，并当场做一次命中测试；
-- 全部主题的 `getComputedStyle` 背景色确实互不相同，**且浅色下 `h1` 回到衬线栈**
-  —— 后者挡住了"把 `--font-display` 写进 `:root`、结果所有主题都变粗黑"那类改法；
-- **新粗野主义里「token 覆盖不到」的那一半也真的生效**：条目卡与主题按钮的
-  `border-radius` 为 0、阴影的模糊半径为 0、`h1` 走粗黑无衬线而不是衬线、页头不再毛玻璃。
-  这一条挡的是"只改了变量、忘了形状"这种半生效的改动 —— 也正是它需要在
-  `global.css` 末尾那样一个无层级覆盖块的原因；
-- **赛博终端与瑞士极简的"个性"由计算值证明**，而不是只看 CSS 里写了什么：
-  前者读 `body::after` 的 `background-image` 确认 CRT 扫描线真的被画出来（并与粗野主义的底纹比对，
-  证明它没有被沿用）、画布是 `rgb(6, 10, 6)`、`h1` 走等宽字体；
-  后者断言两个底纹伪元素都是 `display: none`、卡片阴影被清掉、`h1` 是无衬线**且比粗野主义更大**
-  （实测 80px vs 68px）—— "只换颜色不换排版"的假主题过不了这几条；
-- 320、390、768、1280、1440px × 全部主题下导航不拆行、图版不放大且没有横向滚动，**且 390px 那一次是在新粗野主义下量的**：
-  硬阴影向右下探出，是这套主题唯一真实的溢出风险，只在默认主题下量是量不到它的；
-- **滚动进场动画一定收敛到可见终态**：逐个把 `.reveal` 滚进视口，再断言它的 `transform`
-  归位、`opacity` 为 1 —— 挡住"动到一半就永久停住"这种只有真跑一遍才看得见的回归
-  （所以首屏以下的内容才敢用 `animation-timeline: view()`）；
-- **`prefers-reduced-motion: reduce` 下动效整体让位**：每页都没有元素停在位移中间态、
-  没有横向滚动、内容照常渲染。注意 base 层那条"把 animation-duration 压到 0.01ms"的
-  全局兜底对 scroll-driven 动画**无效**（那类动画不看 duration），所以每条动效都另外包在
-  `(prefers-reduced-motion: no-preference)` 里。视图过渡也一样：它位于**独立的顶层伪元素树**，
-  那条全局兜底同样管不到，所以 `global.css` 里另有一条显式规则把它关掉，
-  并且验收会确认 reduce 下切主题**照样生效、照样记住选择**（让位的只是那一段淡出动画）。
-
-它同时把每页的浅色 / 深色 / 新粗野主义 / 窄屏截图写到 `.assets-raw/verify/`，
-外加首页在新粗野主义下四个滚动位置、390px 与「禁用脚本」的一张预览图，供人眼复核。
-
-> 两个脚本的分工值得说明：`guard` 是**快速、离线、每次提交都跑**的契约测试；
-> `verify:browser` 是**慢一些、需要浏览器且 CI 必跑**的行为验收。
-> 前者挡回归，后者挡「看起来对了但其实没生效」—— 它已经抓到过一次真问题：
-> Astro 只为它自己产出的脚本生成哈希，通过 `set:html` 注入的内联主题脚本没有哈希，
-> 于是那段脚本在 CSP 下会被直接拦掉。
+截图与 `result.json` 写入 `.assets-raw/verify/`，自动预览日志在 `.assets-raw/preview.log`。CI 保留验收证据，任何阶段失败都会阻止发布。
 
 ## 素材流水线
 
-站点仓库之外的项目目录只被**读**，不会被修改。
-
 ```bash
-pnpm assets           # 重新生成图版、图标与 OG 卡片
-pnpm assets:inspect   # 图片体检
+pnpm assets            # 重新生成图版、图标、OG 和尺寸清单
+pnpm assets:inspect    # 检查正式发布图片
 ```
 
-`prepare-assets.py` 做四件事：
+[prepare-assets.py](scripts/prepare-assets.py) 读取 `PLATE_SOURCES` 白名单，目前使用：
 
-1. **图版**：把项目仓库里已公开发布的截图缩到 1400px 宽
-   （**只缩不放**，放大只会变糊），输出 WebP，并写下 `src/data/plates.ts`。
-   目前有两个来源：`../AshenCourier/docs/screenshots/` 与
-   `../ruiqiang-website/docs/screenshots/`（后者只取它 README 实拍的那三张 ——
-   该仓库 `img/` 下的营业执照原图永不发布，本站也不复制）。
-   加一个来源只需在 `scripts/prepare-assets.py` 的 `PLATE_SOURCES` 里加一行。
-2. **图标**：导航使用 `BrandMark.astro` 的「月牙书页」，随主题切换墨色与余烬色；
-   标签页使用「星轨封印」。其轮廓与颜色以 `public/favicon.svg` 为唯一来源，
-   Pillow 读取绝对 M/L/C/Z 路径，超采样生成 180×180 的 `apple-touch-icon.png`
-   与 16/32/48/64px 的 `favicon.ico`。SVG 的浅色底衬保证深浅标签栏里都清楚。
-3. **OG 卡片**：用无头 Chrome 渲染 `scripts/og-template.html` → `public/og.jpg`（1200×630）。
-   存 JPEG 而不是 PNG：同样是这张扁平渐变卡片，PNG 要 **297 KB**、JPEG q85 只要 **~44 KB**
-   （省 85%），而每一次分享预览都要付这份流量；q85 下文字边缘没有可见损失。
-4. **体检**：`--inspect` 用灰度均值 / 标准差 / 颜色数给每张图一个可读指纹。
+- `../AshenCourier/docs/screenshots/` 下的四张既有截图。
+- `../ruiqiang-website/docs/screenshots/` 下的 `desktop-home.png`、`pages-grid.png`、`mobile-home.png`。
 
-### 为什么线上站点不在这里抓
+短链仓库的 `neo-brutalism/` 截图是另一组素材，当前流水线不会自动改用它们。调整来源时应显式修改映射并重新核对条目的 gallery。
 
-曾经想让脚本顺手抓 `blog.miku831.fun` 的首页当图版。**实测不可行**：
+图版按最多 1400px 宽缩小为 WebP，禁止放大；输出真实像素到 `src/data/plates.ts`。`plate-sizes.css.ts` 在构建时生成外链 CSS，约束详情图版最大宽度，避免 CSP 禁止的行内样式。
 
-```text
-https://blog.miku831.fun/ 在 Cloudflare 的安全验证之后。
-无头浏览器拿到的是「请稍候… 正在进行安全验证」的中间页 ——
-DOM 里 <title> 就是这四个字，没有任何文章链接；
-截出来的图几乎全白，灰度标准差只有 18。
-```
+导航、阅读页与页脚使用 `BrandMark.astro` 的月牙书页；标签页图标使用 `public/favicon.svg` 的星轨封印，Pillow 由同一 SVG 轮廓生成 ICO 和 Apple 图标。OG 卡片由无头 Chrome 渲染 `scripts/og-template.html`，输出 1200×630 JPEG。
 
-所以线上截图不自动化。需要某个项目的线上截图时：人工截好放进
-`public/shots/<slug>/`，先人工确认内容有效，写进条目的 `gallery`，再运行 `pnpm assets` 将手工图纳入尺寸清单，最后 `pnpm assets:inspect`。
-正式图片全部通过检查后才替换成品；缺少任何配置源图、损坏图或疑似空白图都会失败并保留旧产物。
+流水线先生成和检查候选成品，再替换正式文件；缺源、损坏、疑似空白或替换失败都有失败处理与反例。它只读相邻仓库，不修改源截图。
 
-> 图片统计只能提示空白/白屏，不能判定内容有效，更不能凭标准差识别 Cloudflare 验证页。
-> `--inspect` 只检查正式发布图片，失败返回非零退出码；人工复核仍不可省略。
+需要新增人工截图时，将确认过内容的图片放入 `public/shots/<slug>/`，登记条目的 `gallery`，运行 `pnpm assets` 纳入尺寸清单，再执行 `pnpm assets:inspect` 和完整验证。该生成命令仍需要所有已配置源图存在。
 
-### 不要带进仓库的东西
+图片统计只能提示空白或异常，不能识别 Cloudflare 验证页或证明截图内容有效。本站不自动抓取受验证保护的线上博客；不要把验证页当成项目截图。
 
-四个项目目录里有敏感文件，**一律不复制进本站仓库**：
-`.env`、`CryptoWitch/access.yaml`、`notes_of_ashen_backup.sql`、
-`CryptoWitch/content/plain/**`（明文资料）、`security-audit/evidence/**`，
-以及 `ruiqiang-website` 的 `.env.local`、`img/` 下的营业执照原图与工商登记摘要源文件
-（那个仓库的构建闸门按设计拒绝它们）、`_shot/` 与 `_shot2/` 本地抓图草稿。
-本站只取了几张截图与图标。
+仅复制已允许公开的素材。`.env`、CryptoWitch 的 `access.yaml` / `generated.go` / `content/plain/**`、数据库备份、审计私有证据及企业证件原图不属于图版来源。锐强截图中的浏览器外框由其截图脚本合成，托管角标来自拍摄时的真实页面。
 
 ## 内容：怎么加一个条目
 
-在 `src/content/projects/` 下新建一份 `.md`，文件名就是路由片段
-（`my-project.md` → `/projects/my-project/`）。frontmatter 的字段：
+在 `src/content/projects/` 创建 `.md` 文件，如 `my-project.md` 对应 `/projects/my-project/`。schema 的完整规则见 [src/content.config.ts](src/content.config.ts)。
 
-| 字段 | 类型 | 说明 |
-| --- | --- | --- |
-| `title` / `tagline` / `summary` | string | 卡片与详情页的三层文字 |
-| `status` | `live` \| `wip` \| `archived` | 决定状态标记的颜色与文案 |
-| `year` / `role` | number / string | 详情页头部的小标记 |
-| `accent` | `coral` \| `teal` \| `amber` | 这条目的强调色，**只能取色板里的名字** |
-| `glyph` | `book` \| `link` \| `lock` \| `sigil` \| `github` | 卡片上的内联 SVG 标记 |
-| `order` | 正整数，**互不重复** | 首页顺序（守卫会查重复） |
-| `stack` | string[] | 技术栈标签 |
-| `tags` | string[]，**≥ 2 个** | 首页标签过滤的策展标签：小写短词，且要与别的条目**共用** |
-| `highlights` | string[]，**≥ 3 条** | 首页卡片取前三条，详情页全部展开 |
-| `preview` | `{ architecture, challenges[≥2], lessons[≥2] }` | 卡片「快速预览」抽屉的三段内容：架构图是等宽 ASCII（正文那张的浓缩版），难点与心得各至少两条 |
-| `links.repo` | 必须以 `https://github.com/Elari39/` 开头 | 仓库地址 |
-| `links.live` | 可选 | 线上演示 |
-| `gallery` | `{ src, alt, caption? }[]` | 图版，`src` 是 `public/` 下的绝对路径 |
+| 字段 | 要求 |
+| --- | --- |
+| `title` / `tagline` / `summary` | 非空文字，分别用于项目名、一句话介绍和摘要 |
+| `status` | `live`、`wip` 或 `archived` |
+| `year` / `role` | 2000–2100 的整数年份 / 非空角色描述 |
+| `accent` | `coral`、`teal` 或 `amber`，不能直接填色值 |
+| `glyph` | `book`、`link`、`lock`、`sigil` 或 `github` |
+| `order` | 正整数，已发布条目间不重复 |
+| `stack` | 至少一个技术栈标签 |
+| `tags` | 至少两个标签，小写短词、无空格，并与其他条目共用 |
+| `highlights` | 至少三条亮点；首页展示前三条 |
+| `preview.architecture` | 至少 20 字符的等宽架构图 |
+| `preview.challenges` / `preview.lessons` | 难点与心得各至少两条，直接用于预览抽屉 |
+| `links.repo` | `https://github.com/Elari39/<repo>`，不得含凭据、查询串或片段 |
+| `links.live` | 可选 HTTPS 线上地址 |
+| `gallery` | 可选数组；每项有 `/shots/` 下的 `src`、非空 `alt` 和可选 `caption` |
+| `draft` | 默认 `false`；`true` 时不生成公开条目与卡片 |
 
-正文用普通 Markdown 写。**不要用围栏代码块做语法高亮**：本站关掉了 Shiki，
-代码块只会有 `global.css` 里的等宽样式（ASCII 架构图正合适）。
+正文用普通 Markdown，模板已经提供唯一的 `<h1>`，正文从 `##` 开始。代码围栏可以展示 ASCII 架构图，但本站关闭 Shiki，不提供语法高亮，避免生成行内样式。正文标题生成目录锚点，需避免与模板的 `highlights`、`stack`、`plates` 等 id 冲突。
+
+添加条目后运行 `pnpm verify`；改动交互、布局或素材展示时再运行浏览器验收。条目数由内容集合计算，其他首页承诺数字仍需与守卫一致。
 
 ## 设计系统
 
-九套主题，token 只有一处来源：`src/styles/global.css` 的 `--c-*` 变量，
-再通过 `@theme inline` 暴露成 `bg-canvas` / `text-ink` 这类工具类。
+主题清单唯一来源为 [src/lib/theme.ts](src/lib/theme.ts) 的 `THEME_IDS`，第 0 项即默认主题；标签、面板和验收从这里取值。CSS token 位于 [src/styles/global.css](src/styles/global.css)。
 
-**默认是新粗野主义**（写在 `:root` 这个基础层上，并由服务端直接渲染到
-`<html data-theme="brutal">`）；**其余主题是它之上的覆盖，只能手动选到**。
-右上角是一个原生 `<details>` 做的选择面板，每套主题各带一枚色块预览，选择存在
-`localStorage`。主题清单只有一处定义（`src/lib/theme.ts` 的 `THEME_IDS`，
-**第 0 项就是默认主题**），默认值、引导脚本接受的合法值与面板里的排列顺序都从它生成 ——
-守卫与浏览器验收也**从那个文件读**主题清单，而不是各自再抄一份数组。
+| id | 名称 | 视觉特征 |
+| --- | --- | --- |
+| `brutal` | 新粗野主义（默认） | 纸白、粗黑边、方角、硬阴影、粗黑无衬线 |
+| `light` | 羊皮纸 | 暖纸色、珊瑚强调、圆角、衬线标题 |
+| `dark` | 灰烬 | 暖灰褐深底、圆角、柔光 |
+| `cyber` | 赛博终端 | 绿黑、等宽标题、CRT 扫描线 |
+| `swiss` | 瑞士极简 | 白黑红、无底纹、无阴影、大字号 |
+| `ink` | 水墨宣纸 | 宣纸灰、朱砂、方角发丝边、衬线 |
+| `archive` | 午夜档案馆 | 深靛蓝、黄铜、小圆角 |
+| `sunset` | 霓虹落日 | 紫底、品红与青、小圆角 |
+| `riso` | 孔版印刷 | 亮黄、电光蓝、粗边方角、错位硬阴影 |
 
-> 默认主题没有用 `prefers-color-scheme` 去猜。它写在 HTML 上，引导脚本只在
-> 访客手动选过之后才覆盖它（sync，早于首屏绘制）——所以脚本没跑、被 CSP 拦掉
-> 或属性被谁删掉，看到的都是新粗野主义，而不是某个没人描述过的额外主题。
+默认主题由服务端写入 `<html data-theme="brutal">`；同步引导读取 `localStorage` 的 `grimoire-theme`，仅合法手动选择覆盖默认值。系统明暗偏好不决定主题；无 JS 或存储不可用时仍可阅读默认主题。
 
-| 语义 | 新粗野主义 | 羊皮纸（浅） | 灰烬（深） | 赛博终端 | 瑞士极简 | 水墨宣纸（浅） | 午夜档案馆（深） | 霓虹落日（深） | 孔版印刷（浅） |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 画布 | `#fffdf4` | `#faf9f5` | `#121110` | `#060a06` | `#ffffff` | `#ebe8e0` | `#0d1420` | `#170b26` | `#ffe94a` |
-| 卡片 | `#ffffff` | `#efe9de` | `#1f1e1b` | `#0b140c` | `#ffffff` | `#f7f5ef` | `#18212e` | `#22143a` | `#fffdf0` |
-| 描边 | `#101010` | `#e6dfd8` | `#2e2c28` | `#1d3a20` | `#111111` | `#1c1c1c` | `#2a3646` | `#3a2560` | `#101010` |
-| 正文 | `#1a1a1a` | `#3d3d3a` | `#d8d4cb` | `#b6f5c4` | `#1a1a1a` | `#2b2823` | `#cfd6e0` | `#dfc9f2` | `#1c1a12` |
-| 标题 | `#0a0a0a` | `#141413` | `#faf9f5` | `#d9ffe0` | `#000000` | `#14120f` | `#f2f4f8` | `#f7eaff` | `#0b0b0b` |
-| 主色 | `#f04e14` | `#cc785c` | `#e08d6d` | `#39ff14` | `#d0021b` | `#a3241a` | `#c9a227` | `#ff2e88` | `#1b2ff0` |
-| teal / amber | `#0a6169` / `#8a5200` | `#276b5e` / `#8f5a10` | `#5db8a6` / `#e8a55a` | `#2ee6d0` / `#ffb454` | `#0a6169` / `#8a5200` | `#245a55` / `#8a5200` | `#5fbcae` / `#e29a4a` | `#35e0d0` / `#ffb257` | `#0a5f5a` / `#7a4a00` |
-| 形状 | 方角 · 粗边 | 圆角 | 圆角 | 方角 | 方角 | 方角 · 发丝边 | 小圆角 | 小圆角 | 方角 · 粗边 · 套印阴影 |
-| 标题字体 | 粗黑无衬线 | 衬线 | 衬线 | 等宽 | 无衬线 | 衬线（宋） | 衬线 | 几何无衬线 | 无衬线 |
+### token 与组件约束
 
-前三套里，浅色与深色继承自 AshenCourier 的 `DESIGN.md`（暖奶油画布 + 珊瑚主色 +
-深色面板），所以这个站点与它展示的项目看起来像同一个作者做的。
+- 保持每套主题 token 键集合一致。颜色修改先核对每套九对 WCAG 对比度，不能只看默认主题。
+- 新组件直接使用 `--r-card`、`--r-pill`、`--r-sm`、`--bw`、`--c-glow` 等运行时变量，不为每套主题另写一套类覆盖。
+- 部分既有 `rounded-*` 工具类经 `@theme inline` 编译为字面量，须保留现有逐类形状覆盖；新组件不重复这套历史实现。
+- 新增半透明颜色用八位十六进制，避免 `color-mix()` 生成重复回退规则；已有装饰的 `@supports` 外壳保留，变更后检查 CSS 预算。
+- 新主题同步更新清单及名称、CSS token、面板预览和首页主题数字；图鉴及验收读取清单，不复制第二份主题数组。
+- Tailwind 只扫描 `src/`，README、脚本和设计候选不应生成工具类。
 
-**赛博终端（cyber）**：高对比绿黑 + CRT 扫描线。扫描线是**单条**
-`repeating-linear-gradient`（画在 `body::after` 上），不引任何图片；
-显示字体换成等宽，全方角，标题带一层很淡的磷光辉光。断言里有一条专门读
-`getComputedStyle(body, '::after').backgroundImage` —— 证明它真的被画出来了，
-而不只是 CSS 里写了这行字。
+### 动效、阅读与模态
 
-**瑞士极简（swiss）**：纯白画布、纯黑发丝线、单一红色强调、全方角、无阴影，
-靠字号与留白而不是边框建立层级 —— 所以这套主题做的是**减法**：`body::before/after`
-两个底纹整块关掉、卡片阴影清零、`h1` 放大约一档（实测 80px vs 粗野主义的 68px）。
-对比度余量最小的两处都在这一套（红底白字与强调色分别 5.67:1），改这两个值之前先看守卫。
+滚动进场、进度余烬线、底纹和跨文档视图过渡由 CSS 渐进增强。不支持相应能力时保留可见静态内容；不要用从零透明度开始的滚动动画隐藏正文，也不要给 sticky 元素祖先添加 `.reveal` 的 transform。
 
-**后加的四套（水墨宣纸 / 午夜档案馆 / 霓虹落日 / 孔版印刷）**走的是另一条实现路线：
-个性全部写成**运行时 token**，而不是像 brutal / swiss 那样在文件末尾另写一份
-无层级的逐类覆盖块 —— 那种块一套动辄 400–900 字节。CSS 预算固定为 48 KB，
-实际占用与余量以本次 `pnpm assert:budgets` 输出为准，不在文档中维护易过期的余量数字。
-每套的"性格"由 `--font-display`（标题字形）、`--r-*` / `--bw`（面板与抽屉的形状）、
-`--c-grid`（整页底纹颜色）与 `--c-glow`（暗色系的卡片柔光）这几个 token 承载，
-浏览器验收逐条读计算值，所以不会沦为「只换颜色的假主题」：
+减少动态效果模式下，除普通元素动画外，必须**显式**关闭顶层 `::view-transition-*`；全局 `*::before` / `*::after` 规则覆盖不到这棵伪元素树。滚动时间线使用独立 `animation-timeline` 声明，避免简写合并后失效。
 
-- **水墨宣纸（ink）**：绢本灰画布、浓墨描边、朱砂主色、花青标记，全方角发丝边。
-  标题不另写字体栈 —— 默认衬线栈本来就以宋体兜底，中文拿到的就是宋体衬线。
-- **午夜档案馆（archive）**：深靛蓝画布配黄铜强调，小圆角，卡片边缘一圈黄铜柔光。
-  与「灰烬」的暖灰褐明确区分开。
-- **霓虹落日（sunset）**：深紫罗兰配品红与青，几何无衬线标题带一层很淡的品红辉光。
-  与「赛博终端」不同源：那套是纯黑上的磷光绿 + CRT 扫描线。
-- **孔版印刷（riso）**：亮黄纸 + 电光蓝，粗黑描边全方角，卡片与按钮带一道**错位套印**
-  的青色硬阴影（偏移量比粗野主义的"踩下去"更小 —— 是没对齐，不是按压）。
-  亮黄底上的正文必须压到近黑才够 14:1，这是量出来的，不是为了酷。
+阅读页采用纯色正文底衬与独立目录栏，小于 1280px 时目录使用原生 `<details>`，页首和页尾提供返回条目入口。快速预览使用原生 `<dialog>` + `showModal()`；打开后把 `scrollTop` 归零，标题 / 关闭按钮吸附顶部，源码 / 阅读入口吸附底部，背景滚动由 CSS 锁定。
 
-四套里只有 ink / riso 需要一条显式的「方角」覆盖（既有组件读的是被 `@theme inline`
-内联成字面量的圆角，token 管不到它们），sunset 的标题辉光与 riso 的套印阴影也各有一条
-—— 见 `global.css` 第 1b 与第 8 节。
-
-### 后加的那些「个性」，以及它们各自的字节账
-
-装饰性做加法时，唯一真正受限的是 **CSS 48 KB**（默认主题与三套老主题的形状覆盖是
-逐类的无层级规则，无法靠 token 消掉）。所以后加的每一项都按同一条规矩来：
-**数据与形状只有一个来源，逐个主题的覆盖一概不写。** 加完这一批之后 CSS 用掉
-47.6 KB —— 余量不到 0.4 KB，**再加装饰之前先跑 `pnpm assert:budgets` 看实际值**，
-别凭估计。
-
-- **主题图鉴（`/grimoire/`）**：把九套主题摊成一页。每一格的样品块就是
-  `[data-theme="<id>"]` 的一小块，颜色由那套主题自己的 token 画出来 —— 页面里
-  一个十六进制都没有，加一套主题这一页自动多一格。它**不提供切换**（切换仍然是
-  右上角那个面板），所以没有多出第二段脚本，体量只有约 600 字节的栅格规则。
-  类名刻意不叫 `theme-opt__swatch`：守卫按那个类名数"每页面板里的色块数"，同名会让
-  首页与图鉴页的计数当场翻倍。
-- **条目封面各有一套纹样**：`--cover-motif` 由 `.cover--coral/teal/amber` 给出，
-  纹样画在 `.cover` **元素自己**的背景上（不是 `::before`——那个属性被粗野主义一条
-  无层级的 `[data-theme='brutal'] .cover`（0,2,0）用 `background:` 简写重置过，
-  `.cover--x::before` 的（0,1,1）根本压不过它）。修饰类因此写成
-  `.cover--coral.cover--coral` 拿到同级的（0,2,0），再靠源序取胜 ——
-  这是这一页里唯一一处"把类名写两遍"的特异性技巧，注释里写明了原因；
-  纹样用 `--entry-accent` 上色，九套主题各自成立。
-- **详情页的进度余烬线**：纯 CSS 的滚动时间线，零 JS、零滚动监听，并且与页头投影
-  **共用同一个 `@supports` 外壳**（多包一层等于让产物把同一份规则写两遍）。
-  它的 `animation-*` 刻意**逐条列出、不并进简写**：并成
-  `animation: … scroll(root)` 之后 Lightning CSS 会把它压成简写，而 Chrome 在
-  简写里解析不了 `scroll()`/`view()`，整条声明被丢弃、计算值退回
-  `animation-name:none` —— 进度线会一直停在原地。这个坑由"真滚一遍读计算值"那条
-  断言当场指出（`animation-timeline` 单独写就正常）。
-- **印记的显影**：首屏那枚印记的刻度环与封缄随滚动从淡到实，只动 `opacity` ——
-  `transform` 已经被自转占掉了。起始态本身可读（刻度 0.35）：滚动范围在页面不足
-  一屏时会塌成 0，而 `both` 会把进度钉在起点，所以起点不能是"看不见"。
-- **跨文档转场**：站内跳转走原生 `@view-transition`（纯 CSS，不引 ClientRouter，
-  也就不破"每页恰好两段脚本"）。进度线有自己的 `view-transition-name`，翻页时它是
-  "被重置"而不是整条淡出。`prefers-reduced-motion: reduce` 下那条
-  `::view-transition-* { animation: none }` 同样是显式的，守卫盯着它。
-
-
-### 形状与质感：运行时 token，而不是逐类覆盖
-
-`@theme inline` 会把 token 的**值**内联进工具类（产物里是
-`.rounded-card{border-radius:.875rem}` 这样的字面量），所以圆角没法靠改变量覆盖 ——
-这也是文件末尾那一整块无层级 `[data-theme='brutal'] .btn { … }` 存在的原因。
-
-新增的组件（主题面板、标签过滤条、预览弹层）不重复那套做法：它们读
-`--r-card` / `--r-pill` / `--r-sm` / `--bw` / `--c-glow` 这几个**运行时**变量
-（定义在 `:root`，各主题块按需覆盖），于是"粗野主义与瑞士都是方角"只需要在各主题块里
-改一行 `--r-pill: 0`。半透明的强调色一律写成 8 位十六进制（`#39ff1455`），
-避免用 `color-mix()` —— 产物会为它生成一份 `@supports` 孪生规则，等于每条规则写两遍，
-而 CSS 预算是硬的。
-
-### 默认主题：新粗野主义（neo-brutalism）
-
-它换的不只是颜色，还有形状语言：纸白画布、纯黑描边、模糊半径为 0 的硬阴影、全方角、
-没有渐变也没有柔光（连页头的毛玻璃都去掉），标题字体从衬线换成粗黑系统栈。
-
-四件值得写下来的事：
-
-- **形状与显示字体不能靠 token 覆盖。** `@theme inline` 会把 token 的值**内联**进工具类
-  —— 产物里是 `.rounded-card{border-radius:.875rem}`、
-  `.rounded-full{border-radius:2147483647px}`、`.font-display{font-family:<衬线栈>}`，
-  没有一个 `var()`。所以这一套的方角、硬阴影与字重写在 `global.css` 末尾一个
-  **无层级**（不在任何 `@layer` 里）的覆盖块中：无层级声明优先于所有层，
-  而写进 `@layer components` 会被 `@layer utilities` 盖掉。
-- **亮青过不了对比度。** 新粗野主义常见的亮青对白底只有约 3:1，够不到 4.5 的门槛，
-  所以这里的 teal 是压暗过的 `#0a6169`；同理按钮上是黑字压橙底而不是白字。
-  这两处都是守卫的对比度检查挡回来的。
-- **默认值只有一个来源。** 这套 token 写在 `:root`（基础层），
-  另两套是 `[data-theme='light']` / `[data-theme='dark']` 上的覆盖 ——
-  包括显示字体：衬线栈的唯一来源是 `@theme inline` 的 `--font-display`，
-  所以浅 / 深什么都不用写就仍是衬线，粗野主义只在一条 `[data-theme='brutal']`
-  规则里换成粗黑栈。要是把字体并进 `:root`，就得把衬线栈复制到另外两套里去。
-- **整个站点都不再跟随系统偏好。** `prefers-color-scheme` 只剩「浏览器地址栏配色」
-  那一条 `<meta>` 还在用；两套浅 / 深是用户自己选的，默认也不是猜出来的。
-
-`--brutal-shadow` / `--brutal-shadow-sm` 与 `--c-hairline-strong` / `--c-grid` /
-`--c-ember-soft` 同属**纯装饰 token**：只用于阴影、描边与网格，从不承载文字，
-所以不参与守卫的对比度计算。
-
-**几个刻意的取舍：**
-
-- **零 WebFont，用系统字体栈。** 换来的是一点外部请求都没有、没有 FOUT，
-  也不用为中文正文背几 MB 的 CJK 字体。代价是标题的衬线字形随系统略有差异。
-- **珊瑚底上的文字用近黑而不是白。** 白字对 `#cc785c` 只有 3.3:1，
-  过不了 WCAG AA —— 而按钮与跳转链接都是小字号。这条由守卫的对比度检查盯着。
-- **主题引导脚本内联、且哈希手工登记。** 晚一步执行就会先画出错误的主题再改回来；
-  而 Astro 只为它自己产出的脚本生成哈希，`set:html` 注入的不在其中
-  （详见 `src/lib/csp.ts` 的注释）。
-
-### 底纹、动效与装饰 token
-
-背景是两层 `position: fixed` 的纯 CSS 图层（不请求任何图片）：三层 bloom（暖 / 冷 / 暖，
-最大的一层锚在视口下方 112% 处，保证滚到任何位置、视口下半部分都留着余温）+ 一层 32px
-的方格纸纹理（用 `mask-image` 朝下淡出）。
-
-> 这一版是被实测推着改的：对验收截图逐像素采样发现，旧版只有一个 68rem×34rem 的椭圆、
-> 62% 处即透明，于是页面只有顶部约 270px 有颜色，其余部分逐像素等于画布色。
-> 现在同一位置（右侧空白列）的通道偏离从 `0` 变成 `8–29`，且 32px 周期正好落在网格线上
-> —— 有客观指标，不必凭感觉说"更有质感了"。
-
-三个新 token（`--c-hairline-strong` / `--c-grid` / `--c-ember-soft`）**只用于描边、
-网格与封面渐变，从不承载文字**，所以不参与守卫的对比度计算；基础对比度契约仍是原来那 9 对，
-一个都没改 —— 新粗野主义也是这 9 对，只是换了一组值（外加同类的两个硬阴影 token）。动效的时间与缓动 token（`--ease-ember` / `--dur-*`）刻意放在 `:root` 而
-不放进 `@theme`：放进去会覆盖 Tailwind 内建的 `--ease-out`，改变已有工具类的语义。
-
-动效全部由 CSS 驱动（零客户端 JS），两条硬规矩写在 `global.css` 的 2.5 节里：
-
-- **`.reveal` 只动 `transform`，绝不动 `opacity`。** 文字在任何瞬间都完全可读；更要紧的是，
-  `opacity` 从 0 起跑时"滚动时间线不活跃"就等于"内容永久隐身"。
-- **`.reveal` 不得加在任何 `position: sticky` 元素的祖先上。** 祖先上的 `transform` 会新建
-  包含块，把 sticky 直接废掉（页头与详情页目录都靠它）。
-
-页头投影用 `animation-timeline: scroll(root)`、滚动进场用 `view()`，都包在 `@supports` 里
-渐进增强：不支持的浏览器看到的是静态终态，而不是"动不了"的中间态。
-
-### 阅读与快速预览
-
-阅读页、页脚与导航共用 `BrandMark.astro` 的月牙书页。正文使用纯色书页底衬，
-网格只留在页边；桌面目录位于有边界的右栏，手机使用原生折叠目录。
-页首与页末都有「返回全部条目」按钮，标签列表称为「技术概览」，避免与正文里的
-详细技术栈标题混淆。
-
-快速预览仍是原生 `<dialog>`：标题与唯一关闭按钮吸附在顶部，源码与阅读全文入口
-吸附在底部；打开时背景锁定滚动，关闭后恢复位置与焦点。较宽的架构图可横向滚动，
-也可通过键盘聚焦；手机横屏会收紧工具栏。内容仍从 frontmatter 原样渲染。
-这些视觉与滚动处理全部使用 CSS，不增加客户端脚本。
-
-**图版浮悬窗**（`PlateViewer.astro`）解决的是另一件事：详情页的图版此前包着一个
-`<a href="{原图路径}">`，点一下**整页跳走**，看完只能靠浏览器后退回来。现在点任意一张图版
-（详情页那几张 + 首页图版走廊的全部）就地弹出浮悬窗：原图、标题、`n / N`、关闭按钮、
-上一张 / 下一张；打开时锁背景滚动、关闭后焦点回到点的那张图。Esc 与点窗外背景照旧能关
-（前者是原生 `<dialog>` 给的，后者由脚本补）。
-
-它**自己不存图片**：静态 HTML 里没有 `<img>`，打开那一刻才由被点的缩略图填进去 ——
-不复制标记、不预加载、不新增请求，于是既不撑首页 HTML，也不会把 7 张图一起拽进首屏。
-造型整个复用抽屉的 `.preview*` 与 `.reading-action`（CSS 只剩几百字节预算，
-不另写一套），只加两条规则把那张纸放宽到接近视口；方角、柔光、底色全部读
-`--r-*` / `--bw` / `--c-*`，所以九套主题不用各写一份覆盖。
-
-触发器用 `data-zoom` 而**不是** `data-preview`：后者在禁用脚本时必须是隐藏的
-（那是一条守卫），而图版触发器必须无 JS 也能用 —— 它的 `href` 仍然指向同一张原图，
-少了脚本只是回到"点开原图、后退回来"的老路径，而不是点了没反应。
-
-`scripts/reading-contracts.mjs` 验证四篇阅读页的新标记与返回入口，四个预览在
-桌面、手机竖屏、横屏下滚动到底部后的关闭、标题可见、完整阅读入口、背景滚动锁、
-关闭后的焦点归还与再次打开归零；也验证浮悬窗的点开、翻页回绕、三条关闭路径与换主题换皮；
-无 JS 那条回退路径由 `scripts/interaction-contracts.mjs` 逐页核对。
-两者都复用既有对比度测量检查九套主题。
-
-Tailwind 的扫描范围明确限定为 `src/`。文档、脚本与设计候选不会生成无用工具类；
-新增样式仍遵守 48 KB 的原预算，测量口径继续来自 `scripts/budget.mjs`。
+`PlateViewer.astro` 共用 `.preview*` 样式，静态 HTML 不放图片，打开时才由缩略图填充。它的触发器是始终可用的原图链接 `data-zoom`；`data-preview`、主题面板和标签条则先带 `hidden`，等交互脚本注册完再显示。两者不能混用。图片不放大，不为浮悬窗另写一套主题样式。
 
 ## 部署
 
-**约束：仓库名必须是 `Elari39.github.io`。** 用户站点只能由同名仓库提供，
-站点根就是 <https://elari39.github.io/>，没有子路径。
+正式地址为 **[https://elari39.github.io/](https://elari39.github.io/)**。本地目录可叫 `AshenGrimoire`，GitHub 用户站点仓库为 `Elari39/Elari39.github.io`，不设项目子路径 `base`。
 
-发布流程（`.github/workflows/deploy.yml`）：
+GitHub 仓库 Settings → Pages → Source 选择 **GitHub Actions**。工作流为：
 
-1. `verify`：main push、面向 main 的 PR 与手动触发都跑：类型检查、一次构建、静态守卫与反例、素材检查、完整浏览器验收。成功后上传该份 `dist` 的 Pages artifact，失败时保留日志与截图。
-2. `deploy`：仅 main 上非 PR 事件执行，直接发布已验收的 artifact，不重新安装或构建。
+1. main push、面向 main 的 PR 和手动触发运行 `verify`：依赖安装、类型检查、构建、静态守卫、反例、独立预算报告、图片体检和浏览器验收。
+2. 验收成功后上传这份 `dist` 作为 Pages artifact，保留浏览器证据。
+3. `deploy` 仅在 main 上的非 PR 事件运行，直接发布已验收 artifact，不重新构建，也不使用 `gh-pages` 分支。
 
-**Pages 的发布源必须是「GitHub Actions」**（Settings → Pages → Source）。
-如果发布 job 报找不到 Pages 站点，就是这一项没设：
-
-```bash
-gh api -X POST repos/Elari39/Elari39.github.io/pages -f build_type=workflow
-```
-
-**与项目站点的区别：** 这个仓库是用户站点，所以 `astro.config.mjs` 里
-`site: 'https://elari39.github.io'` 且**不设 `base`**。同账号下的 `shiki-toolbox`
-那种项目站点需要 `base: '/<repo>/'` —— 两者不能照抄配置。
+更换域名时需同步核对 `astro.config.mjs`、`src/data/site.ts`、`public/robots.txt` 及守卫中的正式 origin，重新验证 canonical、sitemap、OG 和内部链接。不能只改 README 地址。
 
 ## 已知限制
 
-- **挡不住点击劫持。** GitHub Pages 不允许自定义响应头，CSP 只能用 `<meta>` 形式，
-  而规范规定 meta 形式会忽略 `frame-ancestors`（Chrome 甚至为它每页打一条控制台错误，
-  所以本站干脆不写这条指令）。要真正解决，得挂一层能设响应头的 CDN 或代理。
-- **CSP 之外没有响应头。** HSTS、`X-Content-Type-Options`、`Referrer-Policy`
-  这些同样需要响应头，本站都没有。
-- **半透明装饰需要 `color-mix()`。** Tailwind 管线里的 Lightning CSS 把浏览器目标
-  硬编码在 Safari/iOS 16.4、Firefox 128、Chrome 111（没有公开配置入口），而那组
-  目标不支持 `color-mix()` 的 lab/oklab 插值 —— 于是每条用到它的声明都会多生成一份
-  `@supports` 回退（实测 28 块、约 4.9 KB，占外链 CSS 的 10%）。为此我们把所有
-  `color-mix` 装饰声明包进自己的 `@supports (color: color-mix(in lab, red, red))`
-  里（原因见 `global.css` 文件头），换回约 3 KB 预算。代价：不支持 `color-mix()` 的
-  浏览器（Chrome < 111 / Safari < 16.2 / Firefox < 113）失去页底 bloom、选中底色、
-  封面渐变与卡片柔光这类**装饰** —— 承载文字的颜色一律没动，9 对对比度不受影响，
-  这些浏览器本来也没有 `animation-timeline` / `::view-transition-*`。
-- **无分析、无评论、无搜索、无 i18n。** 都是刻意的：前三个会破坏「没有第三方请求」
-  与「仅两段脚本」这两条承诺；i18n 会让正文翻倍。将来要加，也该先想清楚
-  它值不值得放弃某条承诺。
-- **图版靠人眼。** 自动化只能判断「是不是空白页」，判断不了「好不好看」。
-- **默认主题不跟随系统偏好。** 深色系统的访客第一眼看到的也是纸白的新粗野主义 ——
-  这是刻意的：默认值写在 HTML 上，不是用 `prefers-color-scheme` 猜的。要跟随系统，
-  就得放弃"默认值只有一个来源"这条，或者接受无 JS 时落到另一套外观上。
-- **`theme-color` 只跟默认主题。** 浏览器地址栏配色是一条写死的 `<meta>`
-  （默认主题的画布色 `#fffdf4`），手动切到浅 / 深时不会跟着走。
-  要让它跟着走就得多一段改 meta 的脚本，还得处理"改完会不会闪"——不值得。
-- **CryptoWitch 没有 Release**，所以条目只链仓库，没有下载按钮。
-- **Ruiqiang Website 的图版里含该公司自己公开的信息**（联系电话、工商登记摘要）。
-  本站只收录它 README 已公开发布的那三张实拍，绝不碰 `img/` 下的营业执照原图；
-  图上的浏览器窗口外框是那个项目的脚本合成的，右下角的 `Powered by Netlify`
-  角标则是真实存在的。
-- **那条手机端图版只有 418px 宽。** 详情页通过构建生成的外链 CSS 限制在原始宽度以内；
-  浮悬窗里也**只缩不放**（`width: auto` + `max-width: 100%`），所以它不会为了填满窗口而被拉糊。
+- GitHub Pages 不提供仓库级自定义响应头，本站通过 meta 设置 CSP，无法用它实现 `frame-ancestors` 点击劫持保护；平台实际响应头不由项目控制。
+- 老浏览器可能缺少底纹、滚动动画或视图过渡装饰，正文仍应可读。交互使用原生 dialog，需要浏览器支持。
+- `theme-color` 固定为默认主题画布色，手动切主题后地址栏颜色不随之更新。
+- 无站内搜索、评论、分析和多语言正文；当前浏览器本地持久化仅用于主题选择。
+- 图片质量与内容真实性需要人工检查；截图可能落后于对应项目线上版本。CryptoWitch 条目提供源码入口，桌面程序按其 README 自行构建。
 
 ## 许可
 
-MIT。本站自身是 MIT；被展示的四个项目各自另有许可 —— `AshenCourier` 与
-`ruiqiang-website` 为 MIT，`CryptoWitch` 与 `Notes of Ashen` 未声明许可。
-
-
-### 守卫自身的反例与验收证据
-
-`pnpm test:guard` 在临时目录复制真实构建后注入故障：404 行内样式、重复标题、非首块 JSON-LD 损坏、伪同源域名、缺资源、非首页 JS 超预算、UTF-8 超预算、图片尺寸不符、CSS 第三方资源及数字说明漂移。每个案例必须断言具体错误，不接受任意异常代替预期失败。原始 dist 不被修改。图版浮悬窗另有四个反例：触发器与缩略图不是同一张（无 JS 的回退会跳到别的图）、触发器缺 `aria-haspopup`、浮悬窗缺关闭按钮、缺上一张 —— 少了任何一个 `pnpm guard` 都会红。
-
-`pnpm test:assets` 覆盖缺源、损坏图、空白图、手工图入清单、生成失败保留成品与替换中途失败回滚。测试故障注入仅作用于临时目录，不代表真实 Chrome 已渲染成功。
-
-浏览器除主题面板（每套主题逐个选中、键盘、Esc 与点外部关闭）、视图过渡及其降级、
-标签过滤及其无 JS 降级、就地预览抽屉、图版浮悬窗（点开 / 翻页回绕 / 三条关闭路径与焦点归还）、
-CSP、无 JS、动画与 reduced-motion 契约外，还检查精确 HTTP 状态、所有阶段的网络和控制台错误、真实组件背景的文字对比度、键盘目录和图版、无效主题值及不可用存储。截图及 `result.json` 位于 `.assets-raw/verify/`（全部主题 × 各页面，外加 `plate-viewer-dark.png`），预览日志为 `.assets-raw/preview.log`。任何失败阻止发布。
-
-后加的那些装饰各有一条**只看计算值**的契约，因为"CSS 里写了"什么都证明不了：
-
-- 详情页的进度线真滚一遍再读 `transform`：起点与终点必须不同（滚动时间线真的在驱动它）；
-- 首页四张卡片的 `.cover::before` 计算背景图必须两两不同（三种强调色是三种图案）；
-- `/grimoire/` 的九格样品块各自读 `data-theme` 子树的背景，九张背景图必须互不相同，
-  且该页仍然只有一个 `<h1>`、面板的选项一个不少。
-
-
-每套主题的截图都是**用 `<html data-theme>` 直接渲染出来的**，不是靠注入脚本 ——
-站点的 CSP 只放行登记过哈希的内联脚本，任何临时注入的 `<script>` 都会被静默拦掉，
-那样拍出来的图会全是默认主题。截图之后还会用众数颜色独立核对每张图的画布色，
-证明它真的是那一套主题。
-
-手机页头为品牌与导航两行；小于 1280px 时目录使用原生 `<details>`。这两项都不增加客户端脚本。
-
-主题选择器与快速预览入口和标签条一样，服务端渲染时带 `hidden`，只由现有交互脚本
-在事件处理注册完成后显示。无 JS 时正文、默认主题和详情链接仍可用。验收逐页检查控件
-确实存在且不可见，启用脚本后再次验证可见；不会让“控件被删掉”成为假通过。
-图版入口走的是相反的一条路：它**不带** `hidden`（它首先是个指向原图的链接），
-验收反过来核对无 JS 时它仍然可见、`href` 与缩略图同源、而浮悬窗不会自己打开。
-
-所有体积测量与阈值由 `scripts/budget.mjs` 提供。JS 总量为全部外链脚本各计一次，
-加上所有 HTML 中最大的页面内联 gzip；单段 raw 上限取所有页面的最大值。
-逐页统计随结果返回，因此详情页与 404 超限也能被独立的静态断言拦截。
-反例覆盖非首页超限、JSON-LD 排除、UTF-8 字节、raw/gzip 最大值来自不同页面，
-以及边界值：单段 4096 字节必须失败，CSS/首页 HTML 恰好预算允许、超出一字节必须失败。
+本站源码使用 [MIT](LICENSE)。被收录项目独立授权：AshenCourier 与 ruiqiang-website 提供 MIT 许可；CryptoWitch 与 Notes of Ashen 当前未提供项目级 LICENSE。项目素材、企业资料和第三方数据不因被展示而自动获得本站源码许可。
