@@ -80,7 +80,7 @@ export async function verifyReadingContracts({ cdp, check, navigate, base, theme
     JSON.stringify({ classes: motifs.classes, gradients: motifs.gradients }),
   );
 
-  /* 主题图鉴：九套主题各有一格，且每一格的样品块用的确实是**它自己**那套 token
+  /* 主题图鉴：三套主题各有一格，且每一格的样品块用的确实是**它自己**那套 token
      （读 data-theme 子树的背景，而不是页面当前主题的背景）。 */
   await navigate(`${base}/grimoire/`);
   await cdp.evaluate(`document.documentElement.dataset.theme='brutal'`);
@@ -351,7 +351,7 @@ export async function verifyReadingContracts({ cdp, check, navigate, base, theme
   await navigate(`${base}/`);
   await openPlateViewer();
   const viewerThemeFacts = {};
-  for (const theme of ["brutal", "cyber"]) {
+  for (const theme of ["brutal", "dark"]) {
     await cdp.evaluate(`document.documentElement.dataset.theme='${theme}'`);
     await sleep(400);
     viewerThemeFacts[theme] = await cdp.evaluate(`(() => {
@@ -360,13 +360,13 @@ export async function verifyReadingContracts({ cdp, check, navigate, base, theme
         backdrop:getComputedStyle(dialog,'::backdrop').backgroundColor};
     })()`);
     if (theme === "brutal") await cdp.screenshot(path.join(shots, "plate-viewer-brutal.png"));
-    if (theme === "cyber") await cdp.screenshot(path.join(shots, "plate-viewer-dark.png"));
+    if (theme === "dark") await cdp.screenshot(path.join(shots, "plate-viewer-dark.png"));
   }
   check(
-    viewerThemeFacts.brutal.bg !== viewerThemeFacts.cyber.bg &&
-      viewerThemeFacts.brutal.color !== viewerThemeFacts.cyber.color &&
+    viewerThemeFacts.brutal.bg !== viewerThemeFacts.dark.bg &&
+      viewerThemeFacts.brutal.color !== viewerThemeFacts.dark.color &&
       viewerThemeFacts.brutal.radius === "0px",
-    `浮悬窗的底色 / 文字色 / 方角跟随主题变量（${viewerThemeFacts.brutal.bg} vs ${viewerThemeFacts.cyber.bg}）`,
+    `浮悬窗的底色 / 文字色 / 方角跟随主题变量（${viewerThemeFacts.brutal.bg} vs ${viewerThemeFacts.dark.bg}）`,
   );
 
   await cdp.evaluate(`document.documentElement.dataset.theme='brutal'`);

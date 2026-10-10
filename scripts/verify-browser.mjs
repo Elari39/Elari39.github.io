@@ -13,8 +13,7 @@
  *   · 视图过渡真的被调用过（而不只是 API 存在），且把 API 删掉后切换照样生效
  *   · 每套主题的 CSS 变量真的生效（读 computedStyle，不是看源码）
  *   · 每套主题"token 覆盖不到"的那一半也真的生效：粗野主义的方角/硬阴影/字重/去毛玻璃、
- *     赛博终端的 CRT 扫描线（读 ::after 的 background-image）与等宽显示字体、
- *     瑞士极简的关底纹/去阴影/加大字号
+ *     羊皮纸的衬线显示字体（默认栈）、灰烬的圆角与卡片柔光
  *   · 标签过滤：按钮筛选真的留下带该标签的卡片、多选是并集、清空能恢复、
  *     键盘可用，而且**禁用脚本时过滤条整条不出现**（渐进增强的方向）
  *   · 窄屏（390px）不会出现横向滚动（含硬阴影最容易撑破的那一档）
@@ -571,7 +570,7 @@ try {
       cardRadius: card ? style(card).borderRadius : null,
       cardShadow: card ? style(card).boxShadow : null,
       buttonShadow: style(document.querySelector('.btn'))?.boxShadow ?? null,
-      // 底纹画在 body 的两个伪元素上：cyber 的 CRT 扫描线就在 ::after
+      // 底纹画在 body 的两个伪元素上：粗野主义的方格网格就在 ::after
       gridDisplay: pseudo('::after').display,
       grid: pseudo('::after').backgroundImage,
       bloomDisplay: pseudo('::before').display,
@@ -631,133 +630,6 @@ try {
       check(
         isHardShadow(brutal.buttonShadow),
         `首页按钮是硬阴影（${brutal.buttonShadow}）`,
-      );
-    }
-
-    // 赛博终端：底纹换成了扫描线、显示字体换成等宽、方角、近黑画布。
-    // 断言扫描线"真的被画出来"（读 ::after 的 background-image），
-    // 而不是只信 CSS 里写了 repeating-linear-gradient。
-    const cyber = facts.cyber;
-    check(
-      cyber.gridDisplay !== "none" && /repeating-linear-gradient/.test(cyber.grid),
-      `${route.path} 赛博终端画出了 CRT 扫描线`,
-      cyber.grid.slice(0, 90),
-    );
-    check(
-      cyber.grid !== brutal.grid,
-      `${route.path} 赛博终端的底纹与粗野主义不同（不是照抄一份）`,
-    );
-    check(
-      cyber.bloomDisplay === "none",
-      `${route.path} 赛博终端关掉了径向柔光（${cyber.bloomDisplay}）`,
-    );
-    check(
-      cyber.bg === "rgb(6, 10, 6)",
-      `${route.path} 赛博终端的画布是近黑（${cyber.bg}）`,
-    );
-    check(
-      /mono/i.test(cyber.h1Font),
-      `${route.path} 赛博终端的显示字体是等宽`,
-      cyber.h1Font.slice(0, 60),
-    );
-    check(
-      cyber.toggleRadius === "0px",
-      `${route.path} 赛博终端下按钮是方角（${cyber.toggleRadius}）`,
-    );
-
-    // 瑞士极简：关掉底纹与阴影、全方角、字号更大 —— 这套主题做的是"减法"，
-    // 所以断言的重点是"少了什么"和"字大了多少"。
-    const swiss = facts.swiss;
-    check(
-      swiss.gridDisplay === "none" && swiss.bloomDisplay === "none",
-      `${route.path} 瑞士极简关掉了所有底纹（${swiss.gridDisplay} / ${swiss.bloomDisplay}）`,
-    );
-    check(
-      swiss.toggleRadius === "0px",
-      `${route.path} 瑞士极简下按钮是方角（${swiss.toggleRadius}）`,
-    );
-    check(
-      !swiss.cardShadow || swiss.cardShadow === "none",
-      `${route.path} 瑞士极简去掉了卡片阴影（${swiss.cardShadow}）`,
-    );
-    check(
-      !/Iowan|Georgia|Palatino/i.test(swiss.h1Font),
-      `${route.path} 瑞士极简的 h1 是无衬线`,
-      swiss.h1Font,
-    );
-    check(
-      swiss.h1Size > brutal.h1Size,
-      `${route.path} 瑞士极简的 h1 比粗野主义更大（${swiss.h1Size} > ${brutal.h1Size}）`,
-    );
-
-    /* 后加的四套主题（水墨宣纸 / 午夜档案馆 / 霓虹落日 / 孔版印刷）。
-       它们的个性全部走**运行时 token**（标题字体栈、方角/圆角、错位套印），
-       而不是像 brutal / swiss 那样另写一份无层级的逐类覆盖块 —— 那是为了把产物体积
-       压进 48 KB 预算（见 global.css 第 1b 与第 8 节的说明）。所以这里同样只能读计算值：
-       只换颜色的"假主题"会在这几条上红。 */
-    const { ink, archive, sunset, riso } = facts;
-    const SERIF = /Iowan|Georgia|Palatino|Songti/i;
-
-    for (const [name, f] of [
-      ["水墨宣纸", ink],
-      ["孔版印刷", riso],
-    ]) {
-      /* `--r-pill` 归零只对读运行时 token 的组件生效（面板触发器每页都在）；
-         既有组件读的是被 @theme inline 内联的字面量，所以卡片方角靠 global.css
-         第 8 节那条覆盖 —— 卡片只在首页出现，先确认它真的在再量（空集不算通过）。 */
-      check(
-        f.toggleRadius === "0px",
-        `${route.path} ${name}下按钮是方角（${f.toggleRadius}）`,
-      );
-      if (route.path === "/") {
-        check(f.cardCount > 0, `首页确实有 ${f.cardCount} 张条目卡`);
-        check(
-          f.cardRadius === "0px",
-          `${route.path} ${name}的卡片是方角（${f.cardRadius}）`,
-        );
-      }
-    }
-
-    for (const [name, f] of [
-      ["午夜档案馆", archive],
-      ["霓虹落日", sunset],
-    ]) {
-      check(
-        Number.parseFloat(f.toggleRadius) > 0,
-        `${route.path} ${name}保留圆角（${f.toggleRadius}）`,
-      );
-    }
-
-    // 字体：ink / archive 走默认衬线栈（中文落到宋体），sunset / riso 各有一套无衬线栈
-    check(
-      SERIF.test(ink.h1Font) && SERIF.test(archive.h1Font),
-      `${route.path} 水墨宣纸与午夜档案馆的 h1 是衬线`,
-      `${ink.h1Font} | ${archive.h1Font}`,
-    );
-    check(
-      !SERIF.test(sunset.h1Font) && !SERIF.test(riso.h1Font),
-      `${route.path} 霓虹落日与孔版印刷的 h1 是无衬线`,
-      `${sunset.h1Font} | ${riso.h1Font}`,
-    );
-    check(
-      sunset.h1Font !== riso.h1Font,
-      `${route.path} 两套无衬线主题用的是不同的字体栈`,
-      `${sunset.h1Font} | ${riso.h1Font}`,
-    );
-
-    /* 孔版印刷的"错位套印"：也是硬阴影，但与粗野主义的区别在**阴影颜色** ——
-       粗野主义用描边色（黑），孔版印刷用第二色（青）。只断言 isHardShadow 是分不开的。
-       卡片只在首页出现，所以先确认它真的在，再量（空集不算通过）。 */
-    if (route.path === "/") {
-      check(riso.cardCount > 0, `首页确实有 ${riso.cardCount} 张条目卡`);
-      check(
-        isHardShadow(riso.cardShadow) &&
-          /rgb\(10,\s*95,\s*90\)/.test(riso.cardShadow ?? ""),
-        `${route.path} 孔版印刷的卡片是青色的错位套印（${riso.cardShadow}）`,
-      );
-      check(
-        riso.cardShadow !== brutal.cardShadow,
-        `${route.path} 孔版印刷的套印与粗野主义的硬阴影不是同一种`,
       );
     }
 
@@ -1321,9 +1193,9 @@ try {
     `抽屉打开时停在开头、标题可见（scrollTop=${opened.scrollTop}）`,
   );
 
-  // 视觉继承主题变量：换主题，抽屉的底色/文字色必须跟着变（而不是写死的颜色）
+  // 视觉继承主题变量：换主题，抽屉的底色/文字色/圆角必须跟着变（而不是写死的颜色）
   const dialogThemeFacts = {};
-  for (const theme of ["brutal", "cyber"]) {
+  for (const theme of ["brutal", "dark"]) {
     await cdp.evaluate(`document.documentElement.dataset.theme='${theme}'`);
     await sleep(250);
     dialogThemeFacts[theme] = await cdp.evaluate(`(() => {
@@ -1333,13 +1205,13 @@ try {
   })()`);
   }
   check(
-    dialogThemeFacts.brutal.bg !== dialogThemeFacts.cyber.bg &&
-      dialogThemeFacts.brutal.color !== dialogThemeFacts.cyber.color,
-    `抽屉的底色与文字色跟随主题变量（${dialogThemeFacts.brutal.bg} vs ${dialogThemeFacts.cyber.bg}）`,
+    dialogThemeFacts.brutal.bg !== dialogThemeFacts.dark.bg &&
+      dialogThemeFacts.brutal.color !== dialogThemeFacts.dark.color,
+    `抽屉的底色与文字色跟随主题变量（${dialogThemeFacts.brutal.bg} vs ${dialogThemeFacts.dark.bg}）`,
   );
   check(
-    dialogThemeFacts.brutal.radius === "0px" && dialogThemeFacts.cyber.radius === "0px",
-    `方角主题下抽屉也是方角（${dialogThemeFacts.brutal.radius} / ${dialogThemeFacts.cyber.radius}）`,
+    dialogThemeFacts.brutal.radius === "0px" && Number.parseFloat(dialogThemeFacts.dark.radius) > 0,
+    `抽屉的圆角跟随主题变量（方角 ${dialogThemeFacts.brutal.radius} / 圆角 ${dialogThemeFacts.dark.radius}）`,
   );
   await cdp.evaluate(`document.documentElement.dataset.theme='brutal'`);
   await sleep(200);
@@ -1532,9 +1404,10 @@ try {
       `后一张卡 top ${brutalPress.pressed.nextTop}，文档高 ${brutalPress.pressed.docHeight}）`,
   );
 
-  /* 三套暗色主题（灰烬 / 午夜档案馆 / 霓虹落日）共用同一套"边缘柔光"触感，
-     颜色由各自的 --c-glow 决定 —— 所以这里逐套量模糊半径，而不是只量灰烬那一套。 */
-  for (const theme of ["dark", "archive", "sunset"]) {
+  /* 灰烬的"边缘柔光"触感：颜色由 --c-glow 决定。读按下后的 box-shadow 模糊半径，
+     而不是只信 CSS 里写了 —— 与粗野主义"完全无模糊"形成对照。 */
+  {
+    const theme = "dark";
     const press = await pressCard(theme);
     check(
       shadowBlurs(press.pressed.shadow).some((blur) => blur > 0),

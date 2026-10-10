@@ -117,7 +117,7 @@ const cases = [
   [
     "数字条主题数漂移",
     "index.html",
-    (s) => s.replace(/配色 × \d+ 主题/, "配色 × 3 主题"),
+    (s) => s.replace(/配色 × \d+ 主题/, "配色 × 99 主题"),
     "数字条完整说明",
   ],
   // 面板色块靠嵌套 data-theme 取各自主题的 token —— 写错 id 不会报错，
@@ -125,7 +125,7 @@ const cases = [
   [
     "面板色块主题 id 写错",
     "index.html",
-    (s) => s.replace('data-theme="cyber"', 'data-theme="nope"'),
+    (s) => s.replace('data-theme="dark"', 'data-theme="nope"'),
     "未知的 data-theme 值",
   ],
   [

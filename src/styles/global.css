@@ -123,8 +123,7 @@
      （产物里是 `.rounded-card{border-radius:.875rem}` 这样的字面量），
      于是新组件没法靠改一个变量就把圆角归零。这几条只给新组件用（主题面板、
      过滤条、预览弹层），既有组件仍走各自的规则，不去动它们。
-     brutal 与 swiss 靠各自的主题块把 --r-* 归零，而不需要像 brutal 那样
-     为每个类各写一条无层级覆盖。 */
+     brutal 靠自己的主题块把 --r-* 与 --bw 归零，不必为每个类各写一条无层级覆盖。 */
   --r-card: 0.875rem;
   --r-pill: 999px;
   --r-sm: 0.5rem;
@@ -220,256 +219,6 @@
   /* 卡片边缘的柔光。带 alpha 的强调色写成 8 位十六进制，就不必用 color-mix()
      （那会让产物多出一份 @supports 孪生规则）。 */
   --c-glow: #e08d6d88;
-}
-
-/* 手动选择的深色，但换一套语言：赛博终端
-   -----------------------------------------------------------------------------
-   高对比绿黑 + CRT 扫描线。扫描线是**单条** repeating-linear-gradient（见文件末尾
-   覆盖块），不引任何图片 —— 零第三方请求这条不变量对"主题看起来更花"同样有效。
-
-   色板取高饱和绿（磷光屏）压近黑。绿色在近黑上的对比度极高，所以这套主题里最紧的
-   一对是"次要文字"（9.73:1），仍然离 4.5 的门槛很远。主按钮文字用很深的绿压在
-   霓虹绿上（12.27:1）：白字压在 #39ff14 上只有 1.7:1，是这个主题最容易写错的地方。
-
-   `color-scheme: dark` 让表单控件与滚动条跟着变深 —— 它是**逐元素**生效的，
-   所以主题面板里带 data-theme="cyber" 的色块也能正确拿到它。 */
-[data-theme='cyber'] {
-  color-scheme: dark;
-
-  --c-canvas: #060a06;
-  --c-surface: #0a120b;
-  --c-card: #0b140c;
-  --c-card-strong: #12200f;
-  --c-hairline: #1d3a20;
-  --c-hairline-soft: #16301a;
-  --c-ink: #d9ffe0;
-  --c-body: #b6f5c4;
-  --c-muted: #7fd693;
-  --c-muted-soft: #6ec884;
-  --c-primary: #39ff14;
-  --c-primary-ink: #4dff6a;
-  --c-on-primary: #04240a;
-  --c-amber: #ffb454;
-  --c-teal: #2ee6d0;
-  --c-code: #0b140c;
-
-  --c-hairline-strong: #2a5230;
-  --c-grid: #12301a;
-  --c-ember-soft: #143d1a;
-  --c-glow: #39ff1455;
-
-  /* 终端是全方角的；显示字体换成等宽，标题才有"字符界面"的分量 */
-  --font-display: ui-monospace, SFMono-Regular, 'Cascadia Mono', Consolas, 'Liberation Mono', Menlo,
-    monospace;
-  --r-card: 0;
-  --r-pill: 0;
-  --r-sm: 0;
-  --bw: 1px;
-}
-
-/* 手动选择的浅色，另一套语言：瑞士极简
-   -----------------------------------------------------------------------------
-   国际主义/瑞士风格：纯白画布、纯黑发丝线、单一红色强调、全方角、无阴影、
-   靠字号与留白而不是边框与装饰建立层级。所以它把底纹整块关掉（body::before/after），
-   并把 h1 放大一档。
-
-   对比度余量最小的两处都在这一套（红底白字 5.67:1、强调色对白底 5.67:1），
-   是整个站点最紧的地方 —— 改这两个值之前先看守卫。
-   注意画布用纯 #ffffff：它必须与另外四套（#fffdf4 / #faf9f5 / #121110 / #060a06）都不同，
-   否则"各主题真的不一样"那条检查会红。 */
-[data-theme='swiss'] {
-  color-scheme: light;
-
-  --c-canvas: #ffffff;
-  --c-surface: #f4f4f4;
-  --c-card: #ffffff;
-  --c-card-strong: #ededed;
-  --c-hairline: #111111;
-  --c-hairline-soft: #dcdcdc;
-  --c-ink: #000000;
-  --c-body: #1a1a1a;
-  --c-muted: #4d4d4d;
-  --c-muted-soft: #575757;
-  --c-primary: #d0021b;
-  --c-primary-ink: #b00016;
-  --c-on-primary: #ffffff;
-  --c-amber: #8a5200;
-  --c-teal: #0a6169;
-  --c-code: #f4f4f4;
-
-  --c-hairline-strong: #c8c8c8;
-  --c-grid: #eeeeee;
-  --c-ember-soft: #f0d9dc;
-  --c-glow: #00000000;
-
-  /* 无衬线、全方角、发丝描边 —— 与 brutal 相反：粗野主义靠重量，瑞士靠秩序 */
-  --font-display: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', 'PingFang SC',
-    'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
-  --r-card: 0;
-  --r-pill: 0;
-  --r-sm: 0;
-  --bw: 1px;
-}
-
-/* -----------------------------------------------------------------------------
-   1b. 后加的四套主题（水墨宣纸 / 午夜档案馆 / 霓虹落日 / 孔版印刷）
-   -----------------------------------------------------------------------------
-   共同约束：**每套只有一个块**，个性与色板写在同一个块里。
-
-   为什么不像 brutal / swiss 那样另写一份无层级的逐类覆盖块：体积。CSS 预算 48 KB
-   已经用了 45.4 KB，四套主题加起来只有约 2.6 KB 可用，而一份逐个类覆盖的形状块
-   动辄 400–900 字节。所以这几套的个性全部走**运行时 token**：
-
-     --font-display  → h1–h4 与 .attest-value 直接读它，标题字形立刻跟着换
-     --r-card / --r-pill / --r-sm / --bw → 主题面板、预览抽屉、数字条这些新组件都读它们
-     --c-grid        → body::after 那张 32px 方格纸的颜色，整页底纹跟着走
-     --c-glow        → 暗色系的卡片外发光（见文件末尾第 7 节）
-
-   这些都是**计算值可验证**的（浏览器验收里读 getComputedStyle），所以不会沦为
-   「只换颜色的假主题」—— 标题字体栈、面板与抽屉的圆角、底纹颜色都是真的换了。
-
-   色板一律十六进制字面量（守卫只认这个），且九套的 token 键集合必须完全一致。
-   画布色必须与其余八套互不相同：九套是
-   #fffdf4 / #faf9f5 / #121110 / #060a06 / #ffffff / #ebe8e0 / #0d1420 / #170b26 / #ffe94a */
-
-/* 水墨宣纸：绢本底、浓墨描边、朱砂印章。标题用**中文衬线优先**的栈 ——
-   默认那套是 Iowan Old Style 打头（西文衬线），中文会落到系统黑体，出不来「墨」味。 */
-[data-theme='ink'] {
-  color-scheme: light;
-
-  --c-canvas: #ebe8e0;
-  --c-surface: #f2f0e9;
-  --c-card: #f7f5ef;
-  --c-card-strong: #ded9cd;
-  --c-hairline: #1c1c1c;
-  --c-hairline-soft: #2a2a2a;
-  --c-ink: #14120f;
-  --c-body: #2b2823;
-  --c-muted: #565248;
-  --c-muted-soft: #625e53;
-  --c-primary: #a3241a;
-  --c-primary-ink: #8e1b12;
-  --c-on-primary: #fdfbf6;
-  --c-amber: #8a5200;
-  --c-teal: #245a55;
-  --c-code: #ded9cd;
-
-  --c-hairline-strong: #1c1c1c;
-  --c-grid: #ddd8cb;
-  --c-ember-soft: #e8d5d2;
-  --c-glow: #00000000;
-
-  /* 不写 --font-display：默认那套衬线栈本来就以 'Songti SC' / 'Noto Serif CJK SC'
-     兜底，中文正文与标题拿到的就是宋体衬线 —— 这正是水墨要的，省下一份字体栈。 */
-  --r-card: 0;
-  --r-pill: 0;
-  --r-sm: 0;
-  --bw: 1px;
-}
-
-/* 午夜档案馆：深靛蓝连夜灯，黄铜做强调。保留小圆角（阅览室的木作是圆的），
-   卡片边缘透一圈黄铜柔光。 */
-[data-theme='archive'] {
-  color-scheme: dark;
-
-  --c-canvas: #0d1420;
-  --c-surface: #141c28;
-  --c-card: #18212e;
-  --c-card-strong: #1f2a39;
-  --c-hairline: #2a3646;
-  --c-hairline-soft: #212c3a;
-  --c-ink: #f2f4f8;
-  --c-body: #cfd6e0;
-  --c-muted: #98a2b3;
-  --c-muted-soft: #8b95a6;
-  --c-primary: #c9a227;
-  --c-primary-ink: #dcb84a;
-  --c-on-primary: #1a1408;
-  --c-amber: #e29a4a;
-  --c-teal: #5fbcae;
-  --c-code: #18212e;
-
-  --c-hairline-strong: #3a4a5e;
-  --c-grid: #1a2331;
-  --c-ember-soft: #3a2f18;
-  --c-glow: #c9a22755;
-
-  /* 同 ink：不写 --font-display。默认衬线栈就是"阅览室的活字"，
-     这一套的差别在靛蓝画布、黄铜强调与卡片外那圈柔光。 */
-  --r-card: 0.5rem;
-  --r-pill: 999px;
-  --r-sm: 0.35rem;
-  --bw: 1px;
-}
-
-/* 霓虹落日：深紫罗兰底、品红主色配青。等宽与衬线都不合适，走几何无衬线；
-   网格底纹拿到一层暖紫，标题带一点品红辉光。 */
-[data-theme='sunset'] {
-  color-scheme: dark;
-
-  --c-canvas: #170b26;
-  --c-surface: #1d1030;
-  --c-card: #22143a;
-  --c-card-strong: #2b1a47;
-  --c-hairline: #3a2560;
-  --c-hairline-soft: #2e1c4d;
-  --c-ink: #f7eaff;
-  --c-body: #dfc9f2;
-  --c-muted: #b096cc;
-  --c-muted-soft: #a48cc0;
-  --c-primary: #ff2e88;
-  --c-primary-ink: #ff6aa8;
-  --c-on-primary: #1a0421;
-  --c-amber: #ffb257;
-  --c-teal: #35e0d0;
-  --c-code: #22143a;
-
-  --c-hairline-strong: #4a3175;
-  --c-grid: #241540;
-  --c-ember-soft: #4a1836;
-  --c-glow: #ff2e8855;
-
-  --font-display: Futura, 'Century Gothic', 'Avenir Next', 'PingFang SC', system-ui, sans-serif;
-  --r-card: 0.25rem;
-  --r-pill: 999px;
-  --r-sm: 0.25rem;
-  --bw: 1px;
-}
-
-/* 孔版印刷：亮黄纸 + 电光蓝，粗黑描边、全方角，强调用的色块带一道错位套印的硬阴影。
-   亮黄底上的正文必须压到近黑才够 14:1，所以 body / ink 都是近乎纯黑 —— 这是量出来的，
-   不是为了"看起来酷"。 */
-[data-theme='riso'] {
-  color-scheme: light;
-
-  --c-canvas: #ffe94a;
-  --c-surface: #fff19a;
-  --c-card: #fffdf0;
-  --c-card-strong: #f2d93d;
-  --c-hairline: #101010;
-  --c-hairline-soft: #1a1a1a;
-  --c-ink: #0b0b0b;
-  --c-body: #1c1a12;
-  --c-muted: #4a4630;
-  --c-muted-soft: #55503a;
-  --c-primary: #1b2ff0;
-  --c-primary-ink: #1423c4;
-  --c-on-primary: #ffffff;
-  --c-amber: #7a4a00;
-  --c-teal: #0a5f5a;
-  --c-code: #f2d93d;
-
-  --c-hairline-strong: #101010;
-  --c-grid: #e8cf3a;
-  --c-ember-soft: #ffd9d0;
-  --c-glow: #1b2ff055;
-
-  --font-display: 'Helvetica Neue', Helvetica, Arial, system-ui, 'PingFang SC', 'Microsoft YaHei',
-    sans-serif;
-  --r-card: 0;
-  --r-pill: 0;
-  --r-sm: 0;
-  --bw: 2px;
 }
 
 @theme inline {
@@ -869,7 +618,7 @@
   /* 余烬分隔线 */
 
   /* 404 的「钝响」：两行完全相同的字叠出一点色差，靠 --c-primary / --c-teal 上色，
-     所以九套主题各响各的。代码里只有一份文本 —— 复制一份出来做"故障层"会让
+     所以每套主题各响各的。代码里只有一份文本 —— 复制一份出来做"故障层"会让
      读屏读到两遍 404。装饰性的位移在动效区，reduce 下完全不跑。 */
   .glitch {
     position: relative;
@@ -998,7 +747,7 @@
      不需要为每套主题各放一个图标、也不需要 JS 同步。
 
      面板本身完全靠 --r-* / --bw 这类运行时 token 塑形，所以每套主题
-     （含方角的 brutal / cyber / swiss）不用各写一份覆盖。 */
+     （含方角的 brutal）不用各写一份覆盖。 */
   .theme-menu {
     position: relative;
     margin-left: 0.25rem;
@@ -1025,8 +774,7 @@
   .theme-opt__swatch {
     width: 1rem;
     height: 1rem;
-    /* 描边宽度读 --bw，而它是**色块自己那套主题**的值：粗野主义那一格是 2px 方角、
-       瑞士那一格是 1px 方角 */
+    /* 描边宽度读 --bw，而它是**色块自己那套主题**的值：粗野主义那一格是 2px 方角 */
     border: var(--bw) solid var(--c-hairline);
     border-radius: var(--r-pill);
     background: linear-gradient(135deg, var(--c-primary) 0 50%, var(--c-canvas) 50% 100%);
@@ -1100,7 +848,7 @@
     flex: none;
   }
 
-  /* ---- 主题图鉴（/grimoire/）：九套主题各占一格，样品块嵌在那套主题里渲染 ----
+  /* ---- 主题图鉴（/grimoire/）：三套主题各占一格，样品块嵌在那套主题里渲染 ----
      色块画法与面板里那枚 1rem 的小点相同，只是放大成一块样品；形状读运行时
      token（--r-card / --bw），所以方角的主题在这里也是方角，不必逐套写覆盖。
      类名不是 theme-opt__swatch：守卫按那个类名数面板色块，同名会让首页与图鉴页
@@ -1210,7 +958,7 @@
   /* ---- 卡片的「就地预览」抽屉：原生 <dialog> ----
      焦点陷阱、Esc 关闭、把背景置为 inert、以及 ::backdrop 都由浏览器给，
      这里只负责"长什么样"。全部读 --r-* / --bw token，所以每套主题
-     （含方角的 brutal / cyber / swiss）不需要各写一份覆盖。
+     （含方角的 brutal）不需要各写一份覆盖。
 
      background / color / margin 这三条是**必须**重申的：UA 给 dialog 的是
      Canvas / CanvasText（不继承 body），靠 `margin: auto` 居中；而 Tailwind 的
@@ -1254,7 +1002,7 @@
   /* 打开抽屉时我们主动把焦点交给这个容器（见 ProjectCard.astro 的说明），
      而 Chrome 会把这次程序化聚焦当成"需要可见指示"，于是站内那条
      `:focus-visible { outline: 2px solid var(--c-primary) }` 会在整个抽屉内容外面
-     画一大圈强调色 —— 截图里一眼就能看到（瑞士极简下是一整圈红框）。
+     画一大圈强调色 —— 截图里一眼就能看到（浅色主题下是一整圈红框）。
      它不是键盘操作产生的，所以这里明确不画；抽屉内部的可操作元素（关闭按钮）
      仍然有自己的焦点环。 */
   .preview__inner:focus-visible {
@@ -1847,7 +1595,7 @@
 
   /* 三种强调色各有一种**图案**，而不只是三种颜色：封面的纹样由 --cover-motif 承载，
      写在 .cover 自己身上，于是同一个元素上的 ::before 继承到它（自定义属性会继承）。
-     纹样用 --entry-accent 上色，所以九套主题各自成立，没有一处 per-theme 覆盖。
+     纹样用 --entry-accent 上色，所以每套主题各自成立，没有一处 per-theme 覆盖。
 
      这三条刻意**不放在 @layer components 里**，而是写在文件末尾（第 9 节）：
      粗野主义给 .cover::before 换过一副底纹，那条是无层级规则、与这里的特异性相同，
@@ -2442,129 +2190,6 @@
 }
 
 /* -----------------------------------------------------------------------------
-   5. 赛博终端：单条 linear-gradient 画出的 CRT 扫描线
-   -----------------------------------------------------------------------------
-   与第 4 节同一条规矩：写在所有 @layer 之外（无层级声明优先于任何层，
-   只有这样才盖得住工具类里被 @theme inline 内联成字面量的圆角）。
-
-   底纹整体让位给扫描线：一行 repeating-linear-gradient 横向画满细线，
-   不引任何图片 —— 「零第三方请求」这条不变量对"看起来最花"的那套主题同样有效。 */
-[data-theme='cyber'] body::before {
-  /* 三层 bloom（暖 / 冷 / 暖的径向柔光）在终端里没有位置 */
-  display: none;
-}
-
-[data-theme='cyber'] body::after {
-  background-image: repeating-linear-gradient(
-    to bottom,
-    var(--c-hairline-soft) 0,
-    var(--c-hairline-soft) 1px,
-    transparent 1px,
-    transparent 3px
-  );
-  /* 0.5 的不透明度：扫描线要能看见，但不能把背景搅成一道灰雾。
-     线与线之间只差 #16301a 与 #060a06 两级明度，正文对比度几乎不受影响
-     （守卫的浏览器侧会用真实合成背景再算一遍）。 */
-  opacity: 0.5;
-  mask-image: none;
-  -webkit-mask-image: none;
-}
-
-/* 全方角。这里用 :is() 一次列出既有组件 —— 新组件（面板 / 过滤条 / 弹层）
-   本来就读 --r-* token，不需要出现在这张名单里。 */
-[data-theme='cyber'] :is(.btn, .chip, .badge, .glyph, .plate, .entry-card, .attest, .rounded-card, .nav-link, #theme-toggle) {
-  border-radius: 0;
-}
-
-[data-theme='cyber'] .font-display {
-  /* 这个工具类把衬线栈写成了字面量，得手动拉回 var()（h1–h4 已经跟着换了） */
-  font-family: var(--font-display);
-}
-
-[data-theme='cyber'] :is(h1, h2) {
-  /* 磷光屏的辉光。只给两级标题，避免满屏发光 */
-  text-shadow: 0 0 18px var(--c-glow);
-}
-
-[data-theme='cyber'] .label {
-  /* 小号等宽标记换成霓虹绿：像终端提示符 */
-  color: var(--c-primary);
-}
-
-[data-theme='cyber'] .entry-card {
-  border-color: var(--c-hairline);
-  box-shadow: 0 0 22px -14px var(--c-glow);
-}
-
-[data-theme='cyber'] .entry-card:hover {
-  border-color: var(--c-primary);
-  box-shadow: 0 0 30px -10px var(--c-glow);
-}
-
-[data-theme='cyber'] .theme-menu__panel {
-  box-shadow: 0 0 0 1px var(--c-hairline), 0 0 24px -8px var(--c-glow);
-}
-
-/* -----------------------------------------------------------------------------
-   6. 瑞士极简：关掉所有底纹与柔光，只留发丝线与字号秩序
-   -----------------------------------------------------------------------------
-   国际主义风格靠字号、留白与网格建立层级，不靠边框与阴影 —— 所以这套主题
-   做的是"减法"：底纹整块关掉、圆角归零、阴影归零、红色只出现在一处强调上。 */
-/* 底纹整块关掉。写成并列选择器而不是 :is(body::before, body::after) ——
-   **伪元素不能出现在 :is() 里**，那样整条规则会失效（而且是静默失效：
-   看起来写了、其实什么都没发生）。 */
-[data-theme='swiss'] body::before,
-[data-theme='swiss'] body::after {
-  display: none;
-}
-
-[data-theme='swiss'] :is(.btn, .chip, .badge, .glyph, .plate, .entry-card, .attest, .rounded-card, .nav-link, #theme-toggle, .theme-menu__panel) {
-  border-radius: 0;
-  box-shadow: none;
-}
-
-[data-theme='swiss'] h1 {
-  /* 「强化大字号排版」：比默认再大一档，字距收紧。
-     这条挡的是"只换了颜色、没换排版的第四套配色"那种假主题。 */
-  font-size: clamp(2.75rem, 8vw, 5rem);
-  font-weight: 700;
-  letter-spacing: -0.035em;
-}
-
-[data-theme='swiss'] :is(h2, h3, h4) {
-  font-weight: 700;
-  letter-spacing: -0.02em;
-}
-
-[data-theme='swiss'] .font-display {
-  font-family: var(--font-display);
-}
-
-[data-theme='swiss'] .label {
-  color: var(--c-primary);
-  letter-spacing: 0.2em;
-}
-
-[data-theme='swiss'] .entry-card {
-  border-color: var(--c-hairline);
-  background: var(--c-card);
-}
-
-[data-theme='swiss'] .entry-card::before {
-  /* 顶部那道渐变条换成一条纯色杠：瑞士风格不用渐变做强调 */
-  height: 4px;
-  background: var(--c-primary);
-}
-
-[data-theme='swiss'] :is(.sheen, .hero-sigil__aura) {
-  display: none;
-}
-
-[data-theme='swiss'] .hero-sigil {
-  color: var(--c-hairline);
-}
-
-/* -----------------------------------------------------------------------------
    7. 卡片的触感：纯 CSS 伪类，只动 transform 与 box-shadow
    -----------------------------------------------------------------------------
    两套主题各得其所 —— 粗野主义是"按下去把阴影踩平"，暗色是"边缘透出一圈柔光"。
@@ -2580,74 +2205,21 @@
   box-shadow: none;
 }
 
-/* 三套暗色主题共用「边缘透出一圈柔光」这套触感：颜色由各自的 --c-glow 决定，
-   所以这里只需要把选择器列出来，不必复制规则。 */
-:is([data-theme='dark'], [data-theme='archive'], [data-theme='sunset']) .entry-card:hover {
+/* 灰烬的触感：边缘透出一圈柔光，颜色由 --c-glow 决定。
+   与粗野主义的"按下把阴影踩平"相对 —— 两套主题各得其所。 */
+[data-theme='dark'] .entry-card:hover {
   /* 一圈柔和的外发光 + 一道发丝描边。用 --c-glow（8 位十六进制带 alpha）
-     而不是 color-mix()，省下产物里的一份 @supports 孪生规则 */
+     而不是 color-mix()，省下产物里一份 @supports 孪生规则 */
   box-shadow:
     0 0 0 1px var(--c-hairline),
     0 0 30px -9px var(--c-glow);
 }
 
-:is([data-theme='dark'], [data-theme='archive'], [data-theme='sunset']) .entry-card:active {
+[data-theme='dark'] .entry-card:active {
   /* 按下时收窄光晕：同一套语言里的"压下去" */
   box-shadow:
     0 0 0 1px var(--c-hairline),
     0 0 12px -6px var(--c-glow);
-}
-
-/* -----------------------------------------------------------------------------
-   8. 后加四套主题里"token 表达不了"的那部分
-   -----------------------------------------------------------------------------
-   两件 token 覆盖不到的事：
-
-   (1) 方角。`--r-card / --r-pill / --r-sm` 只有**读运行时 token 的新组件**认
-       （主题面板、过滤条、预览抽屉）。既有的 `.btn / .chip / .entry-card …` 读的是
-       `@theme inline` 内联进工具类/规则里的字面量（`.rounded-card{border-radius:.875rem}`），
-       所以"方角"必须逐类写 —— 与 brutal / swiss 那两块覆盖是同一个原因。
-       这里把 ink 与 riso 合成一条 `:is()` 选择器，省下一半字节。
-   (2) 显式效果：sunset 的标题辉光（text-shadow 没有 token 槽位）、
-       riso 的错位套印与粗描边。
-
-   这三块都必须在所有 @layer **之外**：无层级声明才盖得住 @layer utilities
-   里那些被内联成字面量的工具类（原因同第 4 节）。 */
-
-:is([data-theme='ink'], [data-theme='riso'])
-  :is(
-    .btn,
-    .chip,
-    .badge,
-    .glyph,
-    .plate,
-    .entry-card,
-    .attest,
-    .rounded-card,
-    .nav-link,
-    #theme-toggle,
-    .theme-menu__panel
-  ) {
-  border-radius: 0;
-}
-
-:is([data-theme='ink'], [data-theme='riso']) .entry-card::before {
-  /* 顶部那道渐变条自带 var(--radius-card) 的圆角，方角主题得把它压平 */
-  border-radius: 0;
-}
-
-[data-theme='sunset'] :is(h1, h2) {
-  /* 品红磷光。只加一层很淡的辉光，字号与对比度都不动 */
-  text-shadow: 0 0 22px #ff2e8840;
-}
-
-[data-theme='riso'] :is(.btn, .chip, .badge, .glyph, .plate, #theme-toggle) {
-  /* 这几处把 1px 硬编码在 border 简写里，读不到 --bw */
-  border-width: 2px;
-}
-
-[data-theme='riso'] :is(.btn, .entry-card, .attest, .plate) {
-  /* 错位套印：阴影不带模糊，偏移量比粗野主义更小 —— 是"没对齐"而不是"压上去" */
-  box-shadow: 4px 4px 0 var(--c-teal);
 }
 
 /* -----------------------------------------------------------------------------

@@ -80,17 +80,21 @@ export async function verifyInteractionContracts({ cdp, check, navigate, base, t
       })()`);
       check(bounds.top >= 0 && bounds.bottom <= height && bounds.left >= 0 && bounds.right <= width,
         `${label} 展开面板不越出视口`, JSON.stringify(bounds));
-      check(bounds.scrollable && /auto|scroll/.test(bounds.overflow), `${label} 长菜单可内部滚动`, JSON.stringify(bounds));
+      check(/auto|scroll/.test(bounds.overflow), `${label} 长菜单可内部滚动`, JSON.stringify(bounds));
       if (theme === themes[0]) await cdp.screenshot(path.join(shots, `theme-${width}x${height}-open.png`));
 
       // Wheel input, not scrollTop assignment or an out-of-viewport element.click().
-      await cdp.send("Input.dispatchMouseEvent", {
-        type: "mouseWheel", x: (bounds.left + bounds.right) / 2,
-        y: Math.min(bounds.bottom - 5, height - 5), deltaX: 0, deltaY: 800,
-      });
-      await settle();
-      const scrolled = await cdp.evaluate(`document.querySelector('.theme-menu__panel').scrollTop`);
-      check(scrolled > 0, `${label} 滚轮实际滚动菜单`, String(scrolled));
+      // 主题只有三套时面板在窄屏也放得下、本来就不该滚动；只有内容真的溢出
+      // （scrollable）时才要求滚轮滚得动 —— 面板仍然必须是可滚容器。
+      if (bounds.scrollable) {
+        await cdp.send("Input.dispatchMouseEvent", {
+          type: "mouseWheel", x: (bounds.left + bounds.right) / 2,
+          y: Math.min(bounds.bottom - 5, height - 5), deltaX: 0, deltaY: 800,
+        });
+        await settle();
+        const scrolled = await cdp.evaluate(`document.querySelector('.theme-menu__panel').scrollTop`);
+        check(scrolled > 0, `${label} 滚轮实际滚动菜单`, String(scrolled));
+      }
       await click(lastSelector);
       const clicked = await state();
       check(!clicked.open && clicked.theme === last && clicked.stored === last && clicked.pressed.length === 1 && clicked.pressed[0] === last,
@@ -105,10 +109,10 @@ export async function verifyInteractionContracts({ cdp, check, navigate, base, t
       const keyboard = await cdp.evaluate(`(() => {
         const p=document.querySelector('.theme-menu__panel'), e=document.activeElement;
         const r=e.getBoundingClientRect(), pr=p.getBoundingClientRect();
-        return {theme:e.getAttribute('data-theme-opt'),scroll:p.scrollTop,visible:r.top>=pr.top&&r.bottom<=pr.bottom&&r.top>=0&&r.bottom<=innerHeight};
+        return {theme:e.getAttribute('data-theme-opt'),scroll:p.scrollTop,scrollable:p.scrollHeight>p.clientHeight,visible:r.top>=pr.top&&r.bottom<=pr.bottom&&r.top>=0&&r.bottom<=innerHeight};
       })()`);
-      check(keyboard.theme === last && keyboard.scroll > 0 && keyboard.visible,
-        `${label} Tab 自动滚动并完整显示末项`, JSON.stringify(keyboard));
+      check(keyboard.theme === last && (!keyboard.scrollable || keyboard.scroll > 0) && keyboard.visible,
+        `${label} Tab 移到末项并完整显示（必要时自动滚动）`, JSON.stringify(keyboard));
       if (theme === themes[0]) await cdp.screenshot(path.join(shots, `theme-${width}x${height}-last.png`));
       await key("Enter", "Enter", 13);
       await settle();
