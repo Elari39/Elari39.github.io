@@ -115,6 +115,19 @@ const jsonLd = [
 
       <SigilPlate />
     </div>
+
+    {/*
+      序言底部的滚动提示：纯装饰，无文字也无交互，所以整块 aria-hidden。
+      起伏由 CSS 时间动画驱动，滚动时淡出让位（见 global.css 的 .scroll-cue）。
+      窄屏不渲染出可见的它 —— 手机上序言本来就高。
+    */}
+    <span class="scroll-cue" aria-hidden="true">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+        stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"
+        focusable="false">
+        <path d="M12 5v14M6 13l6 6 6-6"></path>
+      </svg>
+    </span>
   </section>
 
   {/* 数字条：全是守卫脚本真的在核对的事实 */}

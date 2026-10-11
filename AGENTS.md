@@ -23,6 +23,11 @@
   加之前先跑一次 `pnpm assert:budgets` 看还剩多少 raw 余量（图版浮悬窗之后已经不宽裕了）。
 - `prefers-reduced-motion: reduce` 下必须显式关掉视图过渡 —— base 层那条全局兜底
   只作用于 `*::before` / `*::after`，管不到顶层伪元素树里的 `::view-transition-*`。
+- 滚动驱动的动画**一律写长写**（`animation-name` / `-duration` / `-timing-function` /
+  `-fill-mode` / `-timeline` 分开声明），不许用 `animation` 简写：Lightning CSS 会把
+  简写与 `animation-timeline` 并成 `animation: linear both rise-in view()`，而 Chrome
+  解析不了简写里的 `view()`，**整条声明被丢弃**——不报错、元素直接落在终态，
+  连「进场必须收敛到终态」那条验收都会绿。浏览器验收读计算值把它钉住。
 - 主题清单只有一处来源（`src/lib/theme.ts` 的 `THEME_IDS`）；各套主题的 token 键集合
   必须一致，且产物里不得出现未知的 `data-theme` 值。加一套主题要同时照顾四处：
   CSS 的 token 块、面板里的预览色块、首页数字条上的主题数、以及验收脚本（后者从

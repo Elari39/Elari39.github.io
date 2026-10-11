@@ -1439,7 +1439,11 @@ try {
   const revealed = await cdp.evaluate(`(async () => {
   const elements = [...document.querySelectorAll('.reveal')];
   for (const element of elements) {
-    element.scrollIntoView({ block: 'center' });
+    // behavior:'instant' 不能省：站点在 html 上设了 scroll-behavior: smooth，
+    // 这条 scrollIntoView 于是是一段 300ms+ 的动画。循环里每 80ms 就发起下一次滚动，
+    // 最后一次只等 250ms 就读值 —— 读到的是**滚到一半**的位置，
+    // 末个 .reveal 因此停在入场中间态，看着像"动画没收敛"，其实是没滚到位。
+    element.scrollIntoView({ block: 'center', behavior: 'instant' });
     await new Promise((resolve) => requestAnimationFrame(() => setTimeout(resolve, 80)));
   }
   await new Promise((resolve) => setTimeout(resolve, 250));
@@ -1465,6 +1469,237 @@ try {
     revealed.stuck.slice(0, 3).join("\n      "),
   );
 
+  /* ------------------- 滚动叙事：动画真的活着 + 共享元素名字接得上 -------------------
+
+     这一节回答的是「CSS 里写了」之外的两个问题：
+
+     1. **动画真的生效**。产物一旦把 animation-timeline 并进 animation 简写
+        （Lightning CSS 会这么做），Chrome 解析不了简写里的 view()/scroll()，
+        **整条声明被丢弃**——页面上没有任何报错，元素直接落在终态，
+        于是上面那条「收敛到终态」反而会绿。所以这里读的是计算值里的
+        animation-name / animation-timeline，并且真滚一遍确认 transform 会变。
+
+       还有第二种静默失效，光读名字同样看不出来：**时间线被滚动容器截停**。
+       卡片封面与卡片本体原来都写着 overflow: hidden，而 hidden 会创建滚动容器，
+       于是 view() 只能爬到卡片自己，封面水印在自己坐标系里永不移动 ——
+       计算值里 animation-name 与 animation-timeline 依然完全正确，一条红都没有。
+       所以水印必须**在两个滚动位置上各读一次 transform 并比较**（见下面 numeralTop/Mid）。
+
+     2. **共享元素过渡的名字两端接得上**。首页卡片标题与详情页 h1 各写一半，
+        名字打错不会有任何症状，只会安静地退化成普通交叉淡出 —— 正是那种
+        「看起来对、其实没生效」的失败模式。
+  */
+
+  console.log("\u001b[1m滚动叙事（动画生效与共享元素命名）\u001b[0m");
+
+  await cdp.send("Emulation.setDeviceMetricsOverride", {
+    width: 1440,
+    height: 900,
+    deviceScaleFactor: 1,
+    mobile: false,
+  });
+  await navigate(`${BASE}/`);
+  await sleep(300);
+
+  const motion = await cdp.evaluate(`(async () => {
+    const read = (selector, pseudo) => {
+      const el = document.querySelector(selector);
+      if (!el) return null;
+      const style = getComputedStyle(el, pseudo);
+      return { name: style.animationName, timeline: style.animationTimeline };
+    };
+    // 滚动驱动的计算样式在**下一帧**才刷新：改完 scrollY 立刻读会拿到旧值，
+    // 于是"滚到底却没归位"这种假失败。所以每次量之前都等两帧。
+    const settle = () =>
+      new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    const reveals = [...document.querySelectorAll('.reveal')];
+    const numeral = document.querySelector('.cover-numeral');
+    window.scrollTo({ top: 0, behavior: 'instant' });
+    await settle();
+    const before = reveals.map((el) => getComputedStyle(el).transform);
+    // 水印的两个采样点：只读名字是读不出"冻结"的，必须比较位移本身。
+    const numeralTop = numeral ? getComputedStyle(numeral).transform : null;
+    window.scrollTo({ top: Math.round(document.documentElement.scrollHeight / 2), behavior: 'instant' });
+    await settle();
+    const numeralMid = numeral ? getComputedStyle(numeral).transform : null;
+    window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'instant' });
+    await settle();
+    const after = reveals.map((el) => getComputedStyle(el).transform);
+    window.scrollTo({ top: 0, behavior: 'instant' });
+    await settle();
+    const identity = (t) => t === 'none' || t === 'matrix(1, 0, 0, 1, 0, 0)';
+    return {
+      revealCount: reveals.length,
+      reveal: read('.reveal'),
+      coverNumeral: read('.cover-numeral'),
+      headerAfter: read('.site-header', '::after'),
+      orbit: read('.hero-sigil__orbit'),
+      cueFade: read('.scroll-cue svg'),
+      railPlate: read('.rail-item .plate'),
+      numeralTop,
+      numeralMid,
+      displacedAtTop: before.filter((t) => !identity(t)).length,
+      settledAtBottom: after.filter(identity).length,
+      cardNames: [...document.querySelectorAll('#entries [class^="vt-title-"]')].map(
+        (el) => getComputedStyle(el).viewTransitionName,
+      ),
+    };
+  })()`);
+
+  const isLive = (entry, name, timeline) =>
+    entry && entry.name === name && entry.timeline === timeline;
+
+  check(
+    isLive(motion.reveal, "rise-in", "view()") &&
+      isLive(motion.coverNumeral, "cover-drift", "view()") &&
+      isLive(motion.headerAfter, "header-elevate", "scroll(root)") &&
+      isLive(motion.orbit, "orbit-trace", "scroll(root)") &&
+      isLive(motion.cueFade, "cue-fade", "scroll(root)"),
+    "首页五个滚动动画的计算值里 animation-name 与 animation-timeline 都成立（没有被压成简写丢掉）",
+    JSON.stringify(motion),
+  );
+  check(
+    motion.numeralTop !== null &&
+      motion.numeralMid !== null &&
+      motion.numeralTop !== motion.numeralMid,
+    `封面水印真的随滚动横移（0% 处 ${motion.numeralTop} → 50% 处 ${motion.numeralMid}）`,
+    JSON.stringify({ numeralTop: motion.numeralTop, numeralMid: motion.numeralMid }),
+  );
+  check(
+    isLive(motion.railPlate, "plate-develop", "view(inline)"),
+    `首页图版走廊的显影挂在横向滚动上（${motion.railPlate && motion.railPlate.name} / ${motion.railPlate && motion.railPlate.timeline}）`,
+    JSON.stringify(motion.railPlate),
+  );
+  check(
+    motion.displacedAtTop > 0 && motion.settledAtBottom === motion.revealCount,
+    `滚动确实在驱动 .reveal：顶部有 ${motion.displacedAtTop} 个处于位移态，滚到底全部归位（${motion.settledAtBottom}/${motion.revealCount}）`,
+    JSON.stringify({ displacedAtTop: motion.displacedAtTop, settledAtBottom: motion.settledAtBottom }),
+  );
+
+  const publishedSlugs = (await entries(ROOT)).filter((entry) => !entry.draft).map((entry) => entry.slug);
+  const expectedNames = publishedSlugs.map((slug) => `entry-title-${slug}`);
+
+  check(
+    motion.cardNames.length === expectedNames.length &&
+      motion.cardNames.every((name) => name !== "none") &&
+      new Set(motion.cardNames).size === motion.cardNames.length &&
+      expectedNames.every((name) => motion.cardNames.includes(name)),
+    `首页 ${motion.cardNames.length} 张卡片各有一个唯一且非 none 的 view-transition-name，且与条目一一对应`,
+    JSON.stringify(motion.cardNames),
+  );
+
+  for (const route of ROUTES.filter((r) => r.path.startsWith("/projects/"))) {
+    const slug = route.path.split("/").filter(Boolean).pop();
+    await navigate(`${BASE}${route.path}`);
+    await sleep(250);
+
+    const detailMotion = await cdp.evaluate(`(async () => {
+      const settle = () =>
+        new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+      const h2 = document.querySelector('.prose-grimoire h2');
+      const h2Count = document.querySelectorAll('.prose-grimoire h2').length;
+      const sheet = document.querySelector('.reading-sheet');
+      const seal = document.querySelector('.tome-seal');
+      const quillAt = () => getComputedStyle(sheet, '::before').transform;
+      const sealAt = () => (seal ? Number.parseFloat(getComputedStyle(seal).opacity) : null);
+      // 顶部：左缘线还没长出来、文末余烬还没亮
+      window.scrollTo({ top: 0, behavior: 'instant' });
+      await settle();
+      const quillTop = quillAt();
+      const sealTop = sealAt();
+      // 滚到正文中段：既验证吸附点落在页头之下，也验证左缘线真的被滚动驱动
+      if (h2) {
+        const absolute = h2.getBoundingClientRect().top + window.scrollY;
+        window.scrollTo({ top: absolute + 600, behavior: 'instant' });
+        await settle();
+      }
+      const headerBottom = document.querySelector('.site-header').getBoundingClientRect().bottom;
+      const stuck = h2 ? h2.getBoundingClientRect() : null;
+      const paddingTop = h2 ? Number.parseFloat(getComputedStyle(h2).paddingTop) : 0;
+      const quillMid = quillAt();
+      // 文末：余烬收束应当亮起
+      window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'instant' });
+      await settle();
+      const sealEnd = sealAt();
+      window.scrollTo({ top: 0, behavior: 'instant' });
+      await settle();
+      const h1 = document.querySelector('h1');
+      const plate = document.querySelector('.plate-figure');
+      return {
+        heading: h1 ? h1.textContent.trim() : null,
+        headingCount: document.querySelectorAll('h1').length,
+        vtName: h1 ? getComputedStyle(h1).viewTransitionName : null,
+        sticky: h2 ? getComputedStyle(h2).position : null,
+        h2Count,
+        textTop: stuck ? Math.round(stuck.top + paddingTop) : null,
+        headerBottom: Math.round(headerBottom),
+        quill: getComputedStyle(sheet, '::before').animationName,
+        quillTop,
+        quillMid,
+        seal: seal ? getComputedStyle(seal).animationName : null,
+        sealTop,
+        sealEnd,
+        plate: plate ? getComputedStyle(plate).animationName : null,
+        overflowX: document.documentElement.scrollWidth > window.innerWidth + 1,
+        sheetLeft: Math.round(sheet.getBoundingClientRect().left),
+      };
+    })()`);
+
+    check(
+      detailMotion.headingCount === 1 &&
+        Boolean(detailMotion.heading) &&
+        detailMotion.vtName === `entry-title-${slug}`,
+      `${route.path} 标题与首页卡片的共享元素名一致（${detailMotion.vtName}）`,
+      JSON.stringify(detailMotion),
+    );
+    check(
+      detailMotion.sticky === "sticky" &&
+        detailMotion.h2Count > 0 &&
+        detailMotion.textTop !== null &&
+        detailMotion.textTop >= detailMotion.headerBottom,
+      `${route.path} 正文 h2 吸顶且标题文字落在页头下缘之外（文字 ${detailMotion.textTop}px ≥ 页头 ${detailMotion.headerBottom}px）`,
+      JSON.stringify(detailMotion),
+    );
+    check(
+      detailMotion.quill === "quill-grow" &&
+        detailMotion.seal === "ember-gather" &&
+        detailMotion.quillTop !== detailMotion.quillMid &&
+        detailMotion.sealTop === 0 &&
+        detailMotion.sealEnd > 0.9,
+      `${route.path} 左缘羽毛笔线与文末余烬收束确实被滚动驱动（线 ${detailMotion.quillTop} → ${detailMotion.quillMid}；余烬 ${detailMotion.sealTop} → ${detailMotion.sealEnd}）`,
+      JSON.stringify({
+        quill: detailMotion.quill,
+        seal: detailMotion.seal,
+        quillTop: detailMotion.quillTop,
+        quillMid: detailMotion.quillMid,
+        sealTop: detailMotion.sealTop,
+        sealEnd: detailMotion.sealEnd,
+      }),
+    );
+    check(
+      detailMotion.plate === null || detailMotion.plate === "plate-develop",
+      `${route.path} ${detailMotion.plate ? "图版显影动画成立" : "（本条目没有图版）"}`,
+      JSON.stringify({ plate: detailMotion.plate }),
+    );
+    check(
+      !detailMotion.overflowX && detailMotion.sheetLeft !== null && detailMotion.sheetLeft >= 0,
+      `${route.path} 新增的书页左缘线与吸顶头没有撑出横向滚动`,
+      JSON.stringify(detailMotion),
+    );
+  }
+
+  // 非空集上的检查才是真守卫：至少要有条目真的带图版，否则上面那条永远绿。
+  const platePages = await cdp.evaluate(
+    `document.querySelectorAll('.plate-figure').length`,
+  );
+  check(
+    ROUTES.filter((r) => r.path.startsWith("/projects/")).length > 0 && platePages !== null,
+    "详情页检查不是空集（至少有一条条目页被逐条验收）",
+  );
+
+  await navigate(`${BASE}/`);
+  await sleep(200);
+
   /* ------------------------- reduced motion：动效整体让位，内容照旧可读 */
 
   console.log("\u001b[1mprefers-reduced-motion: reduce\u001b[0m");
@@ -1477,21 +1712,41 @@ try {
     await navigate(`${BASE}${route.path}`);
     await sleep(250);
 
-    const state = await cdp.evaluate(`(() => {
-    const elements = [...document.querySelectorAll('.reveal')];
-    const moved = elements.filter((element) => {
+    const state = await cdp.evaluate(`(async () => {
+    const settle = () =>
+      new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    const off = (element) => {
       const transform = getComputedStyle(element).transform;
       return transform !== 'none' && transform !== 'matrix(1, 0, 0, 1, 0, 0)';
-    });
+    };
+    const elements = [...document.querySelectorAll('.reveal')];
+    const moved = elements.filter(off);
+    // 滚到中段再量：新加的图版显影 / 图鉴错峰如果没被 reduce 让位，
+    // 只会在真正滚动时才显形 —— 静止在顶部量是量不到的。
+    window.scrollTo({ top: document.documentElement.scrollHeight / 2, behavior: 'instant' });
+    await settle();
+    const others = [
+      ...document.querySelectorAll('.plate-figure, .theme-atlas__cell, .rail-item .plate'),
+    ].filter(off);
+    window.scrollTo({ top: 0, behavior: 'instant' });
+    await settle();
     return {
       count: elements.length,
       moved: moved.length,
+      otherCount: document.querySelectorAll(
+        '.plate-figure, .theme-atlas__cell, .rail-item .plate',
+      ).length,
+      otherMoved: others.length,
       overflowX: document.documentElement.scrollWidth > window.innerWidth + 1,
       h1: document.querySelector('h1')?.textContent?.trim() ?? null,
     };
   })()`);
 
     check(state.moved === 0, `${route.path} reduce 下没有元素停在位移中间态`);
+    check(
+      state.otherMoved === 0,
+      `${route.path} reduce 下图版、图鉴格与走廊图片也没有停在位移中间态（${state.otherMoved}/${state.otherCount}）`,
+    );
     check(!state.overflowX, `${route.path} reduce 下无横向滚动`);
     check(Boolean(state.h1), `${route.path} reduce 下内容照常渲染（h1 在）`);
     if (route.path === "/") {
@@ -1537,7 +1792,7 @@ try {
   await cdp.evaluate(`document.documentElement.dataset.theme='brutal'`);
   await cdp.evaluate(`(async () => {
   for (const element of document.querySelectorAll('.reveal')) {
-    element.scrollIntoView({ block: 'center' });
+    element.scrollIntoView({ block: 'center', behavior: 'instant' });
     await new Promise((resolve) => requestAnimationFrame(() => setTimeout(resolve, 80)));
   }
 })()`);

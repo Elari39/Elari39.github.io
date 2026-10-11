@@ -93,7 +93,12 @@ const jsonLd = {
           <Glyph name={data.glyph} />
         </span>
         <div class="min-w-0">
-          <h1 class="text-3xl sm:text-4xl">{data.title}</h1>
+          {/*
+            与首页卡片的标题共用同一个 view-transition-name（由构建期生成，
+            见 src/pages/plate-sizes.css.ts）：点「翻开这一条」时，标题不是"跳过去"，
+            而是从卡片的位置形变到详情页头部 —— 同一本书翻页，而不是两个页面。
+          */}
+          <h1 class={`vt-title-${entry.id} text-3xl sm:text-4xl`}>{data.title}</h1>
           <p class="mt-2 text-lg text-body">{data.tagline}</p>
         </div>
       </div>
@@ -220,6 +225,13 @@ const jsonLd = {
         }
       </nav>
       <div class="mt-8"><BackToEntries /></div>
+
+      {/*
+        文末的余烬收束：读到底时亮起的一道细线与中央封缄，给长文一个"合上书"
+        的收口。整块是装饰（无文字、无交互），所以 aria-hidden；
+        动效由 scroll(root) 的最后一段驱动，见 global.css 的 .tome-seal。
+      */}
+      <div class="tome-seal" aria-hidden="true"></div>
     </div>
     <aside class="hidden xl:block"><Toc items={tocItems} /></aside>
   </div>

@@ -15,7 +15,10 @@ const href = `/projects/${project.slug}/`;
 const previewId = `preview-${project.slug}`;
 ---
 
-<article class={`entry-card accent-${project.accent} overflow-hidden`}>
+{/* overflow-clip 而不是 overflow-hidden：hidden 会造出滚动容器，把
+      .cover-numeral 的 view() 时间线截停在卡片内部（见 global.css 里 .cover 的注释）。
+      clip 同样裁切卡片圆角，但不创建滚动容器，时间线才爬得到 ROOT。 */}
+<article class={`entry-card accent-${project.accent} overflow-clip`}>
   {/* 程序化封面：accent 渐变 + 该强调色自己的纹样 + 章节水印。纯 CSS，不请求任何图片。
       整块是装饰，所以 aria-hidden。 */}
   <div class={`cover cover--${project.accent}`} aria-hidden="true">
@@ -30,7 +33,12 @@ const previewId = `preview-${project.slug}`;
       <div class="min-w-0 flex-1">
         <p class="label">条目 {entryNumber(index)}</p>
         <h3 class="mt-1 text-xl">
-          <a href={href} class="text-ink no-underline hover:text-primary-ink">{project.title}</a>
+          <a
+            href={href}
+            class={`vt-title-${project.slug} text-ink no-underline hover:text-primary-ink`}
+          >
+            {project.title}
+          </a>
         </h3>
       </div>
       <span class={`badge badge-${project.status}`}>{statusLabel(project.status)}</span>

@@ -417,12 +417,18 @@
    animation-timeline 实现，并在 @supports 里做渐进增强：不支持的浏览器
    （Firefox / Safari）直接看到静态终态，而不是停在动不了的中间态。
 
-   两条硬规矩（写在这里，因为踩过一次就很难查）：
+   三条硬规矩（写在这里，因为踩过一次就很难查）：
      1. .reveal 只动 transform，**绝不动 opacity**。文字在任何瞬间都必须完全
         可读：半透明正文既过不了对比度，也会被验收截图拍下来；更重要的是，
         一旦 opacity 从 0 起跑，"timeline 没活跃"就等于"内容永久隐身"。
      2. .reveal 不得加在任何 position: sticky 元素的祖先上 —— 祖先上的
         transform 会新建包含块，把 sticky 直接废掉（页头与详情页目录都靠它）。
+     3. **滚动驱动的动画一律写长写**（animation-name / -duration / -timing-function /
+        -fill-mode / -timeline 分开写），不许用 animation 简写。Lightning CSS 会把
+        简写和 animation-timeline 并成 `animation: linear both rise-in view()`，
+        而 Chrome 解析不了简写里的 view()/scroll()，**整条声明被丢弃**：
+        页面不报错、元素直接落在终态，连"进场必须收敛到终态"那条验收都会绿。
+        这一条曾经把 .reveal、页头投影与印记显影三处一起打成静默失效。
 
    注意：base 层里那条全局的 prefers-reduced-motion 兜底（把 animation-duration
    压到 0.01ms）对 scroll-driven 动画**无效** —— 那类动画的进度由滚动位置驱动，
@@ -432,7 +438,7 @@
 
 @keyframes rise-in {
   from {
-    transform: translateY(12px);
+    transform: translateY(36px);
   }
   to {
     transform: none;
@@ -511,10 +517,10 @@
    **不动位置也不动尺寸** —— 位移会让这一块在滚动时抖，而它就在首屏。 */
 @keyframes sigil-wake {
   from {
-    opacity: 0.35;
+    opacity: 0.12;
   }
   to {
-    opacity: 0.72;
+    opacity: 0.85;
   }
 }
 
@@ -524,6 +530,84 @@
   }
   to {
     opacity: 1;
+  }
+}
+
+/* --- 滚动叙事（2.7 节）的键帧 -------------------------------------------------
+   与上面几条同一条纪律：**只有纯装饰层才允许动 opacity**，
+   承载文字的层一律只动 transform。 */
+
+/* 条目卡封面水印：卡片穿行视口时轻微横移，给列表一点前后景深 */
+@keyframes cover-drift {
+  from {
+    transform: translateX(2.75rem);
+  }
+  to {
+    transform: translateX(-2.75rem);
+  }
+}
+
+/* 图版「显影」：进入视口时从略小略低归位，像照片在显影液里清晰起来 */
+@keyframes plate-develop {
+  from {
+    transform: translateY(36px) scale(0.94);
+  }
+  to {
+    transform: none;
+  }
+}
+
+/* 印记外圈的虚线圈随滚动被「画」出来：相位走满一个整周期（0.1 + 24.51）。 */
+@keyframes orbit-trace {
+  from {
+    stroke-dashoffset: 0;
+    opacity: 0.1;
+  }
+  to {
+    stroke-dashoffset: -24.61;
+    opacity: 0.85;
+  }
+}
+
+/* 书页左缘的羽毛笔线：随进度纵向生长（静态默认是铺满，见 .reading-sheet::before） */
+@keyframes quill-grow {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+
+/* 文末的余烬收束：读到底时亮起 */
+@keyframes ember-gather {
+  from {
+    opacity: 0;
+    transform: scaleX(0);
+  }
+  to {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+}
+
+/* 序言底部的滚动提示：缓速起伏（时间驱动）与让位（滚动驱动，作用在子元素上） */
+@keyframes cue-bob {
+  0%,
+  100% {
+    transform: translate(-50%, 0);
+  }
+  50% {
+    transform: translate(-50%, 0.6rem);
+  }
+}
+
+@keyframes cue-fade {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
   }
 }
 
@@ -573,6 +657,14 @@
 
 ::view-transition-old(root),
 ::view-transition-new(root) {
+  animation-duration: var(--dur-slow);
+  animation-timing-function: var(--ease-ember);
+}
+
+/* 具名元素的形变时长与整页交叉淡出对齐，否则一次跳转里会同时听到两种节奏。
+   这条必须写在 progress 那条**之前**：两条特异性相同，靠源序决定胜负，
+   而 progress 必须最后生效（它要的是 animation: none，不能在它之后被改掉）。 */
+::view-transition-group(*) {
   animation-duration: var(--dur-slow);
   animation-timing-function: var(--ease-ember);
 }
@@ -1111,6 +1203,45 @@
     background: var(--c-canvas);
     font-size: 1.0625rem;
     line-height: 1.85;
+    /* 左缘的羽毛笔线要贴着书页走，所以这里得有定位上下文。
+       注意：这只是 position: relative —— 详情页的 <dialog> 走 top-layer，
+       不受影响；也没有 transform，所以 sticky 的目录与页头照旧。 */
+    position: relative;
+  }
+
+  /* 书页左缘的羽毛笔线：纵向报一次「这一页还有多长」，与顶部那条横线互补。
+     静态默认是一条铺满的细线（不支持滚动时间线时它就是一道路色描边），
+     动效在 2.5 节里由 scroll(root) 驱动 scaleY。压在书页自己的描边上，
+     所以只在 -1px 处、2px 宽，不撑宽任何容器。 */
+  .reading-sheet::before {
+    content: '';
+    position: absolute;
+    inset: 0 auto 0 -1px;
+    width: 3px;
+    border-radius: 1.5px;
+    background: linear-gradient(180deg, var(--c-primary), var(--c-teal));
+    pointer-events: none;
+  }
+
+  /* 文末的余烬收束：一道余烬细线 + 中央封缄，读到底时才亮起。
+     静态 opacity: 0（同页头投影），动效在 2.5 节里由 scroll(root) 的最后一段驱动。 */
+  .tome-seal {
+    position: relative;
+    height: 2px;
+    margin-top: 2.5rem;
+    background: linear-gradient(90deg, transparent, var(--c-primary), transparent);
+    opacity: 0;
+  }
+
+  .tome-seal::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 0.55rem;
+    height: 0.55rem;
+    transform: translate(-50%, -50%) rotate(45deg);
+    background: var(--c-primary);
   }
 
   /* ---- 长页的进度余烬线 ----
@@ -1215,6 +1346,24 @@
     margin-top: 2rem;
     font-size: 1.1rem;
     color: var(--c-ink);
+  }
+
+  /* ---- 章节吸顶（2.7 滚动叙事之三） ----
+     长文滚到中段时，「这一节叫什么」始终贴在页头下面，不必回头找。
+     只在 64rem 以上开：窄屏页头会换行变高，吸附点不固定（那一段见文件末尾）。
+
+     吸附点取 3.5rem = 56px，比实测页头高度（粗野主义 63px、浅色/深色 61px）更小 ——
+     宁可靠进页头里一点，也不要留出缝：缝里会露出正在滚过去的正文。
+     内边距把标题文字推到页头下缘之外（56 + 9.6 ≈ 66px > 63px）。
+     背景必须是书页色，否则正文会从标题底下穿过去。 */
+  @media (min-width: 64rem) {
+    .prose-grimoire h2 {
+      position: sticky;
+      top: 3.5rem;
+      z-index: 1;
+      padding-top: 0.6rem;
+      background: var(--c-canvas);
+    }
   }
 
   .prose-grimoire p,
@@ -1330,11 +1479,95 @@
   @media (prefers-reduced-motion: no-preference) {
     @supports (animation-timeline: view()) {
       .reveal {
-        animation: rise-in linear both;
+        /* 只写长写、不用 animation 简写：Lightning CSS 会把简写和 animation-timeline
+           并成 `animation: linear both rise-in view()`，而 Chrome 解析不了简写里的
+           view() —— **整条声明被丢弃**，动效静默失效（连 reduce 兜底也看不出来，
+           因为元素直接落在终态）。凡是「动画 + 滚动时间线」的组合都必须这样写。
+           浏览器验收会读 animation-name / animation-timeline 把它钉住。 */
+        animation-name: rise-in;
+        animation-duration: 1s;
+        animation-timing-function: linear;
+        animation-fill-mode: both;
         animation-timeline: view();
-        /* 在 entry 阶段的前 30% 就收敛到终态：元素刚探进视口一点就已到位，
-           不会出现"能读到一半、另一半还在位移"的中间态。 */
-        animation-range: entry 0% entry 30%;
+        /* 区间必须覆盖**整个 entry 阶段**：entry 0% → 100% 的滚动行程正好等于
+           元素自身高度，终点是"底边刚触到视口底边"、也就是元素完整可见的那一刻。
+           原来写 entry 30%，对一张 523px 高的卡片只有 157px 行程 ——
+           卡片刚在屏幕底边露出一点点，入场就已经演完，肉眼完全看不到。
+           终点不落到 cover 区间：长页末尾的卡片走不到 cover，会永久停在位移中间态。 */
+        animation-range: entry 0% entry 100%;
+      }
+
+      /* ---- 2.7 滚动叙事（一）：错峰、显影与景深 ----
+         全部沿用上面这套 view() 时间线，只改 animation-range 或换成新的键帧，
+         不新增 @supports 外壳（每多一层外壳，产物里就多一份回退副本）。
+         三条都只动 transform，因此 .reveal 那条「必须收敛到可见终态」的验收
+         对它们同样成立。 */
+
+      /* 条目卡片错峰：相邻卡片落在不同的 entry 区间上，滚起来是一道由上往下的波，
+         而不是四张一起浮上来。容器里只有这几张卡，所以 nth-child 直接可用。 */
+      #entries .reveal:nth-child(odd) {
+        animation-range: entry 0% entry 82%;
+      }
+
+      #entries .reveal:nth-child(even) {
+        animation-range: entry 18% entry 100%;
+      }
+
+      /* 封面水印横移：卡片从进入视口到离开的这一整段里缓慢漂移，
+         前一张刚归位、后一张已经起步 —— 列表因此有了纵深。 */
+      .cover-numeral {
+        animation-name: cover-drift;
+        animation-duration: 1s;
+        animation-timing-function: linear;
+        animation-fill-mode: both;
+        animation-timeline: view();
+        animation-range: cover 0% cover 100%;
+      }
+
+      /* 图版显影：截图不再是一块"贴上去的图"，而是滚动中慢慢归位、
+         由略小变到正好 —— 详情页最强的沉浸点。 */
+      .plate-figure {
+        animation-name: plate-develop;
+        animation-duration: 1s;
+        animation-timing-function: linear;
+        animation-fill-mode: both;
+        animation-timeline: view();
+        animation-range: entry 0% entry 60%;
+      }
+
+      /* 首页图版走廊：走廊自己就有 overflow-x: auto，横向滚动因此是一条真实的
+         时间线来源。必须用 view(inline) 并把规则挂在图片上 —— 挂在 .rail-item
+         上无效（实测时间线来源仍是 DIV.rail 且 transform 不动），
+         挂在图片上左右滑动时每张图各自显影：0 → 16.16 → 36。
+         entry 0% cover 60%：从图片滑进走廊到它走过走廊六成的位置。 */
+      .rail-item .plate {
+        animation-name: plate-develop;
+        animation-duration: 1s;
+        animation-timing-function: linear;
+        animation-fill-mode: both;
+        animation-timeline: view(inline);
+        animation-range: entry 0% cover 60%;
+      }
+
+      /* 主题图鉴：三格按序错峰展开，与首页卡片同一套节奏语言。 */
+      .theme-atlas__cell {
+        animation-name: rise-in;
+        animation-duration: 1s;
+        animation-timing-function: linear;
+        animation-fill-mode: both;
+        animation-timeline: view();
+        /* 同 .reveal：区间要铺满 entry 阶段，否则窄屏（三格堆叠、页面够长）
+           下三格是"一露面就到位"。桌面端页面只有 464px 行程、三格在首屏内，
+           entry 整个在身后，这条区间在那里本来就没有可动的余地。 */
+        animation-range: entry 0% entry 78%;
+      }
+
+      .theme-atlas__cell:nth-child(2) {
+        animation-range: entry 12% entry 90%;
+      }
+
+      .theme-atlas__cell:nth-child(3) {
+        animation-range: entry 24% entry 100%;
       }
     }
   }
@@ -1363,7 +1596,11 @@
   @media (prefers-reduced-motion: no-preference) {
     @supports (animation-timeline: scroll()) {
       .site-header::after {
-        animation: header-elevate linear both;
+        /* 同 .reveal：必须长写，简写会被压成 Chrome 解析不了的形式 */
+        animation-name: header-elevate;
+        animation-duration: 1s;
+        animation-timing-function: linear;
+        animation-fill-mode: both;
         animation-timeline: scroll(root);
         animation-range: 0 56px;
       }
@@ -1387,6 +1624,65 @@
         animation-timing-function: linear;
         animation-fill-mode: both;
         animation-timeline: scroll(root);
+      }
+
+      /* ---- 2.7 滚动叙事（二）：与横线同一条 scroll(root) 时间线 ----
+         纵向的羽毛笔线与文末的余烬收束，共用上面这份外壳与同一条时间线，
+         页面越短它们越快走完 —— 与"从顶到底走完一次"的语义一致。 */
+
+      /* 书页左缘的羽毛笔线：横向那条报"读到哪里"，这条报"这一页还有多长"。 */
+      .reading-sheet::before {
+        transform-origin: top center;
+        animation-name: quill-grow;
+        animation-duration: 1s;
+        animation-timing-function: linear;
+        animation-fill-mode: both;
+        animation-timeline: scroll(root);
+      }
+
+      /* 文末的余烬收束：滚到接近结尾时才亮起，给长文一个"合上书"的收口。
+         用 scroll(root) 的百分比区间而不是 view()：这枚封缄只有 2px 高，
+         view() 的 entry 阶段只跨它自身的高度（1px）等于永远不触发；
+         而"最后 20% 的滚动"才是它真正想表达的事。
+         静态默认是 opacity: 0（同页头投影的写法）—— 不支持滚动时间线或开了
+         reduce 时它就是一条不出现的装饰，而不是停在半路的线。 */
+      .tome-seal {
+        animation-name: ember-gather;
+        animation-duration: 1s;
+        animation-timing-function: linear;
+        animation-fill-mode: both;
+        animation-timeline: scroll(root);
+        /* 58% 96% 而不是 80% 100%：语义仍是"最后一段滚动"，但收口放宽到最后
+           42% 的行程，并且在滚到底之前就走完 —— 读到底看到的是已经亮起的封缄。
+           原区间在 7277px 的长文里前 80%（约 5094px）全程 opacity 为 0，
+           等于整篇文章都看不到它。顶部仍为 0、底部仍为 1，验收口径不变。 */
+        animation-range: 58% 96%;
+      }
+
+      /* 序言底部的滚动提示：一滚就让位（起伏那条挂在父元素上，互不抢简写）。 */
+      .scroll-cue svg {
+        animation-name: cue-fade;
+        animation-duration: 1s;
+        animation-timing-function: linear;
+        animation-fill-mode: both;
+        animation-timeline: scroll(root);
+        animation-range: 0 140px;
+      }
+
+      /* 印记外圈虚线圈随滚动"咬合"：相位从 0 走到 -24.61（一个整周期），
+         读起来像阵在慢慢转起来 —— 这一层先前只会显示不会动。
+         只动 stroke-dashoffset 与 opacity，**不碰 transform**：
+         旋转已经归刻度环与符文层，同一元素上叠加会互相取代。
+         刻意**不跟刻度环/封缄一样设 48rem 门限**：那两条的理由是"窄屏页面
+         高度不保证能滚"，而外圈这条只是描边相位，范围塌成 0 时停在 0 相位，
+         与静止的虚线圈无从分辨，窄屏没有理由关掉它。 */
+      .hero-sigil__orbit {
+        animation-name: orbit-trace;
+        animation-duration: 1s;
+        animation-timing-function: linear;
+        animation-fill-mode: both;
+        animation-timeline: scroll(root);
+        animation-range: 0 560px;
       }
     }
   }
@@ -1501,14 +1797,25 @@
      3. 只动 opacity，不动 transform —— 旋转已经占了 transform（见上面那条）。 */
   @media (prefers-reduced-motion: no-preference) and (min-width: 48rem) {
     @supports (animation-timeline: scroll()) {
+      /* 刻度环身上有**两条**动画：自转（时间驱动，140s，上面那条规则给的）与
+         显影（滚动驱动）。写成一条 animation 简写会把另一条整个取代 —— 所以两条
+         必须并列进同一组长写。窄屏不匹配这条规则，走的仍是上面那条纯自转。 */
       .hero-sigil__ticks {
-        animation: sigil-wake linear both;
-        animation-timeline: scroll(root);
-        animation-range: 0 420px;
+        animation-name: sigil-spin, sigil-wake;
+        animation-duration: 140s, 1s;
+        animation-timing-function: linear, linear;
+        animation-iteration-count: infinite, 1;
+        animation-direction: reverse, normal;
+        animation-fill-mode: none, both;
+        animation-timeline: auto, scroll(root);
+        animation-range: normal, 0 420px;
       }
 
       .hero-sigil__seal {
-        animation: seal-wake linear both;
+        animation-name: seal-wake;
+        animation-duration: 1s;
+        animation-timing-function: linear;
+        animation-fill-mode: both;
         animation-timeline: scroll(root);
         animation-range: 80px 500px;
       }
@@ -1520,6 +1827,35 @@
   @media (hover: hover) and (pointer: fine) {
     .hero-sigil:hover .hero-sigil__aura {
       opacity: 1;
+    }
+  }
+
+  /* ---- 序言底部的滚动提示（2.7 滚动叙事之四） ----
+     纯装饰：一枚自走的箭头，告诉第一次来的人"这一页可以往下翻"。
+     起伏是时间驱动（不依赖 animation-timeline，Firefox 也照常动），
+     让位是滚动驱动，且刻意挂在**子元素**上 —— 两条都写 animation 简写的话，
+     后一条会把前一条整个替换掉，而不是叠加。
+
+     它**不按断点隐藏**：这是首屏唯一的"可以往下滑"的视觉暗示，
+     而 2.7 节里其余效果全要滚起来才看得见 —— 关掉它等于让窄屏访客
+     在首屏看不到任何可交互的信号。位置落在序言的底部内边距里
+     （pb-14），不会盖到下方的印记。 */
+  .scroll-cue {
+    position: absolute;
+    left: 50%;
+    bottom: 0.85rem;
+    display: grid;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    transform: translateX(-50%);
+    color: var(--c-muted);
+    pointer-events: none;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .scroll-cue {
+      animation: cue-bob 2.8s ease-in-out infinite;
     }
   }
 
@@ -1579,7 +1915,13 @@
   .cover {
     position: relative;
     height: 6.5rem;
-    overflow: hidden;
+    /* 必须是 clip 而不是 hidden：**只有 visible / clip 不创建滚动容器**。
+       .cover-numeral 的 cover-drift 走的是 view() 时间线，而 view() 解析的是
+       "最近的滚动容器祖先" —— 写 hidden 会让时间线只能爬到封面自己，
+       封面在自己坐标系里永不移动，44px 的横移整条冻结（实测三处采样恒为 +11px）。
+       clip 仍然裁切绘制（封面圆角与 .sheen 的微光都靠它），只是不再拦时间线。
+       像素比对：clip 与 hidden 的布局与四角裁切逐字节相同。 */
+    overflow: clip;
     border-bottom: 1px solid var(--c-hairline);
     /* 回退：不支持 color-mix() 时封面就是一块平涂的 surface */
     background: var(--c-surface);

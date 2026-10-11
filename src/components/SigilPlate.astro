@@ -53,8 +53,10 @@ const QUADRANTS = [45, 135, 225, 315];
     {/* 轻覆一层画布色，压住背景网格；中心封缄仍保持通透。 */}
     <circle class="hero-sigil__field" cx="100" cy="100" r="86" stroke="none"></circle>
     <circle cx="100" cy="100" r="86" opacity="0.46" stroke-width={weight * 0.8}></circle>
-    <circle cx="100" cy="100" r="94" opacity="0.55" stroke-width={weight * 1.6}
-      stroke-dasharray="0.1 24.51"></circle>
+    {/* hero-sigil__orbit：外圈虚线圈。它随滚动走一个整周期的相位（global.css 的
+        orbit-trace），像阵在慢慢咬合 —— 只动 stroke-dashoffset 与 opacity。 */}
+    <circle class="hero-sigil__orbit" cx="100" cy="100" r="94" opacity="0.55"
+      stroke-width={weight * 1.6} stroke-dasharray="0.1 24.51"></circle>
 
     {/* 四个定位菱形保持静止，给反向旋转的环提供视觉参照。 */}
     <g class="hero-sigil__accent" fill="currentColor" stroke="none">

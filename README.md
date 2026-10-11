@@ -73,7 +73,7 @@ src/
   lib/entry.ts                 项目视图类型、状态标签与序号
   components/                 卡片、品牌、主题面板、目录、图版等
   pages/                      首页、about、grimoire、404、projects/[slug]
-  pages/plate-sizes.css.ts     构建生成图片宽度上限 CSS，避免行内 style
+  pages/plate-sizes.css.ts     构建生成图片宽度上限与各条目的 view-transition-name
   scripts/interactions.ts     全站共用交互入口
   styles/global.css           主题 token、组件、阅读布局与动效
 scripts/
@@ -173,7 +173,7 @@ pnpm assets:inspect        # 仅检查正式发布图片，不重新生成
 - 原生预览和图版模态的标题可见、初始滚动归零、背景锁定、关闭及焦点归还；图版翻页回绕且只缩不放。
 - 无 JS 时正文、详情链接与图版原图链接可用；没有图片的页面不渲染空浮悬窗。
 - 各主题真实组件背景的对比度、形状和字体；多视口下的导航、阅读目录和横向溢出。
-- 滚动进场、阅读进度线及减少动态效果模式下的可见终态。
+- 滚动进场、阅读进度线及减少动态效果模式下的可见终态；滚动动画的计算值里 `animation-name` 与 `animation-timeline` 成立（防「被压成简写后静默失效」），并且**真的随滚动变化** —— 封面水印在两个滚动位置上各读一次 `transform` 并比较、走廊图片断言 `view(inline)`（防「时间线被 `overflow: hidden` 截停后名字全对却一动不动」）；共享元素名在首页与详情页两端一致，章节吸顶后标题文字落在页头下缘之外。
 
 截图与 `result.json` 写入 `.assets-raw/verify/`，自动预览日志在 `.assets-raw/preview.log`。CI 保留验收证据，任何阶段失败都会阻止发布。
 
@@ -253,6 +253,14 @@ pnpm assets:inspect    # 检查正式发布图片
 ### 动效、阅读与模态
 
 滚动进场、进度余烬线、底纹和跨文档视图过渡由 CSS 渐进增强。不支持相应能力时保留可见静态内容；不要用从零透明度开始的滚动动画隐藏正文，也不要给 sticky 元素祖先添加 `.reveal` 的 transform。
+
+**滚动叙事**（`global.css` 2.7 节）都是零 JS 的滚动时间线，且**必须逐条写长写**（`animation-name` / `-duration` / `-timing-function` / `-fill-mode` / `-timeline` 分开声明，不许用 `animation` 简写）：Lightning CSS 会把简写与 `animation-timeline` 并成 `animation: linear both rise-in view()`，而 Chrome 解析不了简写里的 `view()`，整条声明被丢弃 —— 页面上不报错、元素直接落在终态，连「进场必须收敛到终态」那条验收都会绿。浏览器验收会读计算值里的 `animation-name` 与 `animation-timeline` 把这件事钉住。
+
+**滚动时间线只在「最近的滚动容器祖先」上解析**，而 `overflow: hidden` 与 `overflow: auto` 都会创建滚动容器 —— 只有 `visible` / `clip` 不会。所以给挂 `view()` 的元素或其祖先写 `overflow: hidden` 会把时间线**截停在元素自己身上**：元素在自身坐标系里永不移动，整条动画冻结，而 `animation-name` / `animation-timeline` 的计算值**依然完全正确**，守卫一条红都不会报。裁切要保留时一律写 `overflow: clip`（裁切绘制的结果与 `hidden` 逐像素相同，只是不创建滚动容器）；封面水印与卡片本体就是这个原因从 `hidden` 改成 `clip` 的，两处**必须同时改**，少一处时间线只爬到卡片、照样冻结。浏览器验收因此不能只读名字，还得在**两个滚动位置上各读一次 `transform` 并比较**。
+
+同一套时间线管五件事：条目卡片按序错峰并给封面水印一点横向景深；图版进入视口时「显影」（`translateY + scale`，不用 `filter`）；首页图版走廊的图片用 `view(inline)` 随**横向**滚动显影（规则必须挂在 `.rail-item .plate` 上，挂 `.rail-item` 无效 —— 时间线来源仍停在走廊本身）；详情页正文 `h2` 在 64rem 以上吸顶（吸附点 3.5rem，比页头实测高度小，靠内的实底背景盖住缝隙）；书页左缘的羽毛笔线与文末的余烬收束。进场区间要铺满整个 `entry` 阶段（`entry 0% entry 100%` 的行程恰好等于元素自身高度），写短了等于「刚探进视口就已演完」；但**不要**用 `cover` 收尾，长页末尾的卡片走不到 `cover`，会永久停在位移中间态。首页序言底部有一枚纯装饰的滚动提示，起伏是时间驱动、让位挂在它的**子元素**上（同一个元素上写两条 `animation` 简写会互相取代）。
+
+跨文档视图过渡里，首页卡片标题与详情页 `h1` 共用同一个 `view-transition-name`（由 `src/pages/plate-sizes.css.ts` 按条目生成，名字必须逐条目唯一），于是点「翻开这一条」时标题是从卡片**形变**到详情页头部，而不是两个页面互相淡出。
 
 减少动态效果模式下，除普通元素动画外，必须**显式**关闭顶层 `::view-transition-*`；全局 `*::before` / `*::after` 规则覆盖不到这棵伪元素树。滚动时间线使用独立 `animation-timeline` 声明，避免简写合并后失效。
 
