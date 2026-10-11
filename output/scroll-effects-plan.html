@@ -1,0 +1,1391 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>滚动交互特效方案 · Ashen Witch's Grimoire</title>
+    <meta
+      name="description"
+      content="对 AshenGrimoire 现有滚动交互的盘点，以及在硬预算与守卫约束下可新增的滚动触发特效建议、落点、优先级与预期收益。"
+    />
+    <style>
+      :root {
+        color-scheme: light;
+        --canvas: #fffdf4;
+        --surface: #ffffff;
+        --card: #ffffff;
+        --card-strong: #f1ebd8;
+        --cloth: #faf7ec;
+        --hairline: #101010;
+        --line: #dcd5c2;
+        --ink: #0a0a0a;
+        --body: #1f1f1f;
+        --muted: #4a4a4a;
+        --coral: #b32d00;
+        --coral-bright: #f04e14;
+        --teal: #0a6169;
+        --amber: #8a5200;
+        --grid: #eae4d0;
+        --shadow: 4px 4px 0 var(--hairline);
+        --font-display: 'Iowan Old Style', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia,
+          'Songti SC', 'Noto Serif CJK SC', 'Source Han Serif SC', serif;
+        --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', 'PingFang SC',
+          'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+        --font-mono: ui-monospace, SFMono-Regular, 'Cascadia Mono', Consolas, 'Liberation Mono',
+          Menlo, monospace;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+        scroll-padding-top: 1.25rem;
+        -webkit-text-size-adjust: 100%;
+      }
+
+      body {
+        margin: 0;
+        background-color: var(--canvas);
+        background-image: repeating-linear-gradient(
+          to right,
+          var(--grid) 0,
+          var(--grid) 1px,
+          transparent 1px,
+          transparent 28px
+        ),
+        repeating-linear-gradient(
+          to bottom,
+          var(--grid) 0,
+          var(--grid) 1px,
+          transparent 1px,
+          transparent 28px
+        );
+        color: var(--body);
+        font-family: var(--font-sans);
+        font-size: 1.0625rem;
+        line-height: 1.75;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      h1,
+      h2,
+      h3 {
+        font-family: var(--font-display);
+        color: var(--ink);
+        font-weight: 400;
+        line-height: 1.2;
+        letter-spacing: -0.01em;
+        text-wrap: balance;
+      }
+
+      a {
+        color: var(--coral);
+      }
+
+      a:focus-visible,
+      summary:focus-visible {
+        outline: 2px solid var(--coral-bright);
+        outline-offset: 2px;
+      }
+
+      code,
+      kbd {
+        font-family: var(--font-mono);
+        font-size: 0.86em;
+        padding: 0.06em 0.34em;
+        border: 1px solid var(--line);
+        border-radius: 0.25rem;
+        background: var(--cloth);
+        color: var(--ink);
+        word-break: break-word;
+      }
+
+      .wrap {
+        max-width: 76rem;
+        margin-inline: auto;
+        padding: 0 1.25rem;
+      }
+
+      .skip {
+        position: absolute;
+        left: 0.75rem;
+        top: -4rem;
+        z-index: 50;
+        padding: 0.6rem 1rem;
+        background: var(--coral-bright);
+        color: #0a0a0a;
+        font-weight: 600;
+        text-decoration: none;
+      }
+
+      .skip:focus {
+        top: 0.5rem;
+      }
+
+      .label {
+        font-family: var(--font-mono);
+        font-size: 0.72rem;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      /* ---------- 页头 ---------- */
+      .masthead {
+        border-bottom: 3px solid var(--hairline);
+        background: var(--surface);
+      }
+
+      .masthead__inner {
+        padding: 2.5rem 0 2rem;
+      }
+
+      .masthead h1 {
+        margin: 0.6rem 0 0;
+        font-size: clamp(1.85rem, 5vw, 2.9rem);
+      }
+
+      .masthead p.lede {
+        margin: 0.9rem 0 0;
+        max-width: 52rem;
+        font-size: 1.05rem;
+        color: var(--body);
+      }
+
+      .meta {
+        display: grid;
+        gap: 0.75rem 1.5rem;
+        grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+        margin: 1.6rem 0 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      .meta li {
+        border-left: 2px solid var(--coral-bright);
+        padding-left: 0.75rem;
+      }
+
+      .meta b {
+        display: block;
+        font-family: var(--font-mono);
+        font-size: 0.72rem;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--muted);
+        font-weight: 400;
+      }
+
+      .meta span {
+        color: var(--ink);
+        font-size: 0.95rem;
+      }
+
+      /* ---------- 布局 ---------- */
+      .layout {
+        display: grid;
+        gap: 2rem;
+        padding: 2rem 0 4rem;
+      }
+
+      @media (min-width: 64rem) {
+        .layout {
+          grid-template-columns: 15rem minmax(0, 1fr);
+          align-items: start;
+        }
+      }
+
+      .toc {
+        position: sticky;
+        top: 1rem;
+        max-height: calc(100vh - 2rem);
+        overflow-y: auto;
+        border: 2px solid var(--hairline);
+        background: var(--surface);
+        padding: 1rem;
+      }
+
+      .toc ol {
+        margin: 0.6rem 0 0;
+        padding-left: 1.2rem;
+      }
+
+      .toc li + li {
+        margin-top: 0.35rem;
+      }
+
+      .toc a {
+        color: var(--muted);
+        text-decoration: none;
+        font-size: 0.92rem;
+      }
+
+      .toc a:hover {
+        color: var(--ink);
+        text-decoration: underline;
+      }
+
+      details.toc-details {
+        border: 2px solid var(--hairline);
+        background: var(--surface);
+        padding: 0.8rem 1rem;
+      }
+
+      details.toc-details summary {
+        cursor: pointer;
+        font-family: var(--font-mono);
+        font-size: 0.8rem;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--ink);
+      }
+
+      @media (min-width: 64rem) {
+        details.toc-details {
+          display: none;
+        }
+      }
+
+      @media (max-width: 63.99rem) {
+        .toc {
+          display: none;
+        }
+      }
+
+      main {
+        min-width: 0;
+      }
+
+      section {
+        margin-top: 2.75rem;
+      }
+
+      section:first-child {
+        margin-top: 0;
+      }
+
+      h2 {
+        font-size: 1.5rem;
+        margin: 0 0 0.5rem;
+        padding-bottom: 0.55rem;
+        border-bottom: 2px solid var(--hairline);
+      }
+
+      h3 {
+        font-size: 1.15rem;
+        margin: 1.8rem 0 0.4rem;
+      }
+
+      p {
+        margin: 0.7rem 0 0;
+      }
+
+      ul.plain,
+      ol.plain {
+        padding-left: 1.3rem;
+        margin: 0.7rem 0 0;
+      }
+
+      ul.plain li + li,
+      ol.plain li + li {
+        margin-top: 0.4rem;
+      }
+
+      .note {
+        border-left: 3px solid var(--teal);
+        background: var(--cloth);
+        padding: 0.75rem 1rem;
+        margin-top: 1rem;
+        font-size: 0.97rem;
+      }
+
+      .warn {
+        border-left: 3px solid var(--coral-bright);
+        background: #fff4ef;
+        padding: 0.75rem 1rem;
+        margin-top: 1rem;
+        font-size: 0.97rem;
+      }
+
+      /* ---------- 表格 ---------- */
+      .table-scroll {
+        overflow-x: auto;
+        margin-top: 1.1rem;
+        border: 2px solid var(--hairline);
+        background: var(--surface);
+      }
+
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        min-width: 44rem;
+        font-size: 0.9rem;
+      }
+
+      caption {
+        caption-side: top;
+        text-align: left;
+        padding: 0.7rem 0.9rem;
+        font-family: var(--font-mono);
+        font-size: 0.72rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--muted);
+        border-bottom: 1px solid var(--line);
+      }
+
+      th,
+      td {
+        border-bottom: 1px solid var(--line);
+        border-right: 1px solid var(--line);
+        padding: 0.6rem 0.8rem;
+        vertical-align: top;
+        text-align: left;
+      }
+
+      th:last-child,
+      td:last-child {
+        border-right: 0;
+      }
+
+      thead th {
+        background: var(--card-strong);
+        color: var(--ink);
+        font-weight: 600;
+        font-size: 0.82rem;
+      }
+
+      tbody tr:last-child td {
+        border-bottom: 0;
+      }
+
+      td.num {
+        font-family: var(--font-mono);
+        font-size: 0.82rem;
+        white-space: nowrap;
+        font-variant-numeric: tabular-nums;
+      }
+
+      /* ---------- 优先级徽标 ---------- */
+      .p {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        font-family: var(--font-mono);
+        font-size: 0.72rem;
+        letter-spacing: 0.06em;
+        padding: 0.15rem 0.5rem;
+        border: 1px solid currentColor;
+        white-space: nowrap;
+      }
+
+      .p--0 {
+        color: var(--coral);
+      }
+
+      .p--1 {
+        color: var(--amber);
+      }
+
+      .p--2 {
+        color: var(--teal);
+      }
+
+      /* ---------- 特效卡片 ---------- */
+      .fx {
+        border: 2px solid var(--hairline);
+        background: var(--surface);
+        margin-top: 1.25rem;
+        box-shadow: var(--shadow);
+      }
+
+      .fx__head {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.6rem 0.9rem;
+        align-items: baseline;
+        justify-content: space-between;
+        padding: 0.85rem 1.1rem;
+        border-bottom: 2px solid var(--hairline);
+        background: var(--cloth);
+      }
+
+      .fx__head h3 {
+        margin: 0;
+        font-size: 1.12rem;
+      }
+
+      .fx__tags {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+
+      .fx__body {
+        padding: 0.4rem 1.1rem 1.1rem;
+      }
+
+      .fx dl {
+        display: grid;
+        gap: 0.2rem 1rem;
+        grid-template-columns: 7.5rem minmax(0, 1fr);
+        margin: 0.9rem 0 0;
+        font-size: 0.94rem;
+      }
+
+      @media (max-width: 34rem) {
+        .fx dl {
+          grid-template-columns: minmax(0, 1fr);
+        }
+      }
+
+      .fx dt {
+        font-family: var(--font-mono);
+        font-size: 0.74rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted);
+        padding-top: 0.22rem;
+      }
+
+      .fx dd {
+        margin: 0;
+      }
+
+      /* ---------- 顺序流程 ---------- */
+      .phases {
+        display: grid;
+        gap: 1rem;
+        margin-top: 1.25rem;
+        padding: 0;
+        list-style: none;
+      }
+
+      @media (min-width: 48rem) {
+        .phases {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+
+      .phase {
+        border: 2px solid var(--hairline);
+        background: var(--surface);
+        padding: 1rem 1.1rem;
+      }
+
+      .phase h3 {
+        margin: 0.3rem 0 0.4rem;
+      }
+
+      .phase p {
+        font-size: 0.94rem;
+        margin-top: 0.4rem;
+      }
+
+      .chain {
+        font-family: var(--font-mono);
+        font-size: 0.82rem;
+        color: var(--ink);
+        line-height: 1.9;
+      }
+
+      footer.doc-foot {
+        border-top: 3px solid var(--hairline);
+        background: var(--surface);
+        padding: 1.5rem 0 3rem;
+        font-size: 0.86rem;
+        color: var(--muted);
+      }
+    </style>
+  </head>
+
+  <body>
+    <a class="skip" href="#main">跳到主要内容</a>
+
+    <header class="masthead">
+      <div class="wrap masthead__inner">
+        <p class="label">滚动交互特效方案 · Scroll FX Plan</p>
+        <h1>让魔典在滚动中活过来</h1>
+        <p class="lede">
+          对 AshenGrimoire 现有滚动交互的一次盘点，以及在这套仓库硬约束下可新增的滚动触发特效：
+          每项给出机制、落点页面位置、实现优先级与预期体验收益，并用同一套预算口径估算代价。
+          目标不是炫技，而是让翻页的人在滑动屏幕时产生「这本书是活的」的沉浸感。
+        </p>
+        <ul class="meta">
+          <li><b>分析范围</b><span>src 全量页面 + global.css + interactions.ts + 三层守卫</span></li>
+          <li><b>基线产物</b><span>dist（已构建）· CSS 43.2 KB · JS gzip 1.66 KB</span></li>
+          <li><b>关键前提</b><span>零新增客户端 JS · 纯 CSS 滚动时间线</span></li>
+          <li><b>风险口径</b><span>不破坏 4 条不变量 · 不落在中间态</span></li>
+        </ul>
+      </div>
+    </header>
+
+    <div class="wrap">
+      <details class="toc-details" open>
+        <summary>本页目录</summary>
+        <nav aria-label="本页目录">
+          <ol>
+            <li><a href="#baseline">一、约束基线：还剩下多少空间</a></li>
+            <li><a href="#audit">二、现状盘点：现有滚动交互做了什么</a></li>
+            <li><a href="#gaps">三、落差：缺的是「分层编排」</a></li>
+            <li><a href="#proposals">四、新增特效建议（9 项）</a></li>
+            <li><a href="#sequence">五、落地顺序与依赖</a></li>
+            <li><a href="#accept">六、验收与守卫更新对照</a></li>
+            <li><a href="#reject">七、明确不做的项</a></li>
+            <li><a href="#open">八、未决问题</a></li>
+          </ol>
+        </nav>
+      </details>
+
+      <div class="layout">
+        <nav class="toc" aria-label="本页目录">
+          <p class="label">本页目录</p>
+          <ol>
+            <li><a href="#baseline">约束基线：还剩下多少空间</a></li>
+            <li><a href="#audit">现状盘点：现有滚动交互</a></li>
+            <li><a href="#gaps">落差：缺的是「分层编排」</a></li>
+            <li><a href="#proposals">新增特效建议（9 项）</a></li>
+            <li><a href="#sequence">落地顺序与依赖</a></li>
+            <li><a href="#accept">验收与守卫更新对照</a></li>
+            <li><a href="#reject">明确不做的项</a></li>
+            <li><a href="#open">未决问题</a></li>
+          </ol>
+        </nav>
+
+        <main id="main">
+          <!-- ============================ 1. 基线 ============================ -->
+          <section id="baseline">
+            <h2>一、约束基线：还剩下多少空间</h2>
+            <p>
+              这个仓库把「能被检查的承诺才算承诺」写进了规矩：所有滚动特效最终都要过
+              <code>pnpm verify</code> 与 <code>pnpm verify:browser</code>。所以先量清楚余量——
+              下面三个数字直接读取自已构建的 <code>dist/</code>，测量口径来自
+              <code>scripts/budget.mjs</code>。
+            </p>
+
+            <div class="table-scroll">
+              <table>
+                <caption>预算余量（基线：本地已构建的 dist/）</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">指标</th>
+                    <th scope="col">契约上限</th>
+                    <th scope="col">当前占用</th>
+                    <th scope="col">剩余余量</th>
+                    <th scope="col">对新增特效的含义</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>CSS 未压缩总量</td>
+                    <td class="num">48 KB</td>
+                    <td class="num">43.2 KB</td>
+                    <td class="num">≈ 5.9 KB</td>
+                    <td>新增样式建议合计 <b>≤ 3 KB</b>，留一半缓冲给后续主题与修复。</td>
+                  </tr>
+                  <tr>
+                    <td>交互脚本 raw</td>
+                    <td class="num">&lt; 4096 B</td>
+                    <td class="num">3745 B</td>
+                    <td class="num">≈ 351 B</td>
+                    <td>
+                      <b>这是最紧的一条。</b>超过它 Astro 就改吐外链脚本，同时踩中「外链 JS 必须为
+                      0」。因此新特效<b>一律零 JS</b>。
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>客户端 JS gzip</td>
+                    <td class="num">≤ 4096 B</td>
+                    <td class="num">1699 B</td>
+                    <td class="num">≈ 2.4 KB</td>
+                    <td>gzip 看似宽松，但被上一条 raw 阈值卡死，实际不可动用。</td>
+                  </tr>
+                  <tr>
+                    <td>首页 HTML</td>
+                    <td class="num">≤ 60 KB</td>
+                    <td class="num">51.8 KB</td>
+                    <td class="num">≈ 9.6 KB</td>
+                    <td>有空间放少量装饰性 DOM（如收束层、滚动提示）。</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="warn">
+              <b>结论先行：</b>特效必须走「CSS 滚动时间线 + 渐进增强」这条路——
+              零脚本、零请求、零行内 <code>style</code>。任何需要滚动监听或状态计算的方案（scrollspy、
+              数字滚动）在当前 JS 余量下都要先做瘦身，本方案默认排除。
+            </div>
+
+            <h3>必须同时遵守的 4 条红线</h3>
+            <ul class="plain">
+              <li>
+                <b>进场只动 <code>transform</code>，绝不动 <code>opacity</code>。</b>
+                <code>.reveal</code> 的每一条规矩都源于此：半透明正文过不了对比度，且时间线未活跃时
+                「从 0 起跑」等于内容永久隐身。浏览器验收会逐个断言收敛到终态。
+              </li>
+              <li>
+                <b>不得给 <code>position: sticky</code> 元素的祖先加 <code>transform</code>。</b>
+                祖先的 transform 会新建包含块，直接废掉页头与阅读页目录的吸附。
+              </li>
+              <li>
+                <b><code>animation-timeline</code> 必须单独一行声明，不并进 <code>animation</code> 简写。</b>
+                Lightning CSS 会把简写压成 Chrome 解析不了的形式，整条动画静默失效。
+              </li>
+              <li>
+                <b>每条动效都要包在 <code>(prefers-reduced-motion: no-preference)</code> 里，
+                并配 <code>@supports (animation-timeline: …)</code>。</b>
+                base 层那条全局兜底只管 <code>*::before/::after</code>，管不住滚动时间线，
+                也管不住 <code>::view-transition-*</code>。
+              </li>
+            </ul>
+          </section>
+
+          <!-- ============================ 2. 现状 ============================ -->
+          <section id="audit">
+            <h2>二、现状盘点：现有滚动交互做了什么</h2>
+            <p>
+              站点已经有 4 处真正的滚动驱动动画，全部纯 CSS、零 JS。先把它们说清楚，
+              新增项才不会重复造轮子或与既有动画抢同一个属性。
+            </p>
+
+            <div class="table-scroll">
+              <table>
+                <caption>现有滚动/转场交互清单（源码位置为近似行号）</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">交互</th>
+                    <th scope="col">触发机制</th>
+                    <th scope="col">代码位置</th>
+                    <th scope="col">视觉表现</th>
+                    <th scope="col">局限</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>分区 / 卡片进场</td>
+                    <td><code>animation-timeline: view()</code>，range <code>entry 0%…30%</code></td>
+                    <td>global.css `.reveal`</td>
+                    <td>元素从下方 12px 归位，局部触发。</td>
+                    <td>幅度小、全部同一节奏（无错峰）、只动 Y、只作用在包裹层。</td>
+                  </tr>
+                  <tr>
+                    <td>阅读进度余烬线</td>
+                    <td><code>scroll(root)</code>，<code>scaleX 0→1</code></td>
+                    <td>global.css `.reading-progress`</td>
+                    <td>顶部 3px 珊瑚→青渐变线随页面推进。</td>
+                    <td>只存在详情页；横线一条，信息量单薄。</td>
+                  </tr>
+                  <tr>
+                    <td>页头抬升投影</td>
+                    <td><code>scroll(root)</code>，range <code>0…56px</code></td>
+                    <td>global.css `.site-header::after`</td>
+                    <td>滚过 56px 后页头下缘长处一道投影 / 粗野主义为实心黑边。</td>
+                    <td>只在首屏一瞬发生，之后是静态的。</td>
+                  </tr>
+                  <tr>
+                    <td>印记苏醒</td>
+                    <td><code>scroll(root)</code>，0–420px / 80–500px</td>
+                    <td>global.css `.hero-sigil__ticks / __seal`</td>
+                    <td>刻度环与封缄随滚动从淡到实「显影」。</td>
+                    <td>只动 opacity；旋转层已占用 transform，不能再叠加滚动位移。</td>
+                  </tr>
+                  <tr>
+                    <td>印记常驻自转 / 呼吸</td>
+                    <td>时间驱动（140s / 96s / 6s / 44s）</td>
+                    <td>global.css `--hero-sigil__*`</td>
+                    <td>双层反向自转 + 核心呼吸 + 光晕漂移。</td>
+                    <td>与滚动无关，是背景而非叙事。</td>
+                  </tr>
+                  <tr>
+                    <td>跨文档整页过渡</td>
+                    <td><code>@view-transition { navigation: auto }</code></td>
+                    <td>global.css 2.6 节</td>
+                    <td>同源跳转时两张快照交叉淡出，与切主题同一只手的动作。</td>
+                    <td>只有根快照淡出，没有「共享元素」的位移——页面之间没有连续性。</td>
+                  </tr>
+                  <tr>
+                    <td>主题切换过渡</td>
+                    <td>JS <code>startViewTransition</code> + 同步改 DOM</td>
+                    <td>interactions.ts `switchTheme`</td>
+                    <td>切换主题交叉淡出，节奏与站内一致。</td>
+                    <td>与滚动无关（但示范了命名组与 reduce 关闭的写法）。</td>
+                  </tr>
+                  <tr>
+                    <td>悬停反馈</td>
+                    <td>只读 hover / pointer: fine</td>
+                    <td>global.css `.sheen / .entry-card:hover`</td>
+                    <td>卡片抬起 3px、掠光横扫、图版描边走强调色。</td>
+                    <td>触屏设备完全没有；不是滚动交互。</td>
+                  </tr>
+                  <tr>
+                    <td>图版走廊</td>
+                    <td><code>scroll-snap-type: x mandatory</code>（用户驱动）</td>
+                    <td>global.css `.rail`</td>
+                    <td>横向吸附浏览截图。</td>
+                    <td>横向滚动本身不驱动任何视觉变化。</td>
+                  </tr>
+                  <tr>
+                    <td>底纹 bloom / 网格</td>
+                    <td>静态 <code>position: fixed</code> 伪元素</td>
+                    <td>global.css `body::before / ::after`</td>
+                    <td>三层径向柔光 + 方格纸纹理。</td>
+                    <td>锚在视口上，滚动时逐像素不变——整页缺少纵深。</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <!-- ============================ 3. 落差 ============================ -->
+          <section id="gaps">
+            <h2>三、落差：缺的是「分层编排」</h2>
+            <p>
+              把上表横向读一遍，能看出一个共同特征：现有动效都是<b>单层、单元素、单属性</b>的——
+              一块内容浮一下、一条线走一下、一个环亮一下。它们各自成立，但彼此之间没有关系，
+              滚动过程中没有「景深」，也没有「事件」。这正好是「惊叹感」与「沉浸感」的来源：
+            </p>
+            <ul class="plain">
+              <li><b>节奏感</b>——相邻元素按序、错峰地进入，而不是整齐划一地出现。</li>
+              <li><b>景深感</b>——前景（文字）稳定可读，中景（卡片封面、图版）随滚动位移，背景（底纹）缓移。</li>
+              <li><b>连续性</b>——页面之间不是切换，而是同一个物件被「翻」过去。</li>
+            </ul>
+            <p>
+              下面 9 项建议按这三条落差组织，并严格落在「纯 CSS + 零 JS + 预算内」的框里。
+            </p>
+          </section>
+
+          <!-- ============================ 4. 建议 ============================ -->
+          <section id="proposals">
+            <h2>四、新增特效建议（9 项）</h2>
+            <p>
+              每项给出：<b>落点</b>（改哪个页面/区块）、<b>机制</b>（怎样实现）、
+              <b>优先级</b>（P0 先做 / P1 结构增强 / P2 打磨）、<b>预算</b>（CSS 字节量级）、
+              <b>收益</b>（读者拿到什么）、<b>守卫影响</b>（会不会动到验收）。
+            </p>
+
+            <!-- E1 -->
+            <article class="fx" id="e1">
+              <div class="fx__head">
+                <h3>E1 · 条目卡片错峰入场 + 封面纵深视差</h3>
+                <div class="fx__tags">
+                  <span class="p p--0">P0</span>
+                  <span class="label">首页 #entries</span>
+                </div>
+              </div>
+              <div class="fx__body">
+                <p>
+                  现在 4 张卡片以完全相同的节奏、相同的 12px 上浮进场。改为<b>按序错峰</b>：
+                  用 <code>:nth-child()</code> 给每张卡一个更大的 <code>animation-range</code>
+                  起点，形成一道由上到下的波。同时给卡片<b>内部</b>加纵深——封面的纹样与水印数字
+                  用 <code>view()</code> 驱动轻微横向位移，卡片经过视口中心时最快、到边缘时归位。
+                </p>
+                <dl>
+                  <dt>机制</dt>
+                  <dd>
+                    外层沿用 <code>.reveal</code>（只动 transform）；错峰靠逐条 <code>animation-range</code>
+                    覆盖，或引入 <code>--stagger</code> 变量配合 <code>calc()</code>。
+                    封面纵深作用在 <code>.cover::before</code> 与 <code>.cover-numeral</code>——
+                    它们目前是静态纹样，加 transform 不改布局、不动对比度。
+                  </dd>
+                  <dt>预算</dt>
+                  <dd class="num">≈ 250–450 B CSS · 0 JS</dd>
+                  <dt>收益</dt>
+                  <dd>首屏以下第一个「呼吸点」：列表从整齐地浮变成逐张翻开，是低成本高感知的一档。</dd>
+                  <dt>守卫影响</dt>
+                  <dd>
+                    无。<code>.reveal</code> 仍只动 transform，收敛终态断言照旧通过；
+                    卡片外层不是 sticky 祖先。
+                  </dd>
+                </dl>
+              </div>
+            </article>
+
+            <!-- E2 -->
+            <article class="fx" id="e2">
+              <div class="fx__head">
+                <h3>E2 · 详情页图版「显影」进场</h3>
+                <div class="fx__tags">
+                  <span class="p p--0">P0</span>
+                  <span class="label">projects/[slug] #plates</span>
+                </div>
+              </div>
+              <div class="fx__body">
+                <p>
+                  详情页的截图现在就是一块贴上去的图。给每个 <code>figure.plate-figure</code> 一个
+                  <code>view()</code> 时间线：进入视口时从 <code>scale(0.97)</code> 舒展到 1，
+                  描边与柔光同时点到自己条目的强调色（读现有的
+                  <code>--entry-accent</code>）——像照片在显影液里慢慢清晰。
+                </p>
+                <dl>
+                  <dt>机制</dt>
+                  <dd>
+                    <code>animation-timeline: view(); animation-range: entry 0% entry 60%;</code>，
+                    动画只写 <code>transform: scale()</code> 与 <code>border-color</code> /
+                    <code>box-shadow</code>。建议<b>不用</b> <code>filter</code> 或
+                    <code>mask</code>：前者会强迫每帧重绘整棵子树，后者在滚动中不便宜。
+                  </dd>
+                  <dt>预算</dt>
+                  <dd class="num">≈ 300 B CSS · 0 JS</dd>
+                  <dt>收益</dt>
+                  <dd>详情页最强的沉浸点：图版不再是「文档插图」，而是随滚动显影的一页魔典。</dd>
+                  <dt>守卫影响</dt>
+                  <dd>
+                    注意 390px 窄屏不得横向溢出（<code>scale ≤ 1</code> 天然安全）；
+                    图片真实宽高不改，跳版断言不受影响。
+                  </dd>
+                </dl>
+              </div>
+            </article>
+
+            <!-- E3 -->
+            <article class="fx" id="e3">
+              <div class="fx__head">
+                <h3>E3 · 序言印记「苏醒」强化</h3>
+                <div class="fx__tags">
+                  <span class="p p--0">P0</span>
+                  <span class="label">首页 hero · SigilPlate</span>
+                </div>
+              </div>
+              <div class="fx__body">
+                <p>
+                  印记已经会「显影」，但只有 opacity。再补两笔：外圈那条虚线环用
+                  <code>stroke-dashoffset</code> 随滚动<b>把描边画出来</b>（像阵在成形），
+                  光晕 <code>.hero-sigil__aura</code> 随滚动放大并提亮。这是面试官第一眼看到的区块，
+                  值得做成一次「开场仪式」。
+                </p>
+                <dl>
+                  <dt>机制</dt>
+                  <dd>
+                    新增的滚动驱动量必须落在<b>尚未被占用的属性/元素</b>上：
+                    刻度环与符文层已被旋转占用 <code>transform</code>，只能继续动 opacity；
+                    缩放/位移改由 <code>.hero-sigil__aura</code> 与虚线环的
+                    <code>stroke-dashoffset</code> 承担。全部限定 <code>min-width: 48rem</code>
+                    （窄屏印记在正文下方，页面高度不保证能滚）。
+                  </dd>
+                  <dt>预算</dt>
+                  <dd class="num">≈ 200–350 B CSS · 0 JS</dd>
+                  <dt>收益</dt>
+                  <dd>首屏即叙事：阵在读者面前逐步成形，把「魔典」的主题在第一秒立住。</dd>
+                  <dt>守卫影响</dt>
+                  <dd>
+                    只动装饰层，不承载文字；48rem 门限沿用现有写法，窄屏仍是可见终态。
+                  </dd>
+                </dl>
+              </div>
+            </article>
+
+            <!-- E4 -->
+            <article class="fx" id="e4">
+              <div class="fx__head">
+                <h3>E4 · 卡片 → 详情页 共享元素过渡</h3>
+                <div class="fx__tags">
+                  <span class="p p--1">P1</span>
+                  <span class="label">跨页 · 最高「哇」值</span>
+                </div>
+              </div>
+              <div class="fx__body">
+                <p>
+                  站点已经开了跨文档视图过渡，但只是根快照淡出——页面之间没有连续性。
+                  给<b>卡片的标题与字形标记</b>和<b>详情页头部的标题</b>配同一组
+                  <code>view-transition-name: entry-&lt;slug&gt;</code>，于是点「翻开这一条」时，
+                  标题不是「跳过去」，而是从卡片位置<b>飞进</b>详情页头部——同一本书翻页，而不是两个页面。
+                </p>
+                <dl>
+                  <dt>机制</dt>
+                  <dd>
+                    名字由构建期的 slug 类名生成（<code>.entry-card--&lt;slug&gt;</code> 之类），
+                    CSS 里设 <code>view-transition-name</code>，两个页面各声明一半。
+                    不写行内 <code>style</code>，因此不触碰 CSP。命名组与
+                    <code>::view-transition-group(){animation:none}</code> 的用法，
+                    <code>.reading-progress</code> 已经示范过。
+                  </dd>
+                  <dt>预算</dt>
+                  <dd class="num">≈ 200–400 B CSS · 0 JS</dd>
+                  <dt>收益</dt>
+                  <dd>
+                    这是最能被记住的一项：面试官点一次就能看到「机制感」——
+                    说明作者真正理解跨文档视图过渡，而不仅是会用模板。
+                  </dd>
+                  <dt>守卫影响</dt>
+                  <dd>
+                    <b>需要新增浏览器断言</b>（否则等于「写了但没人验证它生效」）：
+                    断言目标页存在同名快照组、且 reduce 下退化为普通导航。
+                    现有 reduce 块已经 <code>animation: none !important</code> 关掉全部
+                    <code>::view-transition-*</code>，新组会自动被覆盖，但必须实测确认不残留。
+                  </dd>
+                </dl>
+              </div>
+            </article>
+
+            <!-- E5 -->
+            <article class="fx" id="e5">
+              <div class="fx__head">
+                <h3>E5 · 详情页章节吸顶</h3>
+                <div class="fx__tags">
+                  <span class="p p--1">P1</span>
+                  <span class="label">projects/[slug] 正文 h2</span>
+                </div>
+              </div>
+              <div class="fx__body">
+                <p>
+                  长文详情页里，读者常常滚到一半就不知道自己在第几节。把正文的
+                  <code>h2</code> 做成<b>吸顶章节头</b>（<code>position: sticky</code>），
+                  吸附在页头下方，并配一道余烬分隔线——「可翻的魔典」的隐喻由此落到实处。
+                </p>
+                <dl>
+                  <dt>机制</dt>
+                  <dd>
+                    纯 <code>position: sticky</code>，零 JS。关键约束：该元素<b>不能</b>有带
+                    <code>transform</code> 的祖先（所以不能放进 <code>.reveal</code> 包裹层——
+                    详情页正文本来也没有，安全）；吸附位置要避开
+                    <code>scroll-padding-top</code> 已设的 5.5rem 页头高度。
+                  </dd>
+                  <dt>预算</dt>
+                  <dd class="num">≈ 200 B CSS · 0 JS</dd>
+                  <dt>收益</dt>
+                  <dd>阅读体感的直接改善，也是「沉浸」而非「炫技」的那一类——适合放进面试讲解的取舍部分。</dd>
+                  <dt>守卫影响</dt>
+                  <dd>
+                    <code>reading-contracts.mjs</code> 会检查阅读页无横向溢出；吸顶头宽度需
+                    <code>min-width: 0</code> 收敛，实测确认。
+                  </dd>
+                </dl>
+              </div>
+            </article>
+
+            <!-- E6 -->
+            <article class="fx" id="e6">
+              <div class="fx__head">
+                <h3>E6 · 页底「合上书」收束</h3>
+                <div class="fx__tags">
+                  <span class="p p--1">P1</span>
+                  <span class="label">详情页页尾（可选延到首页）</span>
+                </div>
+              </div>
+              <div class="fx__body">
+                <p>
+                  滚到文章结尾时，让一枚装饰性的余烬柔光/封缄印记随
+                  <code>scroll(root)</code> 的最后一段淡入，同时底纹网格略微隐去——
+                  给阅读一个「仪式性」的收尾，而不是文字戛然而止。
+                </p>
+                <dl>
+                  <dt>机制</dt>
+                  <dd>
+                    新增一层 <code>aria-hidden</code> 的装饰 DOM，用相对 <code>max scroll</code>
+                    的 scroll 时间线驱动 opacity；底纹复用 <code>body::after</code>，
+                    在其 mask 上叠加滚动驱动的透明度。装饰层动 opacity 是允许的（不承载文字）。
+                  </dd>
+                  <dt>预算</dt>
+                  <dd class="num">≈ 250 B CSS + 少量 DOM · 0 JS</dd>
+                  <dt>收益</dt>
+                  <dd>长文的「读完感」——把一次浏览变成一次有始有终的翻阅。</dd>
+                  <dt>守卫影响</dt>
+                  <dd>首页 HTML 余量约 9.6 KB，DOM 成本可忽略；装饰层必须 <code>aria-hidden</code>。</dd>
+                </dl>
+              </div>
+            </article>
+
+            <!-- E7 -->
+            <article class="fx" id="e7">
+              <div class="fx__head">
+                <h3>E7 · 阅读页左缘「羽毛笔」进度线</h3>
+                <div class="fx__tags">
+                  <span class="p p--2">P2</span>
+                  <span class="label">详情页 reading-sheet</span>
+                </div>
+              </div>
+              <div class="fx__body">
+                <p>
+                  顶部那条横线继续保留，另在书页左缘加一条纵向余烬线，用同一份
+                  <code>scroll(root)</code> 时间线驱动 <code>scaleY</code>——
+                  横向告诉「读到哪里」，纵向告诉「这一页有多长」，两条互为呼应。
+                </p>
+                <dl>
+                  <dt>机制</dt>
+                  <dd>新增 <code>.reading-ember</code>，只动 transform；与横线共用同一时间线区间。</dd>
+                  <dt>预算</dt>
+                  <dd class="num">≈ 200 B CSS · 0 JS</dd>
+                  <dt>收益</dt>
+                  <dd>书页的物理感；纯增量、可随时撤除。</dd>
+                  <dt>守卫影响</dt>
+                  <dd>不影响既有进度线断言（那是横线单独的 transform）。</dd>
+                </dl>
+              </div>
+            </article>
+
+            <!-- E8 -->
+            <article class="fx" id="e8">
+              <div class="fx__head">
+                <h3>E8 · 图版走廊横向视差 + 图鉴格错峰</h3>
+                <div class="fx__tags">
+                  <span class="p p--2">P2</span>
+                  <span class="label">首页图版段 · /grimoire/</span>
+                </div>
+              </div>
+              <div class="fx__body">
+                <p>
+                  图版走廊内的图片随纵向滚动做轻微位移/缩放（廊本身仍是用户横向滑动），
+                  <code>/grimoire/</code> 的三格样品按序错峰入场。让展示页也有节奏。
+                </p>
+                <dl>
+                  <dt>机制</dt>
+                  <dd>
+                    <code>.rail-item .plate</code> 用 <code>view()</code>；
+                    图鉴格沿用 E1 的错峰手法。
+                  </dd>
+                  <dt>预算</dt>
+                  <dd class="num">≈ 200 B CSS · 0 JS</dd>
+                  <dt>收益</dt>
+                  <dd>次要页面的完成度；成本极低。</dd>
+                  <dt>守卫影响</dt>
+                  <dd>
+                    保持走廊 <code>overflow-x: auto</code> 与内层滚动，不得撑宽页面——
+                    这是既有硬约束。
+                  </dd>
+                </dl>
+              </div>
+            </article>
+
+            <!-- E9 -->
+            <article class="fx" id="e9">
+              <div class="fx__head">
+                <h3>E9 · 序言滚动提示 + 底纹微视差</h3>
+                <div class="fx__tags">
+                  <span class="p p--2">P2</span>
+                  <span class="label">首页 hero · body 底纹</span>
+                </div>
+              </div>
+              <div class="fx__body">
+                <p>
+                  首屏底部放一个 <code>aria-hidden</code> 的滚动提示（CSS 自走的箭头），
+                  在滚动 0→120px 内淡出；同时让 <code>body::after</code> 的方格纸随滚动做极小幅
+                  <code>translate</code>，制造「纸在滑动」的视差。这是「半屏即退出」的第一印象信号。
+                </p>
+                <dl>
+                  <dt>机制</dt>
+                  <dd>
+                    提示用 <code>scroll(root)</code> range <code>0…120px</code> 控 opacity；
+                    底纹是 <code>fixed</code>，加 transform 不参与布局。幅度要小到不引起眩晕。
+                  </dd>
+                  <dt>预算</dt>
+                  <dd class="num">≈ 250 B CSS + 极小 DOM · 0 JS</dd>
+                  <dt>收益</dt>
+                  <dd>引导首次访客开始滚动，是全站「有交互」的第一个暗示。</dd>
+                  <dt>守卫影响</dt>
+                  <dd>reduce 下必须完全静态（箭头仍在，只是不动）。</dd>
+                </dl>
+              </div>
+            </article>
+          </section>
+
+          <!-- ============================ 5. 顺序 ============================ -->
+          <section id="sequence">
+            <h2>五、落地顺序与依赖</h2>
+            <p>
+              顺序按「先零风险铺垫，再结构增强，最后跨页机制与打磨」组织。
+              同一阶段内各项互不依赖，可并行；跨阶段存在真实依赖，已在下面标出。
+            </p>
+
+            <ol class="phases">
+              <li class="phase">
+                <p class="label">阶段 A · 零风险铺垫</p>
+                <h3>E1 → E2 → E3</h3>
+                <p>
+                  三项都是独立、纯 CSS、只读既有 token 的增强，改完可直接跑
+                  <code>pnpm assert:budgets</code> 看余量。做完这一阶段，首页与详情页的滚动体感已经完全不同。
+                </p>
+                <p class="chain">依赖：无</p>
+              </li>
+              <li class="phase">
+                <p class="label">阶段 B · 结构增强</p>
+                <h3>E5 → E6 → E7</h3>
+                <p>
+                  引入 sticky 章节头与阅读收束，涉及少量 DOM 与布局，需要连带跑浏览器验收
+                  （横向溢出、sticky 生效、reduce 终态）。
+                </p>
+                <p class="chain">依赖：无（但与 A 共享预算，建议 A 先合并再估余量）</p>
+              </li>
+              <li class="phase">
+                <p class="label">阶段 C · 跨页机制</p>
+                <h3>E4</h3>
+                <p>
+                  最高价值也最需要验证的一项。依赖首页卡片结构（slug 类名）已稳定；
+                  必须同时新增浏览器断言，否则属于「写了没生效」。
+                </p>
+                <p class="chain">依赖：E1 的卡片结构稳定 → E4</p>
+              </li>
+              <li class="phase">
+                <p class="label">阶段 D · 打磨</p>
+                <h3>E8 → E9</h3>
+                <p>次要页面与首屏细节，可在主体稳定后收尾。</p>
+                <p class="chain">依赖：E1（复用错峰写法）</p>
+              </li>
+            </ol>
+
+            <div class="table-scroll">
+              <table>
+                <caption>优先级与代价一览</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">编号</th>
+                    <th scope="col">特效</th>
+                    <th scope="col">落点</th>
+                    <th scope="col">优先级</th>
+                    <th scope="col">CSS 量级</th>
+                    <th scope="col">JS</th>
+                    <th scope="col">预期体验收益</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="num">E1</td>
+                    <td>卡片错峰 + 封面视差</td>
+                    <td>首页 #entries</td>
+                    <td><span class="p p--0">P0</span></td>
+                    <td class="num">≈ 250–450 B</td>
+                    <td class="num">0</td>
+                    <td>高（首屏以下第一印象）</td>
+                  </tr>
+                  <tr>
+                    <td class="num">E2</td>
+                    <td>图版显影</td>
+                    <td>详情页 #plates</td>
+                    <td><span class="p p--0">P0</span></td>
+                    <td class="num">≈ 300 B</td>
+                    <td class="num">0</td>
+                    <td>高（详情页最强沉浸点）</td>
+                  </tr>
+                  <tr>
+                    <td class="num">E3</td>
+                    <td>印记苏醒强化</td>
+                    <td>首页 hero</td>
+                    <td><span class="p p--0">P0</span></td>
+                    <td class="num">≈ 200–350 B</td>
+                    <td class="num">0</td>
+                    <td>高（第一秒立题）</td>
+                  </tr>
+                  <tr>
+                    <td class="num">E4</td>
+                    <td>卡片→详情共享元素过渡</td>
+                    <td>跨页</td>
+                    <td><span class="p p--1">P1</span></td>
+                    <td class="num">≈ 200–400 B</td>
+                    <td class="num">0</td>
+                    <td>最高（机制感、最易被记住）</td>
+                  </tr>
+                  <tr>
+                    <td class="num">E5</td>
+                    <td>章节吸顶</td>
+                    <td>详情页正文</td>
+                    <td><span class="p p--1">P1</span></td>
+                    <td class="num">≈ 200 B</td>
+                    <td class="num">0</td>
+                    <td>中高（长文阅读体感）</td>
+                  </tr>
+                  <tr>
+                    <td class="num">E6</td>
+                    <td>页底收束</td>
+                    <td>详情页页尾</td>
+                    <td><span class="p p--1">P1</span></td>
+                    <td class="num">≈ 250 B</td>
+                    <td class="num">0</td>
+                    <td>中高（读完感）</td>
+                  </tr>
+                  <tr>
+                    <td class="num">E7</td>
+                    <td>左缘进度线</td>
+                    <td>详情页</td>
+                    <td><span class="p p--2">P2</span></td>
+                    <td class="num">≈ 200 B</td>
+                    <td class="num">0</td>
+                    <td>中（物理感）</td>
+                  </tr>
+                  <tr>
+                    <td class="num">E8</td>
+                    <td>走廊视差 / 图鉴错峰</td>
+                    <td>首页 · /grimoire/</td>
+                    <td><span class="p p--2">P2</span></td>
+                    <td class="num">≈ 200 B</td>
+                    <td class="num">0</td>
+                    <td>中（次要页完成度）</td>
+                  </tr>
+                  <tr>
+                    <td class="num">E9</td>
+                    <td>滚动提示 + 底纹视差</td>
+                    <td>首页 hero · 底纹</td>
+                    <td><span class="p p--2">P2</span></td>
+                    <td class="num">≈ 250 B</td>
+                    <td class="num">0</td>
+                    <td>中（开始滚动的信号）</td>
+                  </tr>
+                  <tr>
+                    <td class="num">合计</td>
+                    <td>9 项全部落地</td>
+                    <td>—</td>
+                    <td>—</td>
+                    <td class="num">≈ 2.1–2.5 KB</td>
+                    <td class="num">0</td>
+                    <td>仍在 5.9 KB CSS 余量之内</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <!-- ============================ 6. 验收 ============================ -->
+          <section id="accept">
+            <h2>六、验收与守卫更新对照</h2>
+            <p>
+              这个仓库的规矩是：新增的每条承诺都要有检查盯着。多数滚动特效复用现有机制，
+              因此天然被既有断言覆盖；只有 E4 需要真正新增断言。
+            </p>
+
+            <div class="table-scroll">
+              <table>
+                <caption>每项与守卫/验收脚本的关系</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">特效</th>
+                    <th scope="col">被哪条既有检查覆盖</th>
+                    <th scope="col">是否需新增断言</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>E1 卡片错峰 + 封面视差</td>
+                    <td>verify-browser「每个 .reveal 收敛到可见终态（transform 归位、完全不透明）」</td>
+                    <td>否（若封面视差动 opacity 则会破，务必只动 transform）</td>
+                  </tr>
+                  <tr>
+                    <td>E2 图版显影</td>
+                    <td>reading-contracts 的横向溢出检查 + 图片真实宽高</td>
+                    <td>否</td>
+                  </tr>
+                  <tr>
+                    <td>E3 印记苏醒</td>
+                    <td>reduce 下「没有元素停在位移中间态」；仅动 opacity 的既有约束</td>
+                    <td>否</td>
+                  </tr>
+                  <tr>
+                    <td>E4 共享元素过渡</td>
+                    <td>现有 <code>::view-transition-*</code> 的 reduce 关闭断言（覆盖全组）</td>
+                    <td><b>是</b>：新增「翻页后同名快照组存在 / reduce 下退化为普通导航」断言</td>
+                  </tr>
+                  <tr>
+                    <td>E5 章节吸顶</td>
+                    <td>reading-contracts 无横向溢出 + sticky 生效</td>
+                    <td>建议补一条「h2 吸顶后仍位于页头之下」</td>
+                  </tr>
+                  <tr>
+                    <td>E6 页底收束</td>
+                    <td>装饰层 <code>aria-hidden</code>、首页 HTML 字节预算</td>
+                    <td>否</td>
+                  </tr>
+                  <tr>
+                    <td>E7 左缘进度线</td>
+                    <td>reading-contracts 已真滚一遍读 transform</td>
+                    <td>否</td>
+                  </tr>
+                  <tr>
+                    <td>E8 走廊视差 / 图鉴错峰</td>
+                    <td>「走廊只用内层滚动、不撑宽页面」</td>
+                    <td>否</td>
+                  </tr>
+                  <tr>
+                    <td>E9 滚动提示 + 底纹</td>
+                    <td>reduce 下内容照常渲染、无横向滚动</td>
+                    <td>否</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="note">
+              <b>每次落地的固定流程：</b>改完先跑 <code>pnpm assert:budgets</code> 看 CSS 实际余量，
+              再跑 <code>pnpm verify</code>（含静态反例），涉及布局或 sticky 的改动再跑
+              <code>pnpm verify:browser:local</code>。不要只凭开发服务器能打开就判断通过。
+            </div>
+          </section>
+
+          <!-- ============================ 7. 不做 ============================ -->
+          <section id="reject">
+            <h2>七、明确不做的项</h2>
+            <p>以下方案在别处很常见，但在本仓库的约束下不值得做——列出来是为了避免反复讨论。</p>
+            <ul class="plain">
+              <li>
+                <b>全页 scroll-snap 吸附。</b>中文长文按屏吸附会打断持续阅读，窄屏与触控板容易误触，
+                且与 <code>scroll-behavior: smooth</code> 和锚点跳转相互干扰。
+              </li>
+              <li>
+                <b>数字条 count-up 计数动画。</b>需要 JS 定时器，而交互脚本 raw 只剩 351 字节——
+                要做就得先瘦身别处，性价比低。
+              </li>
+              <li>
+                <b>目录 scrollspy 高亮。</b>需要滚动监听。用 E5 的吸顶章节头替代，
+                零 JS 就能解决「读到哪一节」。
+              </li>
+              <li>
+                <b>正文/标题 opacity 从 0 渐入。</b>违反对比度契约，且时间线未活跃时等于内容隐身——
+                与本仓库「绝不落在中间态」的取舍直接冲突。
+              </li>
+              <li>
+                <b>给 sticky 元素祖先加 transform 的视差。</b>会新建包含块并废掉吸附，属于硬红线。
+              </li>
+              <li>
+                <b>用 <code>filter</code> / <code>mask</code> 做图版「模糊显影」。</b>
+                每帧重绘成本高，且对比度不可控；E2 用 scale + 描边已经足够。
+              </li>
+            </ul>
+          </section>
+
+          <!-- ============================ 8. 未决 ============================ -->
+          <section id="open">
+            <h2>八、未决问题</h2>
+            <p>需要在动工前拍板的两件事，以及落地时要实测确认的三个点：</p>
+            <ul class="plain">
+              <li>
+                <b>是否接受为 E4 新增浏览器断言？</b>这与仓库「能被检查的承诺才算承诺」一致，
+                建议接受；否则 E4 会沦为无法验证的装饰。
+              </li>
+              <li>
+                <b>E5 吸顶章节头是否要在移动端也开启？</b>窄屏页头会换行变高，吸附点需要按视口重算，
+                可先只在 <code>≥ 64rem</code> 开启。
+              </li>
+              <li>
+                <b>待实测：</b>E4 的跨文档共享元素在 <code>prefers-reduced-motion: reduce</code> 下
+                是否完全退化为普通导航（预期由现有 reduce 块覆盖，但需真跑一遍确认无残留快照）。
+              </li>
+              <li>
+                <b>待实测：</b>E2 与 E5 在 390px 窄屏下是否引入横向溢出
+                （<code>reading-contracts.mjs</code> 会逐页断言）。
+              </li>
+              <li>
+                <b>待实测：</b>E1/E3/E9 叠加后，首页滚动是否出现主线程卡顿——
+                所有项都只动 transform/opacity 以保证走合成层，但仍需在低端设备上目测。
+              </li>
+            </ul>
+          </section>
+        </main>
+      </div>
+    </div>
+
+    <footer class="doc-foot">
+      <div class="wrap">
+        <p>
+          依据的仓库：<code>F:\WorkSpace\Ashen-Witch\AshenGrimoire</code> ·
+          阅读范围：<code>src/</code> 全部页面与组件、<code>src/styles/global.css</code>、
+          <code>src/scripts/interactions.ts</code>、<code>scripts/budget.mjs</code>、
+          <code>check-site.mjs</code>、<code>verify-browser.mjs</code> 与浏览器契约。
+        </p>
+        <p>
+          预算数字取自本地已构建的 <code>dist/</code>；（CSS 总量与脚本 raw/gzip 为实测值）。
+          落地后请以 <code>pnpm assert:budgets</code> 的实时输出为准，本页数字会随之过期。
+        </p>
+      </div>
+    </footer>
+  </body>
+</html>
