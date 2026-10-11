@@ -137,6 +137,34 @@ test("@layer 里嵌套的 reduce 块不算顶层（否则会在错误的地方�
   assert.equal(reducedMotionBlocks(css).length, 0);
 });
 
+const transitionSelectors = ["group", "old", "new"].map(kind => `::view-transition-${kind}(*)`);
+const reduceRule = body => `@media (prefers-reduced-motion: reduce) { ${body} }`;
+const disableTransitions = `${transitionSelectors.join(',')} { animation: none !important; }`;
+for (const [label, css] of [
+  ["无关规则的 animation:none", reduceRule(`::view-transition-old(*){opacity:1}.unrelated{animation:none}`)],
+  ...transitionSelectors.map(missing => [`遗漏 ${missing}`, reduceRule(`${transitionSelectors.filter(s => s !== missing).join(',')}{animation:none!important}`)]),
+  ["只覆盖 root，漏掉共享元素", reduceRule(disableTransitions.replaceAll('(*)', '(root)'))],
+  ["关闭声明在注释里", reduceRule(`${transitionSelectors.join(',')}{/* animation:none!important */}`)],
+  ["声明位于普通媒体查询", `@media (min-width:1px){${disableTransitions}}`],
+  ["reduce 只在部分宽度生效", `@media (prefers-reduced-motion:reduce) and (min-width:1000px){${disableTransitions}}`],
+  ["声明位于条件 supports 分支", reduceRule(`@supports (display:grid){${disableTransitions}}`)],
+  ["字符串内容不能充当声明", reduceRule(`${transitionSelectors.join(',')}{content:'animation:none'}`)],
+  ["同一规则的重要声明被覆盖", reduceRule(`${transitionSelectors.join(',')}{animation:none!important;animation-name:fade!important}`)],
+  ["后续规则重新启用动画", reduceRule(`${disableTransitions}::view-transition-new(*){animation:fade!important}`)],
+  ["语法损坏时失败关闭", reduceRule(`${transitionSelectors.join(',')}{animation:none!important;`) ],
+]) {
+  test(`reduce 守卫反例：${label}`, () => assert.equal(closesViewTransitionUnderReducedMotion(css), false));
+}
+
+test("reduce 守卫接受分开的有效规则，并遵守声明的重要性", () => {
+  assert.equal(closesViewTransitionUnderReducedMotion(reduceRule(
+    transitionSelectors.map(selector => `${selector}{animation-name:none!important;animation:fade}`).join(''),
+  )), true);
+  assert.equal(closesViewTransitionUnderReducedMotion(reduceRule(
+    `${disableTransitions}::view-transition-new(*){animation:fade}`,
+  )), true);
+});
+
 /* ------------------------------------------------------------ 对比度矩阵 */
 test("真实样式表：每套主题的 token 键集合一致，且矩阵全过", async () => {
   const css = await readFile(path.join(ROOT, "src", "styles", "global.css"), "utf8");

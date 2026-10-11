@@ -9,6 +9,15 @@ node_modules/
 # 素材流水线的中间产物（原始截图与 Chrome 日志）
 .assets-raw/
 
+# 本地设计候选、预览记录与审查报告（不参与构建）
+/output/
+/REPAIR_REPORT.md
+
+# 本地代理说明与编辑器配置
+/AGENTS.md
+/CLAUDE.md
+/.vscode/
+
 # 工作区数据（记忆 / 计划等本地文件）。
 # 必须忽略：Tailwind 4 的自动源探测会扫描所有未被 gitignore 的文件，
 # 于是记忆文档里的散文一旦出现 outline / flex 这类词，就会被当成工具类
@@ -23,7 +32,9 @@ pnpm-debug.log*
 
 # 环境变量
 .env
-.env.production
+.env.*
+!.env.example
+!.env.*.example
 
 # 系统与编辑器
 .DS_Store
@@ -32,3 +43,13 @@ Thumbs.db
 
 # Python test/import cache
 __pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+
+# 工具缓存、覆盖率与临时验收输出
+.cache/
+.pnpm-store/
+coverage/
+test-results/
+playwright-report/

@@ -61,6 +61,7 @@ if (THEMES.length < 2) {
 }
 
 const SHOTS = path.join(ROOT, ".assets-raw", "verify");
+const screenshotEvidence = [];
 
 const baseIndex = process.argv.indexOf("--base");
 let BASE = baseIndex !== -1 ? process.argv[baseIndex + 1] : null;
@@ -227,11 +228,14 @@ class Cdp {
   }
 
   async screenshot(file) {
+    const state = await this.evaluate(`({url:location.href,theme:document.documentElement.dataset.theme,
+      viewport:{width:innerWidth,height:innerHeight,scale:devicePixelRatio},scroll:{x:scrollX,y:scrollY}})`);
     const { data } = await this.send("Page.captureScreenshot", {
       format: "png",
       captureBeyondViewport: false,
     });
     await writeFile(file, Buffer.from(data, "base64"));
+    screenshotEvidence.push({ file: path.basename(file), ...state });
   }
 
   close() {
@@ -634,6 +638,8 @@ try {
     }
 
     // 窄屏
+    await cdp.evaluate(`document.documentElement.dataset.theme=${JSON.stringify(DEFAULT_THEME)}`);
+    await sleep(400);
     await cdp.send("Emulation.setDeviceMetricsOverride", {
       width: 390,
       height: 844,
@@ -641,6 +647,8 @@ try {
       mobile: true,
     });
     await sleep(250);
+    check(await cdp.evaluate(`document.documentElement.dataset.theme===${JSON.stringify(DEFAULT_THEME)}`),
+      `${route.path} 粗野主义移动端测量与截图使用正确主题`);
 
     // 先在粗野主义下量一次横向滚动：硬阴影向右下探出，是这套主题唯一真实的
     // 溢出风险，而只在默认主题下量是量不到它的。
@@ -1775,6 +1783,31 @@ try {
     `reduce 下主题切换照常生效并记住选择（${reduceBefore.theme} → ${reduceAfter.theme} / ${reduceAfter.source}）`,
   );
   check(!reduceOverflow, "reduce 下切换主题不会撑出横向滚动");
+  const reducedTransitions = await cdp.evaluate(`(async () => {
+    const original=Document.prototype.startViewTransition;
+    let sampled;
+    Document.prototype.startViewTransition=function(callback) {
+      const transition=original.call(this,callback);
+      sampled=transition.ready.then(async()=>{
+        const names=new Set(['root',...Array.from(document.querySelectorAll('*'),e=>getComputedStyle(e).viewTransitionName)
+          .filter(name=>name&&name!=='none'&&name!=='auto')]);
+        const facts=[...names].flatMap(name=>['group','old','new'].map(kind=>{
+          const pseudo='::view-transition-'+kind+'('+name+')';
+          return {pseudo,animation:getComputedStyle(document.documentElement,pseudo).animationName};
+        }));
+        await transition.finished;
+        return facts;
+      });
+      return transition;
+    };
+    try {
+      const target=[...document.querySelectorAll('[data-theme-opt]')].find(e=>e.dataset.themeOpt!==document.documentElement.dataset.theme);
+      target.click();
+      return await sampled;
+    } finally { Document.prototype.startViewTransition=original; }
+  })()`);
+  check(reducedTransitions?.length >= 3 && reducedTransitions.every(p => p.animation === 'none'),
+    "reduce 下真实主题切换的根与共享元素视图过渡动画全部关闭", JSON.stringify(reducedTransitions));
   await cdp.evaluate(`localStorage.removeItem('grimoire-theme')`);
 
   // 收尾：撤掉媒体模拟
@@ -2105,7 +2138,7 @@ try {
 
   await writeFile(
     path.join(SHOTS, "report.json"),
-    JSON.stringify({ base: BASE, routes: report }, null, 2),
+    JSON.stringify({ base: BASE, routes: report, screenshots: screenshotEvidence }, null, 2),
     "utf8",
   );
 
@@ -2130,7 +2163,7 @@ try {
   await mkdir(SHOTS, { recursive: true });
   await writeFile(
     path.join(SHOTS, "result.json"),
-    JSON.stringify({ base: BASE, problems, report }, null, 2),
+    JSON.stringify({ base: BASE, problems, report, screenshots: screenshotEvidence }, null, 2),
   );
   cdp?.close();
   if (child) {

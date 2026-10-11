@@ -165,4 +165,81 @@ export async function verifyInteractionContracts({ cdp, check, navigate, base, t
     }
   }
   await navigate(`${base}/`);
+  await verifyZoomLinks({ cdp, check, navigate, base, shots });
+}
+
+/** Exercise native link defaults with real input, including newly opened tabs. */
+export async function verifyZoomLinks({ cdp, check, navigate, base, shots }) {
+  const storageKey = "grimoire-verify-link";
+  await cdp.send("Emulation.setDeviceMetricsOverride", { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false });
+  await cdp.send("Browser.setDownloadBehavior", { behavior: "allow", downloadPath: path.join(shots, "link-downloads") });
+  try {
+    for (const activation of [
+      { label: "普通左键", button: "left", modifiers: 0, modal: true },
+      { label: "Ctrl 点击", button: "left", modifiers: 2, newTab: true },
+      { label: "Meta 点击", button: "left", modifiers: 4, newTab: true },
+      { label: "Shift 点击", button: "left", modifiers: 8, newTab: true },
+      { label: "Alt 点击", button: "left", modifiers: 1 },
+      { label: "中键", button: "middle", modifiers: 0, newTab: true },
+    ]) {
+      await navigate(`${base}/`);
+      await cdp.evaluate(`document.activeViewTransition?.finished`);
+      await new Promise(resolve => setTimeout(resolve, 400));
+      const before = new Set((await cdp.send("Target.getTargets")).targetInfos.map(t => t.targetId));
+      const point = await cdp.evaluate(`(() => {
+        const a=document.querySelector('[data-zoom]');
+        // Non-Mac Meta has no native new-tab meaning. Use a target fixture so
+        // real Meta input still opens the same image URL, without navigating
+        // this document into Chromium's generated image-viewer document (whose
+        // internal view-transition promise rejects when opt-in disappears).
+        if (${activation.modifiers}===4 && !/Mac/.test(navigator.platform)) a.target='_blank';
+        a.scrollIntoView({block:'center',behavior:'instant'});
+        localStorage.removeItem('${storageKey}');
+        document.addEventListener('${activation.button === 'middle' ? 'auxclick' : 'click'}', event => {
+          if (!event.target.closest('[data-zoom]')) return;
+          // Persist before the default navigation; no test listener cancels it.
+          localStorage.setItem('${storageKey}',JSON.stringify({
+            prevented:event.defaultPrevented,modal:document.getElementById('plate-viewer').open,
+            button:event.button,ctrl:event.ctrlKey,meta:event.metaKey,shift:event.shiftKey,alt:event.altKey,
+          }));
+        },{once:true});
+        const r=a.getBoundingClientRect(),x=r.x+r.width/2,y=r.y+r.height/2;
+        return {x,y,href:a.href,hit:a.contains(document.elementFromPoint(x,y))};
+      })()`);
+      check(point.hit, `${activation.label} 原图入口可命中`, JSON.stringify(point));
+      if (!point.hit) continue;
+      for (const type of ["mousePressed", "mouseReleased"])
+        await cdp.send("Input.dispatchMouseEvent", { type, x: point.x, y: point.y,
+          button: activation.button, modifiers: activation.modifiers, clickCount: 1 });
+      await new Promise(resolve => setTimeout(resolve, 300));
+      const state = await cdp.evaluate(`JSON.parse(localStorage.getItem('${storageKey}'))`);
+      check(state && state.prevented === Boolean(activation.modal) && state.modal === Boolean(activation.modal) &&
+        state.button === (activation.button === "middle" ? 1 : 0) &&
+        state.ctrl === Boolean(activation.modifiers & 2) && state.meta === Boolean(activation.modifiers & 4) &&
+        state.shift === Boolean(activation.modifiers & 8) && state.alt === Boolean(activation.modifiers & 1),
+        `${activation.label} ${activation.modal ? '打开原生模态' : '保留浏览器默认行为、不开模态'}`, JSON.stringify(state));
+      let added = [];
+      for (let attempt = 0; attempt < (activation.newTab ? 20 : 1); attempt++) {
+        added = (await cdp.send("Target.getTargets")).targetInfos.filter(t => !before.has(t.targetId));
+        if (added.some(t => t.type === "page" && t.url === point.href)) break;
+        await new Promise(resolve => setTimeout(resolve, 50));
+      }
+      if (activation.newTab)
+        check(added.some(t => t.type === "page" && t.url === point.href),
+          `${activation.label} 浏览器实际在新页面打开原图`, JSON.stringify(added.map(t => t.url)));
+      for (const target of added.filter(t => t.type === "page" && t.url === point.href))
+        await cdp.send("Target.closeTarget", { targetId: target.targetId });
+    }
+    await navigate(`${base}/`);
+    await cdp.evaluate(`localStorage.removeItem('${storageKey}');document.querySelector('[data-tag="vue"]').click()`);
+    const vue = await cdp.evaluate(`[...document.querySelectorAll('.entry-card')].filter(c=>!c.closest('[data-tags]').hidden).map(c=>c.querySelector('h2').textContent.trim())`);
+    check(vue.length === 2 && !vue.includes("Notes of Ashen"), "Vue 筛选只包含实际使用 Vue 的两条项目", JSON.stringify(vue));
+    await cdp.evaluate(`document.querySelector('[data-tag-clear]').click();document.querySelector('[data-tag="typescript"]').click()`);
+    const typescript = await cdp.evaluate(`({titles:[...document.querySelectorAll('.entry-card')].filter(c=>!c.closest('[data-tags]').hidden).map(c=>c.querySelector('h2').textContent.trim()),count:document.querySelector('[data-tag="typescript"] .tagbar__n').textContent.trim()})`);
+    check(typescript.titles.length === 3 && typescript.titles.includes("Notes of Ashen") && typescript.count === "3",
+      "TypeScript 筛选包含 Notes of Ashen，计数同步为三条", JSON.stringify(typescript));
+  } finally {
+    await cdp.send("Browser.setDownloadBehavior", { behavior: "default" });
+    await navigate(`${base}/`);
+  }
 }

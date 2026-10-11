@@ -10,8 +10,8 @@ import { DEFAULT_THEME, THEME_IDS, THEME_LABELS } from '../lib/theme';
  * 三件刻意的取舍：
  *   1. 主题顺序**只有一个来源**（src/lib/theme.ts 的 THEME_IDS）——
  *      这里不抄数组、不写字面量，加一套主题这一页就自动多一格。
- *   2. 每格的样品色块是嵌进去的 `data-theme="<id>"`，于是那一套的 token 对这个
- *      元素生效，颜色直接从 global.css 来（零十六进制重复，也就不会漂移）。
+ *   2. 每格整张卡片都嵌在 `data-theme="<id>"` 作用域里，色块、形状与文字
+ *      都从 global.css 读同一套 token（零十六进制重复，也就不会漂移）。
  *   3. 这一页**不提供切换**：切主题的入口仍然是各页右上角那个面板。多一个方式
  *      就等于多一段脚本、多一份状态，而全站只允许两段脚本（见 BaseLayout）。
  *      所以这里只说明"怎么切"，不自己再做一遍。
@@ -61,7 +61,7 @@ const NOTES: Record<string, string> = {
     <ul class="theme-atlas mt-10" aria-label={`${THEME_IDS.length} 套主题的预览`}>
       {
         THEME_IDS.map((id) => (
-          <li class="theme-atlas__cell">
+          <li class="theme-atlas__cell" data-theme={id}>
             <ThemePreview id={id} />
             <div class="theme-atlas__meta">
               <p class="label">{id}</p>

@@ -14,6 +14,7 @@
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { gzipSync } from 'node:zlib';
+import postcss from 'postcss';
 import { document as parseDocument, attr, text, routeFor } from './site-model.mjs';
 
 /** 客户端 JS 预算（gzip 后：全部外链脚本之和 + 最大页面内联脚本之和） */
@@ -181,10 +182,37 @@ export function reducedMotionBlocks(css) {
 
 /** reduce 块里是否存在显式关闭视图过渡的规则 */
 export function closesViewTransitionUnderReducedMotion(css) {
-  return reducedMotionBlocks(css).some(
-    (block) =>
-      /::view-transition-(?:group|old|new)/.test(block.body) && /animation:\s*none/.test(block.body),
-  );
+  let root;
+  try { root = postcss.parse(css); }
+  catch { return false; }
+  const withoutComments = value => value.replace(/\/\*[\s\S]*?\*\//g, '').trim();
+  const winners = new Map();
+  for (const media of root.nodes) {
+    // A conditional width/supports branch cannot guarantee the fallback for
+    // every visitor. Keep the dedicated top-level reduced-motion contract.
+    if (media.type !== 'atrule' || media.name.toLowerCase() !== 'media' ||
+      !/^\(\s*prefers-reduced-motion\s*:\s*reduce\s*\)$/i.test(withoutComments(media.params))) continue;
+    for (const rule of media.nodes ?? []) {
+      if (rule.type !== 'rule') continue;
+      let animation;
+      for (const declaration of rule.nodes ?? []) {
+        if (declaration.type !== 'decl' || !['animation', 'animation-name'].includes(declaration.prop.toLowerCase())) continue;
+        if (!animation || declaration.important || !animation.important) animation = declaration;
+      }
+      if (!animation) continue;
+      for (const selector of withoutComments(rule.selector).split(',')) {
+        const match = /^(?:(:root|html))?::view-transition-(group|old|new)\(\*\)$/i.exec(selector.trim());
+        if (!match) continue;
+        const candidate = { disabled: withoutComments(animation.value).toLowerCase() === 'none',
+          important: Boolean(animation.important), specificity: match[1]?.toLowerCase() === ':root' ? 10 : match[1] ? 1 : 0 };
+        const previous = winners.get(match[2].toLowerCase());
+        if (!previous || Number(candidate.important) > Number(previous.important) ||
+          candidate.important === previous.important && candidate.specificity >= previous.specificity)
+          winners.set(match[2].toLowerCase(), candidate);
+      }
+    }
+  }
+  return ['group', 'old', 'new'].every(kind => winners.get(kind)?.disabled);
 }
 
 /** 从一个块里取出全部 `--c-*: #hex;` —— 只认十六进制字面量 */

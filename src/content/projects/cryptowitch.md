@@ -11,6 +11,7 @@ order: 3
 tags:
   - "go"
   - "typescript"
+  - "vue"
   - "桌面端"
   - "密码学"
 stack:

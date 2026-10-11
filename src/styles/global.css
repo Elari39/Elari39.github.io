@@ -129,6 +129,13 @@
   --r-sm: 0.5rem;
   --bw: 1px;
 
+  /* 衬线栈只登记一次；嵌套主题也能重置显示字体与标题造型。 */
+  --font-serif: 'Iowan Old Style', 'Palatino Linotype', Palatino, 'Book Antiqua',
+    Georgia, 'Songti SC', 'Noto Serif CJK SC', 'Source Han Serif SC', serif;
+  --font-display: var(--font-serif);
+  --heading-weight: 400;
+  --heading-spacing: -0.01em;
+
   --brutal-shadow: 5px 5px 0 var(--c-hairline);
   --brutal-shadow-sm: 3px 3px 0 var(--c-hairline);
 
@@ -145,6 +152,7 @@
    它必须排在 :root **之后**：两个选择器特异度相同（都作用于 <html>），
    源序在后的那个赢。 */
 [data-theme='light'] {
+  color-scheme: light;
   --c-canvas: #faf9f5;
   --c-surface: #f5f0e8;
   --c-card: #efe9de;
@@ -173,10 +181,8 @@
 
 /* 默认主题的显示字体
    -----------------------------------------------------------------------------
-   只有这一条 key 在 [data-theme='brutal'] 上，而不是并进 :root 的 token 里：
-   衬线栈的唯一来源是 @theme inline 的 --font-display（它同时生成 .font-display
-   工具类），所以浅色 / 深色什么都不用写就仍是衬线，粗野主义只需在这里改一次。
-   并进 :root 的话，就得把衬线栈复制到另外两套里，迟早漂移。
+   衬线栈的唯一来源是 --font-serif；粗野主义在这里改显示字体和标题造型。
+   浅色 / 深色在自己的作用域重置，图鉴嵌在粗野主义页面里也不会继承错值。
 
    零 WebFont 这条不变量不能破，所以只从系统字体里挑；中文没有真正的 Black
    字面量，靠 font-weight: 800 让系统挑最粗的那一档。
@@ -190,6 +196,8 @@
   --r-pill: 0;
   --r-sm: 0;
   --bw: 2px;
+  --heading-weight: 800;
+  --heading-spacing: -0.02em;
 }
 
 /* 深色主题：灰烬 */
@@ -221,6 +229,19 @@
   --c-glow: #e08d6d88;
 }
 
+/* 重置运行时变量，隔离祖先主题；不为每套主题另写组件覆盖。
+   放在颜色块之后，守卫仍从各主题的第一块读取完整 --c-* 色板。 */
+[data-theme='light'],
+[data-theme='dark'] {
+  --font-display: var(--font-serif);
+  --heading-weight: 400;
+  --heading-spacing: -0.01em;
+  --r-card: 0.875rem;
+  --r-pill: 999px;
+  --r-sm: 0.5rem;
+  --bw: 1px;
+}
+
 @theme inline {
   --color-canvas: var(--c-canvas);
   --color-surface: var(--c-surface);
@@ -242,8 +263,7 @@
   --color-grid: var(--c-grid);
   --color-ember-soft: var(--c-ember-soft);
 
-  --font-display: 'Iowan Old Style', 'Palatino Linotype', Palatino, 'Book Antiqua',
-    Georgia, 'Songti SC', 'Noto Serif CJK SC', 'Source Han Serif SC', serif;
+  --font-display: var(--font-serif);
   --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue',
     'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, 'Cascadia Mono', Consolas,
@@ -349,9 +369,9 @@
   h4 {
     font-family: var(--font-display);
     color: var(--c-ink);
-    font-weight: 400;
+    font-weight: var(--heading-weight);
     line-height: 1.25;
-    letter-spacing: -0.01em;
+    letter-spacing: var(--heading-spacing);
     text-wrap: balance;
   }
 
@@ -1038,7 +1058,6 @@
 
   .tagbar__n {
     font-variant-numeric: tabular-nums;
-    opacity: 0.7;
   }
 
   .tagbar__status {
@@ -1252,7 +1271,7 @@
   .reading-progress {
     position: fixed;
     inset: 0 0 auto 0;
-    z-index: 40;
+    z-index: 51;
     height: 3px;
     pointer-events: none;
     background: linear-gradient(90deg, var(--c-primary), var(--c-teal));
@@ -2272,8 +2291,9 @@
 [data-theme='brutal'] h3,
 [data-theme='brutal'] h4 {
   /* base 层把标题定在 font-weight: 400（衬线细体的读法），粗野主义要 800 */
-  font-weight: 800;
-  letter-spacing: -0.02em;
+  /* 祖先选择器也可能命中嵌套样本，值必须读取标题自己的主题作用域。 */
+  font-weight: var(--heading-weight);
+  letter-spacing: var(--heading-spacing);
 }
 
 [data-theme='brutal'] .font-display {

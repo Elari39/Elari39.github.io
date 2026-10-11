@@ -1,4 +1,5 @@
 import path from "node:path";
+import { execFileSync } from "node:child_process";
 import { componentContrast } from "./browser-contracts.mjs";
 
 /** Reading surfaces and modal controls must remain usable after scrolling. */
@@ -48,6 +49,50 @@ export async function verifyReadingContracts({ cdp, check, navigate, base, theme
       await settle();
       await cdp.screenshot(path.join(shots, "reading-footer.png"));
     }
+  }
+
+  // Read rendered pixels: a correctly animated bar can still be covered by the
+  // sticky header. Pillow is already required by the asset verification suite.
+  for (const [width, height] of [[1440, 900], [390, 844]]) {
+    await viewport(width, height);
+    await navigate(`${base}${routes.find(route => route.path.startsWith('/projects/')).path}`);
+    for (const theme of themes) {
+      await cdp.evaluate(`document.documentElement.dataset.theme='${theme}';window.scrollTo({top:document.documentElement.scrollHeight,behavior:'instant'})`);
+      await new Promise(resolve => setTimeout(resolve, 400));
+      const file = path.join(shots, `progress-${width}-${theme}.png`);
+      await cdp.screenshot(file);
+      const pixels = JSON.parse(execFileSync("python", ["-c", `
+import json, sys
+from PIL import Image
+image = Image.open(sys.argv[1]).convert('RGB')
+print(json.dumps([{'line': image.getpixel((int(image.width * x), 1)),
+                  'header': image.getpixel((int(image.width * x), 8))}
+                 for x in (.25, .5, .75)]))`, file], { encoding: "utf8", windowsHide: true }));
+      const painted = await cdp.evaluate(`(() => {
+        const bar=document.querySelector('.reading-progress'), s=getComputedStyle(bar), r=bar.getBoundingClientRect();
+        return r.width>innerWidth*.9 && r.top===0 && r.height===3 && s.pointerEvents==='none' && Number(s.opacity)>0;
+      })()`);
+      check(painted && pixels.every(p => Math.max(...p.line.map((v, i) => Math.abs(v - p.header[i]))) > 25),
+        `${width}px ${theme} 进度线实际绘制在页头上方`, JSON.stringify(pixels));
+    }
+  }
+
+  await viewport(1440, 900);
+  await navigate(`${base}/`);
+  for (const theme of themes) {
+    await cdp.evaluate(`document.documentElement.dataset.theme='${theme}'`);
+    await new Promise(resolve => setTimeout(resolve, 400));
+    for (const pressed of [false, true]) {
+      await cdp.evaluate(`(() => {
+        const button=document.querySelector('[data-tag]');
+        if ((button.getAttribute('aria-pressed')==='true')!==${pressed}) button.click();
+      })()`);
+      await settle();
+      const contrast = await cdp.evaluate(`(${componentContrast.toString()})()`);
+      check(contrast.count > 0 && contrast.problems.length === 0,
+        `${theme} 标签${pressed ? '选中' : '未选中'}及数字实际对比度`, contrast.problems.join('; '));
+    }
+    await cdp.evaluate(`document.querySelector('[data-tag-clear]').click()`);
   }
 
   /* 封面纹样：三种强调色必须真的是三种图案，而不是"三种颜色的同一张封面"。
@@ -111,6 +156,41 @@ export async function verifyReadingContracts({ cdp, check, navigate, base, theme
     `/grimoire/ 恰好一个 h1、主题面板的 ${themes.length} 个选项仍在`,
     JSON.stringify({ h1: atlas.h1, panel: atlas.panel }),
   );
+
+  const samples = () => cdp.evaluate(`(() => {
+    const styles=[...document.querySelectorAll('.theme-atlas__cell')].map(cell=>{
+      const s=getComputedStyle(cell),h=getComputedStyle(cell.querySelector('h2'));
+      const example=getComputedStyle(cell.querySelector('.theme-atlas__meta p .font-display'));
+      return {id:cell.dataset.theme,bg:s.backgroundColor,radius:s.borderRadius,border:s.borderWidth,
+        font:h.fontFamily,weight:h.fontWeight,spacing:h.letterSpacing,exampleFont:example.fontFamily,
+        swatch:getComputedStyle(cell.querySelector('.theme-atlas__swatch')).backgroundImage};
+    });
+    return styles;
+  })()`);
+  // First record each sample with the page using the same theme, then compare
+  // across every parent theme. This detects inheritance leaks without copying
+  // theme colors or font stacks into the test.
+  const expected = new Map();
+  for (const theme of themes) {
+    await cdp.evaluate(`document.documentElement.dataset.theme='${theme}'`);
+    await new Promise(resolve => setTimeout(resolve, 400));
+    const sample = (await samples()).find(s => s.id === theme);
+    expected.set(theme, sample);
+    check(Boolean(sample) && (theme === themes[0]
+      ? sample.radius === '0px' && sample.border === '2px' && sample.weight === '800' && !/Iowan|Georgia|Palatino/i.test(sample.font)
+      : parseFloat(sample.radius) > 0 && sample.border === '1px' && sample.weight === '400' && /Iowan|Georgia|Palatino/i.test(sample.font)) &&
+      sample.font === sample.exampleFont,
+      `${theme} 图鉴样本具有自身形状、标题和字体示例`, JSON.stringify(sample));
+  }
+  for (const parent of themes) {
+    await cdp.evaluate(`document.documentElement.dataset.theme='${parent}'`);
+    await new Promise(resolve => setTimeout(resolve, 400));
+    const actual = await samples();
+    check(actual.length === themes.length && actual.every(sample =>
+      JSON.stringify(sample) === JSON.stringify(expected.get(sample.id))),
+      `${parent} 页面中所有图鉴样本保持各自主题`, JSON.stringify(actual));
+    await cdp.screenshot(path.join(shots, `atlas-parent-${parent}.png`));
+  }
 
   for (const [width, height] of [[1440, 900], [390, 844], [568, 320]]) {
     await viewport(width, height);

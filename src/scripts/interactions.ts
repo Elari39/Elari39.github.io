@@ -235,6 +235,8 @@ document.addEventListener('click', (event) => {
   // 无 JS 时那个 href 仍然是可用的回退），以及在窗口内翻页。
   const zoom = target.closest('[data-zoom]');
   if (zoom) {
+    // 保留浏览器的原图链接行为；普通 Enter 激活的 click 仍然是 button=0。
+    if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
     event.preventDefault();
     showPlate(thumbs.indexOf(zoom));
     if (viewer instanceof HTMLDialogElement) {
